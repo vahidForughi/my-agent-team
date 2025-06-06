@@ -32,7 +32,7 @@ spec:
   template:
     metadata:
       annotations:
-        sidecar.istio.io/inject: "false"
+        sidecar.istio.io/inject: "true"
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: discount
@@ -90,8 +90,7 @@ spec:
       restartPolicy: Always
       schedulerName: default-scheduler
       securityContext: {}
-      serviceAccount: default
-      serviceAccountName: default
+      serviceAccountName: discountapi
       terminationGracePeriodSeconds: 30
 status:
   conditions:

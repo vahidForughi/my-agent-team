@@ -8,14 +8,23 @@ image:
   repository: redis
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "latest"
+  tag: "alpine"
 
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: "basketdb"
 
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
 podAnnotations:
-  sidecar.istio.io/inject: "false"
+  sidecar.istio.io/inject: "true"
 
 podSecurityContext: {}
   # fsGroup: 2000

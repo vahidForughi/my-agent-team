@@ -5,10 +5,10 @@
 replicaCount: 1
 
 image:
-  repository: mongo
+  repository: mcr.microsoft.com/mssql/server:2022-latest
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "latest"
+  tag: ""
 
 imagePullSecrets: []
 nameOverride: ""
@@ -16,7 +16,7 @@ fullnameOverride: "catalogdb"
 
 serviceAccount:
   # Specifies whether a service account should be created
-  create: false
+  create: true
   # Annotations to add to the service account
   annotations: {}
   # The name of the service account to use.
@@ -24,7 +24,7 @@ serviceAccount:
   name: ""
 
 podAnnotations:
-  sidecar.istio.io/inject: "false"
+  sidecar.istio.io/inject: "true"
 
 podSecurityContext: {}
   # fsGroup: 2000
@@ -39,7 +39,7 @@ securityContext: {}
 
 service:
   type: ClusterIP
-  port: 27017
+  port: 1433
 
 ingress:
   enabled: false
