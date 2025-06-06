@@ -5,10 +5,10 @@
 replicaCount: 1
 
 image:
-  repository: mcr.microsoft.com/mssql/server:2022-latest
+  repository: postgres
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: ""
+  tag: "13-alpine"
 
 imagePullSecrets: []
 nameOverride: ""
@@ -38,7 +38,7 @@ securityContext: {}
 
 service:
   type: ClusterIP
-  port: 1433
+  port: 5432
 
 ingress:
   enabled: false

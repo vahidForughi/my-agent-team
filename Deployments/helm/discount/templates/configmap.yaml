@@ -4,5 +4,5 @@ metadata:
   name: discountapi
   namespace: default
 data:
-  DatabaseSettings__ConnectionString: Server=discountdb;Port=5432;Database=DiscountDb;User Id=admin;Password=admin1234;Pooling=true;
+  DatabaseSettings__ConnectionString: Server=discountdb;Port=5432;Database=DiscountDb;User Id=admin;Password=admin1234;Pooling=true;SSL Mode=Disable;
   ElasticConfiguration__Uri: http://elasticsearch:9200

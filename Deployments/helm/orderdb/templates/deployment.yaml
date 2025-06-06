@@ -39,13 +39,10 @@ spec:
               protocol: TCP
           resources:
             {{- toYaml .Values.resources | nindent 12 }}              
+          {{- if .Values.env }}
           env:
-            {{- if .Values.env.values -}}
-            {{- range .Values.env.values }}
-              - name: {{ .name }}
-                value: {{ .value | quote }}
-            {{- end -}}
-            {{- end -}}              
+            {{- toYaml .Values.env | nindent 12 }}
+          {{- end }}
           
       {{- with .Values.nodeSelector }}
       nodeSelector:

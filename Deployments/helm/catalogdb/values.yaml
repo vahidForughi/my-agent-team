@@ -5,10 +5,10 @@
 replicaCount: 1
 
 image:
-  repository: mcr.microsoft.com/mssql/server:2022-latest
+  repository: mcr.microsoft.com/mssql/server
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: ""
+  tag: "2022-latest"
 
 imagePullSecrets: []
 nameOverride: ""
@@ -74,3 +74,9 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+env:
+  - name: ACCEPT_EULA
+    value: "Y"
+  - name: SA_PASSWORD
+    value: "SqlPassword123"

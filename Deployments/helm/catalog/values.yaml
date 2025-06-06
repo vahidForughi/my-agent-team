@@ -27,7 +27,7 @@ serviceAccount:
   name: ""
 
 podAnnotations: 
-  sidecar.istio.io/inject: "true"
+  sidecar.istio.io/inject: "false"
 
 podSecurityContext: {}
   # fsGroup: 2000
