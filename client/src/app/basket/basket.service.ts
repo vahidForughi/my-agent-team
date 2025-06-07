@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { AcntService } from '../account/acnt.service';
 import { Basket, IBasket, IBasketItem, IBasketTotal } from '../shared/models/basket';
-import { IProduct } from '../shared/models/product';
+import { IProduct, IProductWithDiscount } from '../shared/models/product';
 
 @Injectable({
   providedIn: 'root'
@@ -56,7 +56,7 @@ export class BasketService {
   }
 
   // Basket operations starts here
-  addItemToBasket(item: IProduct, quantity = 1){
+  addItemToBasket(item: IProduct | IProductWithDiscount, quantity = 1){
     const itemToAdd :IBasketItem = this.mapProductItemToBasketItem(item);
     const basket = this.getCurrentBasket() ?? this.createBasket();
     //now items can be added in the basket
@@ -131,13 +131,14 @@ export class BasketService {
     return basket;
   }
 
-  private mapProductItemToBasketItem(item: IProduct): IBasketItem {
+  private mapProductItemToBasketItem(item: IProduct | IProductWithDiscount): IBasketItem {
+    const hasDiscount = 'hasDiscount' in item && item.hasDiscount;
     return {
       productId: item.id,
       productName: item.name,
       price: item.price,
-      originalPrice: item.price,
-      discountAmount: 0,
+      originalPrice: hasDiscount ? item.originalPrice! : item.price,
+      discountAmount: hasDiscount ? item.discountAmount! : 0,
       imageFile: item.imageFile,
       quantity:0
     }
@@ -146,9 +147,17 @@ export class BasketService {
   private calculateBasketTotal(){
     const basket = this.getCurrentBasket();
     if(!basket) return;
-    //We are going to loop over in array and calculate total
-    const total = basket.items.reduce((x, y)=> (y.price * y.quantity) + x, 0);
-    this.basketTotal.next({total});
+
+    // Calculate totals including savings
+    const total = basket.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const originalTotal = basket.items.reduce((sum, item) => sum + (item.originalPrice * item.quantity), 0);
+    const totalSavings = originalTotal - total;
+
+    this.basketTotal.next({
+      total,
+      originalTotal,
+      totalSavings
+    });
   }
 
 }

@@ -66,6 +66,27 @@
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
+.discount-tag {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  z-index: 2;
+  box-shadow: 0 2px 8px rgba(238, 90, 36, 0.3);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
 .product-actions {
   position: absolute;
   bottom: 15px;
@@ -164,6 +185,48 @@
   font-size: 1.2rem;
   font-weight: 700;
   color: #252B42;
+}
+
+/* Discount Price Styles */
+.price-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.original-price {
+  font-size: 0.9rem;
+  color: #999;
+  text-decoration: line-through;
+  font-weight: 500;
+}
+
+.discount-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  align-self: flex-start;
+  box-shadow: 0 2px 5px rgba(238, 90, 36, 0.2);
+}
+
+.discounted-price {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #27ae60;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.savings-text {
+  font-size: 0.75rem;
+  color: #27ae60;
+  font-weight: 600;
+  font-style: italic;
 }
 
 .cart-btn-mobile {

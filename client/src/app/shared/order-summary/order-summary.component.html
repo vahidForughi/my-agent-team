@@ -5,6 +5,16 @@
 
   <div class="order-summary-body" *ngIf="(basketService.basketTotal$ | async) as total">
     <ul class="summary-list">
+      <li class="summary-item" *ngIf="total.totalSavings > 0">
+        <span class="item-label">Original Subtotal</span>
+        <span class="item-value original-price">{{ total.originalTotal | currency: 'VND' }}</span>
+      </li>
+      <li class="summary-item discount-item" *ngIf="total.totalSavings > 0">
+        <span class="item-label savings-label">
+          <i class="fa fa-tag"></i> Total Savings
+        </span>
+        <span class="item-value savings-value">-{{ total.totalSavings | currency: 'VND' }}</span>
+      </li>
       <li class="summary-item">
         <span class="item-label">Subtotal</span>
         <span class="item-value">{{ total.total | currency: 'VND' }}</span>
@@ -18,5 +28,14 @@
         <span class="item-value">{{ total.total | currency: 'VND' }}</span>
       </li>
     </ul>
+
+    <!-- Savings Banner -->
+    <div class="savings-banner" *ngIf="total.totalSavings > 0">
+      <div class="savings-banner-content">
+        <i class="fa fa-star"></i>
+        <span>You're saving {{ total.totalSavings | currency: 'VND' }} on this order!</span>
+        <i class="fa fa-star"></i>
+      </div>
+    </div>
   </div>
 </div>

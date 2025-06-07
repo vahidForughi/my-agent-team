@@ -1,6 +1,6 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { IBrand } from '../shared/models/brand';
-import { IProduct } from '../shared/models/product';
+import { IProduct, IProductWithDiscount } from '../shared/models/product';
 import { StoreParams } from '../shared/models/storeParams';
 import { IType } from '../shared/models/type';
 import { StoreService } from './store.service';
@@ -12,7 +12,7 @@ import { StoreService } from './store.service';
 })
 export class StoreComponent implements OnInit {
   @ViewChild('search') searchTerm?: ElementRef;
-  products: IProduct[] = [];
+  products: IProductWithDiscount[] = [];
   brands: IBrand[] = [];
   types: IType[] =[];
   storeParams = new StoreParams();

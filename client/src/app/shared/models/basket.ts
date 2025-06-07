@@ -22,4 +22,6 @@ export class Basket implements IBasket {
 
 export interface IBasketTotal {
   total: number;
+  totalSavings: number;
+  originalTotal: number;
 }

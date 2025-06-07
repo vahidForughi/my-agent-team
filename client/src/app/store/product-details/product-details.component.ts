@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { take } from 'rxjs';
 import { BasketService } from 'src/app/basket/basket.service';
-import { IProduct } from 'src/app/shared/models/product';
+import { IProduct, IProductWithDiscount } from 'src/app/shared/models/product';
 import { BreadcrumbService } from 'xng-breadcrumb';
 import { StoreService } from '../store.service';
 
@@ -12,7 +12,7 @@ import { StoreService } from '../store.service';
   styleUrls: ['./product-details.component.scss']
 })
 export class ProductDetailsComponent implements OnInit {
-  product?: IProduct;
+  product?: IProductWithDiscount;
   quantity = 1;
 
   constructor(
