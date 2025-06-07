@@ -85,7 +85,15 @@ builder.Services.AddStackExchangeRedisCache(options =>
 builder.Services.AddScoped<IBasketRepository, BasketRepository>();
 builder.Services.AddScoped<DiscountGrpcService>();
 builder.Services.AddGrpcClient<DiscountProtoService.DiscountProtoServiceClient>
-    (cfg => cfg.Address = new Uri(builder.Configuration["GrpcSettings:DiscountUrl"]));
+    (cfg =>
+    {
+        cfg.Address = new Uri(builder.Configuration["GrpcSettings:DiscountUrl"]);
+        // Configure gRPC client for HTTP/2 over plain HTTP
+        cfg.ChannelOptionsActions.Add(options =>
+        {
+            options.HttpHandler = new HttpClientHandler();
+        });
+    });
 
 // MassTransit-RabbitMQ Configuration
 builder.Services.AddMassTransit(config =>

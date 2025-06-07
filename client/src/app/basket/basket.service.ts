@@ -136,6 +136,8 @@ export class BasketService {
       productId: item.id,
       productName: item.name,
       price: item.price,
+      originalPrice: item.price,
+      discountAmount: 0,
       imageFile: item.imageFile,
       quantity:0
     }

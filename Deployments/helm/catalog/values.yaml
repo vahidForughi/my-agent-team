@@ -6,8 +6,8 @@ replicaCount: 1
 pathBase: /Catalog
 
 image:
-  registry: mcr.microsoft.com
-  repository: eshop/catalog.api
+  registry: ""
+  repository: catalogapi
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"

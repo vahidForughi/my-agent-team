@@ -2,6 +2,8 @@ export interface IBasketItem {
   quantity: number;
   imageFile: string;
   price: number;
+  originalPrice: number;
+  discountAmount: number;
   productId: string;
   productName: string;
 }

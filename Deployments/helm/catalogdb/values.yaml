@@ -5,10 +5,10 @@
 replicaCount: 1
 
 image:
-  repository: mcr.microsoft.com/mssql/server
+  repository: mongo
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "2022-latest"
+  tag: "4.4"
 
 imagePullSecrets: []
 nameOverride: ""
@@ -39,7 +39,7 @@ securityContext: {}
 
 service:
   type: ClusterIP
-  port: 1433
+  port: 27017
 
 ingress:
   enabled: false
@@ -76,7 +76,9 @@ tolerations: []
 affinity: {}
 
 env:
-  - name: ACCEPT_EULA
-    value: "Y"
-  - name: SA_PASSWORD
-    value: "SqlPassword123"
+  - name: MONGO_INITDB_ROOT_USERNAME
+    value: "admin"
+  - name: MONGO_INITDB_ROOT_PASSWORD
+    value: "admin1234"
+  - name: MONGO_INITDB_DATABASE
+    value: "CatalogDb"

@@ -43,7 +43,17 @@ spec:
               {{- range .Values.env }}
               - name: {{ .name }}
                 value: {{ .value }}
-              {{- end }}             
+              {{- end }}
+              - name: ElasticConfiguration__Uri
+                valueFrom:
+                  configMapKeyRef:
+                    name: "cfg-{{ include "ocelotapigw.fullname" . }}"
+                    key: ElasticConfiguration__Uri
+          volumeMounts:
+            - name: ocelot-config
+              mountPath: /app/ocelot.k8s.json
+              subPath: ocelot.k8s.json
+              readOnly: true
       {{- with .Values.nodeSelector }}
       nodeSelector: 
         {{- toYaml . | nindent 8 }}
@@ -56,3 +66,10 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      volumes:
+        - name: ocelot-config
+          configMap:
+            name: "cfg-{{ include "ocelotapigw.fullname" . }}"
+            items:
+              - key: ocelot.k8s.json
+                path: ocelot.k8s.json

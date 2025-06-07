@@ -5,8 +5,8 @@
 replicaCount: 1
 
 image:
-  repository: mcr.microsoft.com/dotnet/aspnet
-  tag: "6.0"
+  repository: ocelotapigateway
+  tag: "latest"
   pullPolicy: IfNotPresent
 
 imagePullSecrets:
