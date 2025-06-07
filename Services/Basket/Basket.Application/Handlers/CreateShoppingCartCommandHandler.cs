@@ -30,12 +30,15 @@ public class CreateShoppingCartCommandHandler : IRequestHandler<CreateShoppingCa
                 item.OriginalPrice = item.Price;
             }
 
-            // Get discount for this product
-            var coupon = await _discountGrpcService.GetDiscount(item.ProductName);
-            item.DiscountAmount = coupon.Amount;
+            // Apply discount only if it hasn't been applied yet
+            if (item.DiscountAmount == 0 && item.Price == item.OriginalPrice)
+            {
+                var coupon = await _discountGrpcService.GetDiscount(item.ProductName);
+                item.DiscountAmount = coupon.Amount;
 
-            // Update the Price to reflect the discounted price
-            item.Price = item.OriginalPrice - item.DiscountAmount;
+                // Update the Price to reflect the discounted price
+                item.Price = item.OriginalPrice - item.DiscountAmount;
+            }
         }
 
         var shoppingCart = await _basketRepository.UpdateBasket(new ShoppingCart
