@@ -1,0 +1,276 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+    types: [opened, synchronize, reopened]
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  NODE_VERSION: '18.x'
+  DOCKER_BUILDKIT: 1
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.changes.outputs.backend }}
+      frontend: ${{ steps.changes.outputs.frontend }}
+      docker: ${{ steps.changes.outputs.docker }}
+      k8s: ${{ steps.changes.outputs.k8s }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            backend:
+              - 'Services/**'
+              - 'ApiGateways/**'
+              - 'Infrastructure/**'
+              - '*.sln'
+              - '**/*.csproj'
+            frontend:
+              - 'client/**'
+            docker:
+              - 'docker-compose*.yml'
+              - '**/Dockerfile'
+            k8s:
+              - 'Deployments/**'
+
+  code-quality:
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.backend == 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      
+      - name: Cache NuGet packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+      
+      - name: Restore dependencies
+        run: dotnet restore Ecommerce.sln
+      
+      - name: Build solution
+        run: dotnet build Ecommerce.sln --no-restore --configuration Release
+      
+      - name: Run tests
+        run: dotnet test Ecommerce.sln --no-build --configuration Release --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./coverage
+      
+      - name: Code Coverage Report
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: coverage/**/coverage.cobertura.xml
+          badge: true
+          fail_below_min: true
+          format: markdown
+          hide_branch_rate: false
+          hide_complexity: true
+          indicators: true
+          output: both
+          thresholds: '60 80'
+      
+      - name: Add Coverage PR Comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        if: github.event_name == 'pull_request'
+        with:
+          recreate: true
+          path: code-coverage-results.md
+
+  security-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+      
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+      
+      - name: Run CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+        with:
+          languages: csharp, javascript
+
+  frontend-quality:
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.frontend == 'true'
+    defaults:
+      run:
+        working-directory: ./client
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: client/package-lock.json
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Lint
+        run: npm run lint
+      
+      - name: Run tests
+        run: npm run test:ci
+      
+      - name: Build
+        run: npm run build
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: [code-quality, frontend-quality]
+    if: always() && (needs.code-quality.result == 'success' || needs.code-quality.result == 'skipped') && (needs.frontend-quality.result == 'success' || needs.frontend-quality.result == 'skipped')
+    strategy:
+      matrix:
+        service: [catalog-api, basket-api, discount-api, ordering-api, ocelot-gateway]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Services/${{ matrix.service }}/Dockerfile
+          push: false
+          tags: ${{ matrix.service }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    needs: docker-build
+    if: github.event_name == 'pull_request'
+    services:
+      redis:
+        image: redis:alpine
+        ports:
+          - 6379:6379
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_DB: discountdb
+          POSTGRES_USER: admin
+          POSTGRES_PASSWORD: Password@1
+        ports:
+          - 5432:5432
+      mongodb:
+        image: mongo:latest
+        ports:
+          - 27017:27017
+      rabbitmq:
+        image: rabbitmq:3-management-alpine
+        ports:
+          - 5672:5672
+          - 15672:15672
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      
+      - name: Run integration tests
+        run: |
+          dotnet test \
+            --configuration Release \
+            --filter "Category=Integration" \
+            --logger "trx;LogFileName=integration-tests.trx" \
+            --results-directory ./TestResults
+      
+      - name: Publish test results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Integration Tests
+          path: ./TestResults/*.trx
+          reporter: dotnet-trx
+
+  helm-lint:
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.k8s == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: 'latest'
+      
+      - name: Lint Helm charts
+        run: |
+          for chart in Deployments/helm/*/; do
+            if [ -f "$chart/Chart.yaml" ]; then
+              echo "Linting $chart"
+              helm lint "$chart"
+            fi
+          done
+      
+      - name: Validate Kubernetes manifests
+        run: |
+          for manifest in Deployments/k8s/**/*.yaml; do
+            if [ -f "$manifest" ]; then
+              echo "Validating $manifest"
+              kubectl --dry-run=client apply -f "$manifest"
+            fi
+          done
+
+  notify-status:
+    runs-on: ubuntu-latest
+    needs: [code-quality, frontend-quality, docker-build, security-scan, helm-lint]
+    if: always()
+    steps:
+      - name: Notify PR status
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const status = '${{ needs.code-quality.result }}' === 'success' && 
+                          '${{ needs.frontend-quality.result }}' === 'success' && 
+                          '${{ needs.docker-build.result }}' === 'success' && 
+                          '${{ needs.security-scan.result }}' === 'success' && 
+                          '${{ needs.helm-lint.result }}' === 'success' ? '✅' : '❌';
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `${status} CI Pipeline completed. Check the [Actions tab](${context.payload.repository.html_url}/actions/runs/${context.runId}) for details.`
+            }); 

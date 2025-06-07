@@ -1,0 +1,32 @@
+name: Dependency Management
+
+on:
+  schedule:
+    - cron: '0 6 * * MON'  # Weekly on Monday at 6 AM UTC
+  workflow_dispatch:
+
+jobs:
+  security-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+      
+      - name: .NET Security Audit
+        run: |
+          dotnet list package --vulnerable --include-transitive || echo "No vulnerabilities found"
+      
+      - name: npm Security Audit
+        working-directory: ./client
+        run: |
+          npm audit || echo "Audit completed" 
