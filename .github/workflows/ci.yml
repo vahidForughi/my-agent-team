@@ -118,20 +118,16 @@ jobs:
       # Initialize CodeQL before analysis
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
-
+        with:
+          languages: csharp, javascript
+      
       # Autobuild attempts to build any compiled languages
       - name: Autobuild
-        uses: github/codeql-action/autobuild@v2
-
-      # Run CodeQL Analysis for C# and JavaScript
-      - name: Run CodeQL Analysis (C#)
+        uses: github/codeql-action/autobuild@v3
+      
+      # Run CodeQL Analysis for both languages
+      - name: Run CodeQL Analysis
         uses: github/codeql-action/analyze@v3
-        with:
-          language: csharp
-      - name: Run CodeQL Analysis (JavaScript)
-        uses: github/codeql-action/analyze@v3
-        with:
-          language: javascript
 
   frontend-quality:
     runs-on: ubuntu-latest
@@ -187,7 +183,7 @@ jobs:
           context: ./${{ matrix.service.path }}
           file: ./${{ matrix.service.path }}/Dockerfile
           push: false
-          tags: ${{ matrix.service.name }}:test
+          tags: ${{ matrix.service.name }}:ci-${{ github.run_number }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
