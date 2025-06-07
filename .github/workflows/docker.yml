@@ -82,16 +82,22 @@ jobs:
     if: github.event_name != 'pull_request'
     strategy:
       matrix:
-        service: [catalog-api, basket-api, discount-api, ordering-api, ocelot-gateway]
+        service: [
+          {name: "catalog-api"},
+          {name: "basket-api"},
+          {name: "discount-api"},
+          {name: "ordering-api"},
+          {name: "ocelot-gateway"}
+        ]
     steps:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.service }}:${{ github.sha }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.service.name }}:${{ github.sha }}
           format: 'sarif'
-          output: 'trivy-results-${{ matrix.service }}.sarif'
+          output: 'trivy-results-${{ matrix.service.name }}.sarif'
 
       - name: Upload Trivy scan results
         uses: github/codeql-action/upload-sarif@v2
         with:
-          sarif_file: 'trivy-results-${{ matrix.service }}.sarif' 
+          sarif_file: 'trivy-results-${{ matrix.service.name }}.sarif' 

@@ -115,10 +115,19 @@ jobs:
         with:
           sarif_file: 'trivy-results.sarif'
       
-      - name: Run CodeQL Analysis
-        uses: github/codeql-action/analyze@v2
+      # Initialize CodeQL before analysis
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
         with:
           languages: csharp, javascript
+      
+      # Autobuild attempts to build any compiled languages
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v2
+      
+      # Run CodeQL Analysis
+      - name: Analyze
+        uses: github/codeql-action/analyze@v2
 
   frontend-quality:
     runs-on: ubuntu-latest
@@ -155,7 +164,13 @@ jobs:
     if: always() && (needs.code-quality.result == 'success' || needs.code-quality.result == 'skipped') && (needs.frontend-quality.result == 'success' || needs.frontend-quality.result == 'skipped')
     strategy:
       matrix:
-        service: [catalog-api, basket-api, discount-api, ordering-api, ocelot-gateway]
+        service: [
+          {name: "catalog-api", path: "Services/Catalog/Catalog.API"},
+          {name: "basket-api", path: "Services/Basket/Basket.API"},
+          {name: "discount-api", path: "Services/Discount/Discount.API"},
+          {name: "ordering-api", path: "Services/Ordering/Ordering.API"},
+          {name: "ocelot-gateway", path: "ApiGateways/Ocelot.ApiGateway"}
+        ]
     steps:
       - uses: actions/checkout@v4
       
@@ -165,10 +180,10 @@ jobs:
       - name: Build Docker image
         uses: docker/build-push-action@v5
         with:
-          context: .
-          file: Services/${{ matrix.service }}/Dockerfile
+          context: ./${{ matrix.service.path }}
+          file: ./${{ matrix.service.path }}/Dockerfile
           push: false
-          tags: ${{ matrix.service }}:latest
+          tags: ${{ matrix.service.name }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
