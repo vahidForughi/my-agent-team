@@ -36,7 +36,16 @@
                 <div class="item-info">
                   <h4><a routerLink="/store/{{item.productId}}">{{item.productName}}</a></h4>
                   <div class="item-type">{{item.productName.split(' ')[0]}}</div>
-                  <div class="item-price">{{item.price | currency:'VND'}}</div>
+                  <div class="price-section">
+                    <div class="price-container" *ngIf="item.discountAmount > 0; else noDiscountPrice">
+                      <div class="original-price">{{item.originalPrice | currency:'VND'}}</div>
+                      <div class="discount-badge">-{{item.discountAmount | currency:'VND'}}</div>
+                      <div class="discounted-price">{{item.price | currency:'VND'}}</div>
+                    </div>
+                    <ng-template #noDiscountPrice>
+                      <div class="item-price">{{item.price | currency:'VND'}}</div>
+                    </ng-template>
+                  </div>
                 </div>
 
                 <div class="item-actions">
@@ -56,8 +65,22 @@
                 </div>
 
                 <div class="item-total">
-                  <span>Total: </span>
-                  <strong>{{item.price * item.quantity | currency: 'VND'}}</strong>
+                  <div *ngIf="item.discountAmount > 0; else noDiscountTotal" class="total-with-discount">
+                    <div class="savings-info">
+                      <small class="savings-text">You save: {{item.discountAmount * item.quantity | currency:
+                        'VND'}}</small>
+                    </div>
+                    <div class="total-amount">
+                      <span>Total: </span>
+                      <strong>{{item.price * item.quantity | currency: 'VND'}}</strong>
+                    </div>
+                  </div>
+                  <ng-template #noDiscountTotal>
+                    <div class="total-amount">
+                      <span>Total: </span>
+                      <strong>{{item.price * item.quantity | currency: 'VND'}}</strong>
+                    </div>
+                  </ng-template>
                 </div>
               </div>
             </div>

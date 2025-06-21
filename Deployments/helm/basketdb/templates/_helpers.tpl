@@ -48,4 +48,15 @@ Selector labels
 {{- define "basketdb.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "basketdb.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
-{{- end }}  
+{{- end }}
+
+{{/*
+Create the name of the service account to use
+*/}}
+{{- define "basketdb.serviceAccountName" -}}
+{{- if .Values.serviceAccount.create }}
+{{- default (include "basketdb.fullname" .) .Values.serviceAccount.name }}
+{{- else }}
+{{- default "default" .Values.serviceAccount.name }}
+{{- end }}
+{{- end }}

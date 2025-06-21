@@ -2,6 +2,8 @@ export interface IBasketItem {
   quantity: number;
   imageFile: string;
   price: number;
+  originalPrice: number;
+  discountAmount: number;
   productId: string;
   productName: string;
 }
@@ -20,4 +22,6 @@ export class Basket implements IBasket {
 
 export interface IBasketTotal {
   total: number;
+  totalSavings: number;
+  originalTotal: number;
 }

@@ -19,7 +19,21 @@
         <h1 class="product-name">{{ product.name }}</h1>
         <div class="product-brand">By <span>{{product.productBrand}}</span></div>
 
-        <div class="product-price">{{ product.price | currency: "VND" }}</div>
+        <!-- Product Price with Discount -->
+        <div class="product-price-section" *ngIf="product.hasDiscount; else normalPriceTemplate">
+          <div class="original-price">{{ product.originalPrice | currency: "VND" }}</div>
+          <div class="discount-info">
+            <span class="discount-badge">-{{ product.discountAmount | currency: "VND" }}</span>
+            <span class="discount-text">Limited Time Offer!</span>
+          </div>
+          <div class="discounted-price">{{ product.price | currency: "VND" }} 🎉</div>
+          <div class="savings-highlight">You save {{ product.discountAmount | currency: "VND" }}!</div>
+        </div>
+
+        <!-- Normal Price Template -->
+        <ng-template #normalPriceTemplate>
+          <div class="product-price">{{ product.price | currency: "VND" }}</div>
+        </ng-template>
 
         <div class="product-actions">
           <div class="quantity-selector">

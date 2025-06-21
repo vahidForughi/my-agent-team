@@ -5,6 +5,7 @@
 
     <!-- Badges can be dynamically added here like "New" or "Sale" -->
     <span class="product-badge">New</span>
+    <span class="discount-tag" *ngIf="product.hasDiscount">SALE</span>
 
     <!-- Quick Action Buttons -->
     <div class="product-actions">
@@ -39,7 +40,18 @@
 
     <!-- Product Price -->
     <div class="product-price-row">
-      <span class="product-price">{{ product.price | currency: "VND" }}</span>
+      <!-- Show discounted price if there's a discount -->
+      <div class="price-container" *ngIf="product.hasDiscount; else normalPrice">
+        <span class="original-price">{{ product.originalPrice | currency: "VND" }}</span>
+        <span class="discount-badge">-{{ product.discountAmount | currency: "VND" }}</span>
+        <span class="discounted-price">{{ product.price | currency: "VND" }} 💰</span>
+        <div class="savings-text">Save {{ product.discountAmount | currency: "VND" }}!</div>
+      </div>
+
+      <!-- Normal price template -->
+      <ng-template #normalPrice>
+        <span class="product-price">{{ product.price | currency: "VND" }}</span>
+      </ng-template>
 
       <!-- Add to Cart Button (visible on mobile) -->
       <button (click)="addItemToBasket()" class="cart-btn-mobile">

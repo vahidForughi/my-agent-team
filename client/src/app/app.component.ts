@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, HostListener, OnInit } from '@angular/core';
+import { AfterViewInit, Component, HostListener, OnInit, inject } from '@angular/core';
 import { AcntService } from './account/acnt.service';
 import { BasketService } from './basket/basket.service';
 import { MsalService } from '@azure/msal-angular';
@@ -11,14 +11,17 @@ import { Router } from '@angular/router';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit, AfterViewInit {
+  private basketService = inject(BasketService);
+  private acntService = inject(AcntService);
+  private msalService = inject(MsalService);
+  private router = inject(Router);
+
   title = 'eShopping';
 
-  constructor(
-    private basketService: BasketService,
-    private acntService: AcntService,
-    private msalService: MsalService,
-    private router: Router
-  ) {}
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() {}
 
   async ngOnInit(): Promise<void> {
     await this.initializeMsal();

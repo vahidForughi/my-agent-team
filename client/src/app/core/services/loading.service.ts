@@ -1,13 +1,18 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { NgxSpinnerService } from 'ngx-spinner';
 
 @Injectable({
   providedIn: 'root'
 })
 export class LoadingService {
+  private spinnerService = inject(NgxSpinnerService);
+
   loadingReqCount = 0;
 
-  constructor(private spinnerService: NgxSpinnerService) {}
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() {}
 
     loading() {
       this.loadingReqCount++;

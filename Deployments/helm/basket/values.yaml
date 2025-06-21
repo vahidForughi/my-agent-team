@@ -5,11 +5,11 @@
 replicaCount: 1
 
 image:
-  registry: eshopping.azurecr.io
-  repository: eshopping.azurecr.io/basketapi
+  registry: mcr.microsoft.com
+  repository: eshop/basket.api
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "v1"
+  tag: "latest"
 
 imagePullSecrets:
   - name: acr-secret
@@ -17,7 +17,17 @@ imagePullSecrets:
 nameOverride: ""
 fullnameOverride: "basket"
 
-podAnnotations: {}
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations:
+  sidecar.istio.io/inject: "false"
 
 podSecurityContext: {}
   # fsGroup: 2000
@@ -43,7 +53,7 @@ resources:
     memory: 128Mi
 
 autoscaling:
-  enabled: true
+  enabled: false
   minReplicas: 1
   maxReplicas: 100
   targetCPUUtilizationPercentage: 80

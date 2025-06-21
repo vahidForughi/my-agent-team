@@ -10,7 +10,7 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 data:
-  DatabaseSettings__ConnectionString: mongodb://catalogdb:27017
+  DatabaseSettings__ConnectionString: mongodb://admin:admin1234@catalogdb:27017/CatalogDb?authSource=admin
   DatabaseSettings__DatabaseName: CatalogDb
   DatabaseSettings__CollectionName: Products
   DatabaseSettings__BrandsCollection: Brands

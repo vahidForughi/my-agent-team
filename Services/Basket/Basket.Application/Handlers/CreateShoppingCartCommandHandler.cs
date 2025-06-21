@@ -20,12 +20,25 @@ public class CreateShoppingCartCommandHandler : IRequestHandler<CreateShoppingCa
     }
 
     public async Task<ShoppingCartResponse> Handle(CreateShoppingCartCommand request,
-        CancellationToken cancellationToken)
+    CancellationToken cancellationToken)
     {
         foreach (var item in request.Items)
         {
-            var coupon = await _discountGrpcService.GetDiscount(item.ProductName);
-            item.Price -= coupon.Amount;
+            // If OriginalPrice is not set, use the current Price as the original price
+            if (item.OriginalPrice <= 0)
+            {
+                item.OriginalPrice = item.Price;
+            }
+
+            // Apply discount only if it hasn't been applied yet
+            if (item.DiscountAmount == 0 && item.Price == item.OriginalPrice)
+            {
+                var coupon = await _discountGrpcService.GetDiscount(item.ProductName);
+                item.DiscountAmount = coupon.Amount;
+
+                // Update the Price to reflect the discounted price
+                item.Price = item.OriginalPrice - item.DiscountAmount;
+            }
         }
 
         var shoppingCart = await _basketRepository.UpdateBasket(new ShoppingCart

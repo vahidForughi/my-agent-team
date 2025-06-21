@@ -1,8 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { take } from 'rxjs';
 import { BasketService } from 'src/app/basket/basket.service';
-import { IProduct } from 'src/app/shared/models/product';
+import { IProduct, IProductWithDiscount } from 'src/app/shared/models/product';
 import { BreadcrumbService } from 'xng-breadcrumb';
 import { StoreService } from '../store.service';
 
@@ -12,15 +12,18 @@ import { StoreService } from '../store.service';
   styleUrls: ['./product-details.component.scss']
 })
 export class ProductDetailsComponent implements OnInit {
-  product?: IProduct;
+  private storeService = inject(StoreService);
+  private activatedRoute = inject(ActivatedRoute);
+  private bcService = inject(BreadcrumbService);
+  private basketService = inject(BasketService);
+
+  product?: IProductWithDiscount;
   quantity = 1;
 
-  constructor(
-    private storeService: StoreService,
-    private activatedRoute: ActivatedRoute,
-    private bcService: BreadcrumbService,
-    private basketService: BasketService
-    ){}
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor(){}
 
   ngOnInit(): void {
     this.loadProduct();

@@ -5,11 +5,11 @@
 replicaCount: 1
 
 image:
-  registry: eshopping.azurecr.io
-  repository: eshopping.azurecr.io/discountapi
+  registry: ""
+  repository: discountapi
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "v1"
+  tag: "latest"
 
 imagePullSecrets:
   - name: acr-secret
@@ -18,7 +18,7 @@ fullnameOverride: "discountapi"
 
 serviceAccount:
   # Specifies whether a service account should be created
-  create: false
+  create: true
   # Annotations to add to the service account
   annotations: {}
   # The name of the service account to use.
@@ -61,14 +61,14 @@ ingress:
 
 resources:
   limits:
-    cpu: 100m
-    memory: 128Mi
+    cpu: 1000m
+    memory: 1Gi
   requests:
     cpu: 100m
-    memory: 128Mi
+    memory: 512Mi
 
 autoscaling:
-  enabled: true
+  enabled: false
   minReplicas: 1
   maxReplicas: 100
   targetCPUUtilizationPercentage: 80

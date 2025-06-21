@@ -61,6 +61,70 @@
     font-size: 1.1rem;
     font-weight: 600;
     color: #252B42;
+
+    &.original-price {
+        color: #999;
+        text-decoration: line-through;
+        font-weight: 400;
+    }
+
+    &.savings-value {
+        color: #27ae60;
+        font-weight: 700;
+        background: rgba(39, 174, 96, 0.1);
+        padding: 5px 10px;
+        border-radius: 15px;
+        border: 1px solid rgba(39, 174, 96, 0.2);
+    }
+}
+
+.discount-item {
+    background: rgba(39, 174, 96, 0.05);
+    margin: 5px -10px;
+    padding: 12px 10px !important;
+    border-radius: 8px;
+    border: 1px solid rgba(39, 174, 96, 0.1) !important;
+
+    .savings-label {
+        color: #27ae60;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        i {
+            color: #27ae60;
+        }
+    }
+}
+
+.savings-banner {
+    margin-top: 20px;
+    background: linear-gradient(135deg, #27ae60, #2ecc71);
+    border-radius: 10px;
+    padding: 15px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+
+    .savings-banner-content {
+        color: white;
+        font-weight: 600;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+
+        i {
+            color: #f1c40f;
+            animation: twinkle 1.5s ease-in-out infinite alternate;
+        }
+    }
+}
+
+@keyframes twinkle {
+    0% { transform: scale(1); opacity: 0.8; }
+    100% { transform: scale(1.2); opacity: 1; }
 }
 
 @media (max-width: 768px) {

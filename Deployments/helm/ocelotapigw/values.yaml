@@ -5,11 +5,9 @@
 replicaCount: 1
 
 image:
-  registry: eshopping.azurecr.io
-  repository: eshopping.azurecr.io/ocelotapigw
+  repository: ocelotapigateway
+  tag: "latest"
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: "v1"
 
 imagePullSecrets:
   - name: acr-secret
@@ -18,14 +16,15 @@ fullnameOverride: "ocelotapigw"
 
 serviceAccount:
   # Specifies whether a service account should be created
-  create: false
+  create: true
   # Annotations to add to the service account
   annotations: {}
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: ""
 
-podAnnotations: {}
+podAnnotations:
+  sidecar.istio.io/inject: "false"
 
 podSecurityContext: {}
   # fsGroup: 2000
@@ -40,7 +39,7 @@ securityContext: {}
 
 service:
   type: NodePort
-  port: 9010  
+  port: 80  
 
 ingress:
   enabled: false

@@ -154,26 +154,32 @@ Each service has its own:
 ## Epics and Features
 
 ### Epic 1: Product Management
+
 - **Catalog Management** - CRUD operations for products with MongoDB
 - **Brand Management** - Organization and administration of product brands
 - **Product Type Management** - Categorization and typing of products
 - **Product Search and Filter** - Advanced discovery capabilities
 
 ### Epic 2: Shopping Experience
+
 - **Product Browsing** - Intuitive product discovery and display
 - **Shopping Cart** - Redis-backed persistent cart management
 
 ### Epic 3: Order Processing
+
 - **Checkout Process** - Convert carts to orders using RabbitMQ event-driven architecture
 - **Order Management** - SQL Server-based order tracking and history
 
 ### Epic 4: Discount Management
+
 - **Discount Application** - Apply percentage or fixed discounts to products
 
 ### Epic 5: User Management and Authentication
+
 - **User Registration and Login** - Identity Server 4 integration
 
 ### Epic 6: System Operations
+
 - **Deployment Automation** - Kubernetes and Helm chart deployment
 - **System Monitoring** - Elastic Stack observability
 - **Scaling and Resilience** - Kubernetes auto-scaling and self-healing
@@ -182,24 +188,28 @@ Each service has its own:
 ## Release Timeline
 
 ### Infrastructure Foundation (March 2025)
+
 - Complete containerization of core microservices (Catalog, Basket)
 - Set up basic Kubernetes cluster configuration
 - Implement Docker Compose for local development
 - Create initial CI/CD pipeline for automated builds
 
 ### Service Expansion (April 2025)
+
 - Containerize Discount and Ordering services
 - Implement Helm charts for automated deployments
 - Configure RabbitMQ for message-based communication
 - Set up inter-service communication patterns
 
 ### Monitoring and Resilience (May 2025)
+
 - Set up Elastic Stack for logging
 - Implement distributed tracing across services
 - Configure Kubernetes horizontal pod autoscaling
 - Enhance API Gateway with advanced routing and caching
 
 ### Service Mesh and Frontend (June 2025)
+
 - Deploy Istio service mesh
 - Implement advanced traffic management
 - Develop and deploy Angular frontend client
@@ -208,6 +218,7 @@ Each service has its own:
 ## Key Outcomes
 
 ### Product Management Outcomes
+
 - MongoDB product database schema for flexible attributes
 - Product CRUD API endpoints with image upload capability
 - Brand entity model with brand-to-product relationships
@@ -215,86 +226,72 @@ Each service has its own:
 - Search and filtering framework for price ranges and attributes
 
 ### Shopping Experience Outcomes
+
 - Responsive product interface with availability indicators
 - Redis-backed cart persistence system
 - Cart management UI with quantity controls and total calculation
 - Cart expiration and recovery mechanism
 
 ### Order Processing Outcomes
+
 - Cart-to-order conversion with RabbitMQ
 - Order confirmation email system
 - Order management dashboard for administrators
 
 ### Discount Management Outcomes
+
 - Percentage and fixed-amount discount configuration
 - Discount scheduling and expiration system
 - Applied discount indicators in product and cart views
 
 ### User Management Outcomes
+
 - Identity Server 4 integration with email verification
 - Secure login process with rate limiting
 
 ### System Operations Outcomes
+
 - Helm charts for each microservice with environment-specific configuration
 - Elasticsearch cluster with centralized logging
 - Kubernetes horizontal pod autoscaling
 - Service mesh capabilities with Istio
 
-## Setup Instructions
+## 🚀 Deployment
 
-### Prerequisites
+This platform supports **Kubernetes deployment with comprehensive monitoring and service mesh capabilities**.
 
-- .NET Core SDK 8.0
-- Docker Desktop
-- Node.js (for client applications)
-- Git
-
-### Development Environment Setup
-
-1. Clone the repository:
+### **Quick Start**
 
 ```bash
-git clone https://github.com/sloweyyy/cloud-native-ecommerce-platform.git
-cd cloud-native-ecommerce-platform
+# One-command deployment (15-20 minutes)
+./deploy.sh
+
+# Or start services if already deployed (30 seconds)
+./start.sh
+
+# Complete cleanup when done
+./cleanup.sh
 ```
 
-2. Configure Docker resources:
+### **Deployment Guides**
 
-```bash
-docker-compose -f docker-compose.yml -f docker-compose.override.yml up -d
-```
+- 📋 **[Quick Reference](DEPLOYMENT-QUICKSTART.md)** - Essential commands and URLs
+- 📚 **[Complete Guide](DEPLOYMENT-GUIDE-COMPLETE.md)** - Detailed step-by-step instructions
 
-Required resources:
+### **Access URLs (After Deployment)**
 
-- Memory: Minimum 7GB
-- CPU: Minimum 5 cores
+- 🌐 **Frontend**: <http://localhost:4200>
+- 🔗 **API Gateway**: <http://localhost:8010>
+- 📈 **Prometheus**: <http://localhost:9090>
+- 📊 **Grafana**: <http://localhost:3000>
+- 🔍 **Jaeger**: <http://localhost:16686>
+- 🕸️ **Kiali**: <http://localhost:20001>
+- 🐰 **RabbitMQ**: <http://localhost:15672> (guest/guest)
 
-3. Start the services:
+### **Prerequisites**
 
-```bash
-docker-compose up
-```
-
-## Service URLs
-
-- Catalog API: http://localhost:8000
-- Basket API: http://localhost:8001
-- Discount API: http://localhost:8002
-- Ordering API: http://localhost:8003
-- API Gateway: http://localhost:8010
-- Web Client: http://localhost:4200
-
-## Monitoring & Infrastructure URLs
-
-- Kibana: http://localhost:5601
-- Elasticsearch: http://localhost:9200
-- RabbitMQ Management: http://localhost:15672
-  - Username: guest
-  - Password: guest
-- Portainer: http://localhost:9000
-- pgAdmin: http://localhost:5050
-  - Email: admin@eCommerce.net
-  - Password: Password@1
+- Docker, Kubernetes (minikube), Helm, kubectl
+- 8GB+ RAM, 4+ CPU cores, 50GB+ disk space
 
 ## Project Structure
 
@@ -419,10 +416,12 @@ The project follows a clean microservices architecture with the following organi
 ## Analytics and Performance Metrics
 
 ### Deployment Metrics
+
 - Deployment time target: 15 minutes (from 3 hours baseline)
 - Deployment success rate target: 99.5% (from 85% baseline)
 
 ### Monitoring Metrics
+
 - Mean time to detect (MTTD) issues target: 5 minutes (from 30 minutes baseline)
 - Mean time to resolve (MTTR) issues target: 1 hour (from 4 hours baseline)
 
@@ -437,4 +436,4 @@ The project follows a clean microservices architecture with the following organi
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. 
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

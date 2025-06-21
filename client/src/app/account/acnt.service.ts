@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { ReplaySubject } from 'rxjs';
 
@@ -13,14 +13,17 @@ import { AuthenticationResult } from '@azure/msal-browser';
   providedIn: 'root'
 })
 export class AcntService {
+  private http = inject(HttpClient);
+  private router = inject(Router);
+  private msalService = inject(MsalService);
+
 
   public currentUserSource = new ReplaySubject<any>(1);
   currentUser$ = this.currentUserSource.asObservable();
-  constructor(
-    private http: HttpClient,
-    private router: Router,
-    private msalService: MsalService
-  ) {
+
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+  constructor() {
     const account = this.msalService.instance.getActiveAccount();
     if (account) {
       this.currentUserSource.next(account);

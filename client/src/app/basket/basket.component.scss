@@ -209,6 +209,50 @@
         font-weight: 700;
         color: #252B42;
     }
+
+    // New discount pricing styles
+    .price-section {
+        margin-top: 8px;
+    }
+
+    .price-container {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .original-price {
+        font-size: 1rem;
+        color: #999;
+        text-decoration: line-through;
+        font-weight: 500;
+    }
+
+    .discount-badge {
+        display: inline-block;
+        background: linear-gradient(135deg, #e74c3c, #c0392b);
+        color: white;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        width: fit-content;
+        box-shadow: 0 2px 4px rgba(231, 76, 60, 0.3);
+    }
+
+    .discounted-price {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #27ae60;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        &::after {
+            content: "🎉";
+            font-size: 0.9rem;
+        }
+    }
 }
 
 .item-actions {
@@ -281,18 +325,43 @@
 
 .item-total {
     display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 10px;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
     font-size: 1.1rem;
 
-    span {
-        color: #5c5c5c;
+    .total-with-discount {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 5px;
     }
 
-    strong {
-        color: #252B42;
-        font-weight: 700;
+    .savings-info {
+        .savings-text {
+            color: #27ae60;
+            font-weight: 600;
+            font-size: 0.9rem;
+            background: rgba(39, 174, 96, 0.1);
+            padding: 2px 8px;
+            border-radius: 8px;
+            border: 1px solid rgba(39, 174, 96, 0.2);
+        }
+    }
+
+    .total-amount {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        span {
+            color: #5c5c5c;
+        }
+
+        strong {
+            color: #252B42;
+            font-weight: 700;
+        }
     }
 }
 

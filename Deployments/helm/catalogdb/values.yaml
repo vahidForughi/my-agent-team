@@ -8,7 +8,7 @@ image:
   repository: mongo
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "latest"
+  tag: "4.4"
 
 imagePullSecrets: []
 nameOverride: ""
@@ -16,7 +16,7 @@ fullnameOverride: "catalogdb"
 
 serviceAccount:
   # Specifies whether a service account should be created
-  create: false
+  create: true
   # Annotations to add to the service account
   annotations: {}
   # The name of the service account to use.
@@ -24,7 +24,7 @@ serviceAccount:
   name: ""
 
 podAnnotations:
-  sidecar.istio.io/inject: "false"
+  sidecar.istio.io/inject: "true"
 
 podSecurityContext: {}
   # fsGroup: 2000
@@ -74,3 +74,11 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+env:
+  - name: MONGO_INITDB_ROOT_USERNAME
+    value: "admin"
+  - name: MONGO_INITDB_ROOT_PASSWORD
+    value: "admin1234"
+  - name: MONGO_INITDB_DATABASE
+    value: "CatalogDb"

@@ -8,7 +8,7 @@ image:
   repository: postgres
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "latest"
+  tag: "13-alpine"
 
 imagePullSecrets: []
 nameOverride: ""
@@ -16,15 +16,14 @@ fullnameOverride: "discountdb"
 
 serviceAccount:
   # Specifies whether a service account should be created
-  create: false
+  create: true
   # Annotations to add to the service account
   annotations: {}
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: ""
 
-podAnnotations:
-  sidecar.istio.io/inject: "false"
+podAnnotations: {}
 
 podSecurityContext: {}
   # fsGroup: 2000
@@ -83,10 +82,9 @@ tolerations: []
 affinity: {}
 
 env:
-  values:
-    - name: POSTGRES_PASSWORD
-      value: "${POSTGRES_PASSWORD}"
-    - name: POSTGRES_USER
-      value: "${POSTGRES_USER}"
-    - name: POSTGRES_DB
-      value: "${POSTGRES_DB}"  
+  - name: POSTGRES_USER
+    value: "admin"
+  - name: POSTGRES_PASSWORD
+    value: "admin1234"
+  - name: POSTGRES_DB
+    value: "DiscountDb"

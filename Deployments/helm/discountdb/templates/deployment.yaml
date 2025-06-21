@@ -34,24 +34,15 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - name: http
+            - name: postgres
               containerPort: 5432
               protocol: TCP
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           env:
-            {{- if .Values.env.values -}}
-            {{- range .Values.env.values }}
-              - name: {{ .name }}
-                value: {{ .value | quote }}
-            {{- end -}}
-            {{- end -}}
-              # - name: POSTGRES_PASSWORD
-              #   value: "admin1234"
-              # - name: POSTGRES_USER
-              #   value: admin1234"                
-              # - name: POSTGRES_DB
-              #   value: {{ .Values.POSTGRES_DB }}                
+            {{- with .Values.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

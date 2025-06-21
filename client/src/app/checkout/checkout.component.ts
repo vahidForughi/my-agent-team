@@ -1,5 +1,5 @@
 import { HttpHeaders } from '@angular/common/http';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { AcntService } from '../account/acnt.service';
 import { BasketService } from '../basket/basket.service';
 import { IBasket, IBasketItem } from '../shared/models/basket';
@@ -11,10 +11,14 @@ import { Router } from '@angular/router';
   styleUrls: ['./checkout.component.scss']
 })
 export class CheckoutComponent implements OnInit {
-  constructor(
-    public basketService: BasketService,
-    private acntService: AcntService,
-    private router: Router){}
+  basketService = inject(BasketService);
+  private acntService = inject(AcntService);
+  private router = inject(Router);
+
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor(){}
 
   ngOnInit(): void {
     this.acntService.currentUser$.subscribe({

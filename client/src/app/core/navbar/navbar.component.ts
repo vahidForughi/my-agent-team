@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { AcntService } from 'src/app/account/acnt.service';
 import { BasketService } from 'src/app/basket/basket.service';
 import { IBasketItem } from 'src/app/shared/models/basket';
@@ -9,9 +9,15 @@ import { IBasketItem } from 'src/app/shared/models/basket';
   styleUrls: ['./navbar.component.scss']
 })
 export class NavbarComponent implements OnInit {
+  basketService = inject(BasketService);
+  private acntService = inject(AcntService);
+
   public isUserAuthenticated: boolean = false;
 
-  constructor(public basketService: BasketService, private acntService: AcntService) {}
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() {}
 
   ngOnInit(): void {
     this.acntService.currentUser$.subscribe({
