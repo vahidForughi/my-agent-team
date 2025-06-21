@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Observable, forkJoin, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { IProduct, IProductWithDiscount } from '../models/product';
@@ -15,9 +15,14 @@ export interface IDiscount {
   providedIn: 'root',
 })
 export class DiscountService {
+  private http = inject(HttpClient);
+
   private baseUrl = 'http://localhost:8010/';
 
-  constructor(private http: HttpClient) {}
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() {}
 
   // This would require a new endpoint on the backend, but for now we'll simulate it
   getDiscountForProduct(productName: string): Observable<IDiscount> {

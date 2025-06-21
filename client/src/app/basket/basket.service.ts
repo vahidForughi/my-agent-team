@@ -1,5 +1,5 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { AcntService } from '../account/acnt.service';
@@ -15,12 +15,15 @@ import { IProduct, IProductWithDiscount } from '../shared/models/product';
   providedIn: 'root',
 })
 export class BasketService {
+  private http = inject(HttpClient);
+  private acntService = inject(AcntService);
+  private router = inject(Router);
+
   baseUrl = 'http://localhost:8010';
-  constructor(
-    private http: HttpClient,
-    private acntService: AcntService,
-    private router: Router
-  ) {}
+
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+  constructor() {}
   private basketSource = new BehaviorSubject<Basket | null>(null);
   basketSource$ = this.basketSource.asObservable();
   private basketTotal = new BehaviorSubject<IBasketTotal | null>(null);

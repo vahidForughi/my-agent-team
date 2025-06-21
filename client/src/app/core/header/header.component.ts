@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { BreadcrumbService } from 'xng-breadcrumb';
 
 @Component({
@@ -7,6 +7,11 @@ import { BreadcrumbService } from 'xng-breadcrumb';
   styleUrls: ['./header.component.scss']
 })
 export class HeaderComponent {
-  constructor(public bcService: BreadcrumbService){}
+  bcService = inject(BreadcrumbService);
+
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor(){}
 
 }

@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild, inject } from '@angular/core';
 import { IBrand } from '../shared/models/brand';
 import { IProduct, IProductWithDiscount } from '../shared/models/product';
 import { StoreParams } from '../shared/models/storeParams';
@@ -11,6 +11,8 @@ import { StoreService } from './store.service';
   styleUrls: ['./store.component.scss']
 })
 export class StoreComponent implements OnInit {
+  private storeService = inject(StoreService);
+
   @ViewChild('search') searchTerm?: ElementRef;
   products: IProductWithDiscount[] = [];
   brands: IBrand[] = [];
@@ -23,7 +25,10 @@ export class StoreComponent implements OnInit {
     { name: 'Price: Descending', value: 'priceDesc'}
   ];
 
-  constructor(private storeService: StoreService){}
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor(){}
 
   ngOnInit(): void {
     this.getProducts();

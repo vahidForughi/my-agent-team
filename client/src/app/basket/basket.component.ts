@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { IBasketItem } from '../shared/models/basket';
 import { BasketService } from './basket.service';
 
@@ -8,7 +8,12 @@ import { BasketService } from './basket.service';
   styleUrls: ['./basket.component.scss']
 })
 export class BasketComponent {
-  constructor(public basketService: BasketService){}
+  basketService = inject(BasketService);
+
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor(){}
 
   removeBasketItem(item: IBasketItem){
     this.basketService.removeItemFromBasket(item);

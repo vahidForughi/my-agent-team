@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { BasketService } from 'src/app/basket/basket.service';
 
 @Component({
@@ -7,5 +7,10 @@ import { BasketService } from 'src/app/basket/basket.service';
   styleUrls: ['./order-summary.component.scss']
 })
 export class OrderSummaryComponent {
-  constructor(public basketService: BasketService){}
+  basketService = inject(BasketService);
+
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor(){}
 }
