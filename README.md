@@ -119,11 +119,11 @@ graph TD
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/cloud-native-ecommerce-platform.git
+git clone https://github.com/sloweyyy/cloud-native-ecommerce-platform.git
 cd cloud-native-ecommerce-platform
 
 # Start all services with Docker Compose
-docker-compose up -d
+docker-compose -f docker-compose.yml -f docker-compose.override.yml up -d 
 
 # Or use the deployment script
 ./deploy.sh
