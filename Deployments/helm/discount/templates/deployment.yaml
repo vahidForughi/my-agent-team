@@ -55,25 +55,13 @@ spec:
         envFrom:
         - configMapRef:
             name: discountapi
-        image: slowey/discountapi:latest
+        image: discountapi:latest
         imagePullPolicy: IfNotPresent
-        livenessProbe:
-          httpGet:
-            path: /health/live
-            port: grpc
-          initialDelaySeconds: 15
-          periodSeconds: 30
         name: discount-grpc
         ports:
         - name: grpc
           containerPort: 80
           protocol: TCP
-        readinessProbe:
-          httpGet:
-            path: /health/ready
-            port: grpc
-          initialDelaySeconds: 15
-          periodSeconds: 30
         resources:
           limits:
             cpu: 100m

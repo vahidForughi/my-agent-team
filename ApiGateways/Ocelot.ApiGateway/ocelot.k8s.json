@@ -1,194 +1,190 @@
 {
-  "Routes": [
-    //Catalog API
-    {
-      "DownstreamPathTemplate": "/api/v1/Catalog",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "catalog",
-          "Port": "80"
-        }
-      ],
-      "UpstreamPathTemplate": "/Catalog",
-      "UpstreamHttpMethod": [ "GET", "POST", "PUT" ],
-      "FileCacheOptions": { "TtlSeconds": 30 }
-    },
-    {
-      "DownstreamPathTemplate": "/api/v1/Catalog/GetProductById/{id}",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "catalog",
-          "Port": "80"
-        }
-      ],
-      "UpstreamPathTemplate": "/Catalog/GetProductById/{id}",
-      "UpstreamHttpMethod": [ "GET", "DELETE" ]
-    },
-    {
-      "DownstreamPathTemplate": "/api/v1/Catalog/GetAllProducts",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "catalog",
-          "Port": "80"
-        }
-      ],
-      "UpstreamPathTemplate": "/Catalog/GetAllProducts",
-      "UpstreamHttpMethod": [ "GET", "DELETE" ]
-    },
-    {
-      "DownstreamPathTemplate": "/api/v1/Catalog/GetAllBrands",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "catalog",
-          "Port": "80"
-        }
-      ],
-      "UpstreamPathTemplate": "/Catalog/GetAllBrands",
-      "UpstreamHttpMethod": [ "GET", "DELETE" ]
-    },
-    {
-      "DownstreamPathTemplate": "/api/v1/Catalog/GetAllTypes",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "catalog",
-          "Port": "80"
-        }
-      ],
-      "UpstreamPathTemplate": "/Catalog/GetAllTypes",
-      "UpstreamHttpMethod": [ "GET", "DELETE" ]
-    },
-    {
-      "DownstreamPathTemplate": "/api/v1/Catalog/GetProductsByBrandName/{brand}",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "catalog",
-          "Port": "80"
-        }
-      ],
-      "UpstreamPathTemplate": "/Catalog/GetProductsByBrandName/{brand}",
-      "UpstreamHttpMethod": [ "GET" ]
-    },
-    //Basket API
-    {
-      "DownstreamPathTemplate": "/api/v1/Basket/GetBasket/{userName}",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "basket",
-          "Port": "80"
-        }
-      ],
-      "UpstreamPathTemplate": "/Basket/GetBasket/{userName}",
-      "UpstreamHttpMethod": [ "GET" ]
-    },
-    {
-      "DownstreamPathTemplate": "/api/v1/Basket/DeleteBasket/{userName}",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "basket",
-          "Port": "80"
-        }
-      ],
-      "UpstreamPathTemplate": "/Basket/DeleteBasket/{userName}",
-      "UpstreamHttpMethod": [ "DELETE" ]
-    },
-    {
-      "DownstreamPathTemplate": "/api/v1/Basket/CreateBasket",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "basket",
-          "Port": "80"
-        }
-      ],
-      "UpstreamPathTemplate": "/Basket/CreateBasket",
-      "UpstreamHttpMethod": [ "POST" ]      
-    },
-    {
-      "DownstreamPathTemplate": "/api/v1/Basket/Checkout",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "basket",
-          "Port": "80"
-        }
-      ],
-      "UpstreamPathTemplate": "/Basket/Checkout",
-      "UpstreamHttpMethod": [ "POST" ],
-      "RateLimitOptions": {
-        "ClientWhitelist": [],
-        "EnableRateLimiting": true,
-        "Period": "3s",
-        "PeriodTimespan": 1,
-        "Limit": 1
-      }
-    },
-    {
-      "DownstreamPathTemplate": "/api/v2/Basket/Checkout",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "basket",
-          "Port": "80"
-        }
-      ],
-      "UpstreamPathTemplate": "/Basket/CheckoutV2",
-      "UpstreamHttpMethod": [ "POST" ],
-      "RateLimitOptions": {
-        "ClientWhitelist": [],
-        "EnableRateLimiting": true,
-        "Period": "3s",
-        "PeriodTimespan": 1,
-        "Limit": 1
-      }
-    },
-    //Discount API
-    {
-      "DownstreamPathTemplate": "/api/v1/Discount/{productName}",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "discountapi",
-          "Port": "80"
-        }
-      ],
-      "UpstreamPathTemplate": "/Discount/{productName}",
-      "UpstreamHttpMethod": [ "GET", "DELETE" ]
-    },
-    {
-      "DownstreamPathTemplate": "/api/v1/Discount",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "discountapi",
-          "Port": "80"
-        }
-      ],
-      "UpstreamPathTemplate": "/Discount",
-      "UpstreamHttpMethod": [ "PUT", "POST" ]
-    },
-    //Order API
-    {
-      "DownstreamPathTemplate": "/api/v1/Order/{userName}",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "ordering",
-          "Port": "80"
-        }
-      ],
-      "UpstreamPathTemplate": "/Order/{userName}",
-      "UpstreamHttpMethod": [ "GET" ]
-    }
-  ],
-  "GlobalConfiguration": {
-    "BaseUrl": "http://ocelotapigw"
-  }
+	"Routes": [
+		{
+			"DownstreamPathTemplate": "/api/v1/Catalog",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "catalog",
+					"Port": "80"
+				}
+			],
+			"UpstreamPathTemplate": "/Catalog",
+			"UpstreamHttpMethod": ["GET", "POST", "PUT"],
+			"FileCacheOptions": { "TtlSeconds": 30 }
+		},
+		{
+			"DownstreamPathTemplate": "/api/v1/Catalog/GetProductById/{id}",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "catalog",
+					"Port": "80"
+				}
+			],
+			"UpstreamPathTemplate": "/Catalog/GetProductById/{id}",
+			"UpstreamHttpMethod": ["GET", "DELETE"]
+		},
+		{
+			"DownstreamPathTemplate": "/api/v1/Catalog/GetAllProducts",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "catalog",
+					"Port": "80"
+				}
+			],
+			"UpstreamPathTemplate": "/Catalog/GetAllProducts",
+			"UpstreamHttpMethod": ["GET", "DELETE"]
+		},
+		{
+			"DownstreamPathTemplate": "/api/v1/Catalog/GetAllBrands",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "catalog",
+					"Port": "80"
+				}
+			],
+			"UpstreamPathTemplate": "/Catalog/GetAllBrands",
+			"UpstreamHttpMethod": ["GET", "DELETE"]
+		},
+		{
+			"DownstreamPathTemplate": "/api/v1/Catalog/GetAllTypes",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "catalog",
+					"Port": "80"
+				}
+			],
+			"UpstreamPathTemplate": "/Catalog/GetAllTypes",
+			"UpstreamHttpMethod": ["GET", "DELETE"]
+		},
+		{
+			"DownstreamPathTemplate": "/api/v1/Catalog/GetProductsByBrandName/{brand}",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "catalog",
+					"Port": "80"
+				}
+			],
+			"UpstreamPathTemplate": "/Catalog/GetProductsByBrandName/{brand}",
+			"UpstreamHttpMethod": ["GET"]
+		},
+		{
+			"DownstreamPathTemplate": "/api/v1/Basket/GetBasket/{userName}",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "basket",
+					"Port": "8080"
+				}
+			],
+			"UpstreamPathTemplate": "/Basket/GetBasket/{userName}",
+			"UpstreamHttpMethod": ["GET"]
+		},
+		{
+			"DownstreamPathTemplate": "/api/v1/Basket/DeleteBasket/{userName}",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "basket",
+					"Port": "8080"
+				}
+			],
+			"UpstreamPathTemplate": "/Basket/DeleteBasket/{userName}",
+			"UpstreamHttpMethod": ["DELETE"]
+		},
+		{
+			"DownstreamPathTemplate": "/api/v1/Basket/CreateBasket",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "basket",
+					"Port": "8080"
+				}
+			],
+			"UpstreamPathTemplate": "/Basket/CreateBasket",
+			"UpstreamHttpMethod": ["POST"]
+		},
+		{
+			"DownstreamPathTemplate": "/api/v1/Basket/Checkout",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "basket",
+					"Port": "8080"
+				}
+			],
+			"UpstreamPathTemplate": "/Basket/Checkout",
+			"UpstreamHttpMethod": ["POST"],
+			"RateLimitOptions": {
+				"ClientWhitelist": [],
+				"EnableRateLimiting": true,
+				"Period": "3s",
+				"PeriodTimespan": 1,
+				"Limit": 1
+			}
+		},
+		{
+			"DownstreamPathTemplate": "/api/v2/Basket/Checkout",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "basket",
+					"Port": "8080"
+				}
+			],
+			"UpstreamPathTemplate": "/Basket/CheckoutV2",
+			"UpstreamHttpMethod": ["POST"],
+			"RateLimitOptions": {
+				"ClientWhitelist": [],
+				"EnableRateLimiting": true,
+				"Period": "3s",
+				"PeriodTimespan": 1,
+				"Limit": 1
+			}
+		},
+		{
+			"DownstreamPathTemplate": "/api/v1/Discount/{productName}",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "discountapi",
+					"Port": "8080"
+				}
+			],
+			"UpstreamPathTemplate": "/Discount/{productName}",
+			"UpstreamHttpMethod": ["GET", "DELETE"]
+		},
+		{
+			"DownstreamPathTemplate": "/api/v1/Discount",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "discountapi",
+					"Port": "8080"
+				}
+			],
+			"UpstreamPathTemplate": "/Discount",
+			"UpstreamHttpMethod": ["PUT", "POST"]
+		},
+		{
+			"DownstreamPathTemplate": "/api/v1/Order/{userName}",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "ordering",
+					"Port": "8080"
+				}
+			],
+			"UpstreamPathTemplate": "/Order/{userName}",
+			"UpstreamHttpMethod": ["GET"]
+		}
+	],
+	"GlobalConfiguration": {
+		"BaseUrl": "http://ocelotapigw"
+	}
 }

@@ -6,18 +6,33 @@ import { UnAuthenticatedComponent } from './core/un-authenticated/un-authenticat
 import { HomeComponent } from './home/home.component';
 
 const routes: Routes = [
-  {path: '',  component:HomeComponent, data:{breadcrumb:'Home'}},
-  {path: 'not-found', component: NotFoundComponent},
-  {path: 'un-authenticated', component: UnAuthenticatedComponent},
-  {path:'server-error', component: ServerErrorComponent},
-  {path: 'store', loadChildren:()=>import('./store/store.module').then(mod=>mod.StoreModule), data:{breadcrumb:'Store'}},
-  {path: 'basket', loadChildren:()=>import('./basket/basket.module').then(mod=>mod.BasketModule), data:{breadcrumb:'Basket'}},
-  {path: 'checkout', loadChildren:()=>import('./checkout/checkout.module').then(mod=>mod.CheckoutModule), data:{breadcrumb:'Checkout'}},
-  {path: '**', redirectTo: '', pathMatch: 'full'},
+  { path: '', component: HomeComponent, data: { breadcrumb: 'Home' } },
+  { path: 'not-found', component: NotFoundComponent },
+  { path: 'un-authenticated', component: UnAuthenticatedComponent },
+  { path: 'server-error', component: ServerErrorComponent },
+  {
+    path: 'store',
+    loadChildren: () =>
+      import('./store/store.module').then((mod) => mod.StoreModule),
+    data: { breadcrumb: 'Store' },
+  },
+  {
+    path: 'basket',
+    loadChildren: () =>
+      import('./basket/basket.module').then((mod) => mod.BasketModule),
+    data: { breadcrumb: 'Basket' },
+  },
+  {
+    path: 'checkout',
+    loadChildren: () =>
+      import('./checkout/checkout.module').then((mod) => mod.CheckoutModule),
+    data: { breadcrumb: 'Checkout' },
+  },
+  { path: '**', redirectTo: '', pathMatch: 'full' },
 ];
 
 @NgModule({
   imports: [RouterModule.forRoot(routes)],
-  exports: [RouterModule]
+  exports: [RouterModule],
 })
-export class AppRoutingModule { }
+export class AppRoutingModule {}

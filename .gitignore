@@ -398,3 +398,4 @@ coverage.json
 .env
 
 /.cursor
+/istio-1.26.2
