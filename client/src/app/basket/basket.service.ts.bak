@@ -115,7 +115,7 @@ export class BasketService {
           localStorage.removeItem('basket_username');
         },
         error: (err) => {
-          console.log('Error Occurred while deletin basket');
+          console.log('Error Occurred while deleting basket');
           console.log(err);
         },
       });
