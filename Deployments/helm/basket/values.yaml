@@ -71,6 +71,8 @@ env:
   values:
   - name: ASPNETCORE_ENVIRONMENT
     value: Development
+  - name: BypassDiscount__Enabled
+    value: "true"
   urls:
   # configmap declares variables which value is taken from the config map defined in template configmap.yaml (name is name of var and key the key in configmap).
   configmap:

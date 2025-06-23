@@ -1,5 +1,5 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { IBrand } from '../shared/models/brand';
@@ -13,10 +13,13 @@ import { DiscountService } from '../shared/services/discount.service';
   providedIn: 'root',
 })
 export class StoreService {
-  constructor(
-    private http: HttpClient,
-    private discountService: DiscountService
-  ) {}
+  private http = inject(HttpClient);
+  private discountService = inject(DiscountService);
+
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() {}
 
   baseUrl = 'http://localhost:8010/';
 
