@@ -154,7 +154,12 @@ deploy_apis() {
 
 # Function to deploy monitoring stack
 deploy_monitoring() {
-    log_info "Deploying monitoring stack..."
+    
+    # Apply permanent Grafana fix
+    log_info "Applying permanent Grafana-Prometheus fix..."
+    if [ -f "apply-permanent-grafana-fix.sh" ]; then
+        ./apply-permanent-grafana-fix.sh
+    fi    log_info "Deploying monitoring stack..."
     
     # Create monitoring namespace
     kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
@@ -178,7 +183,13 @@ deploy_monitoring() {
     kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.20/samples/addons/grafana.yaml
     kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.20/samples/addons/jaeger.yaml
     kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.20/samples/addons/kiali.yaml
-    
+
+    # Setup Grafana-Prometheus connection
+    log_info "Setting up Grafana-Prometheus connection..."
+    if [ -f "scripts/monitoring/setup-grafana-prometheus-connection.sh" ]; then
+        ./scripts/monitoring/setup-grafana-prometheus-connection.sh > /dev/null 2>&1 || log_warning "Grafana setup script failed, but continuing..."
+    fi
+
     log_success "Monitoring stack deployed"
 }
 
