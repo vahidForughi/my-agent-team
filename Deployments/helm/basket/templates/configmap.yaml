@@ -12,5 +12,5 @@ metadata:
 data:
   EventBusSettings__HostAddress: amqp://guest:guest@rabbitmq:5672
   CacheSettings__ConnectionString: basketdb:6379
-  GrpcSettings__DiscountUrl: http://discountapi:80
+  GrpcSettings__DiscountUrl: http://discountapi:8080
   ElasticConfiguration__Uri: http://elasticsearch:9200
