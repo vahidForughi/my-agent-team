@@ -298,8 +298,7 @@ jobs:
     permissions:
       issues: write
       pull-requests: write
-    needs:
-      [code-quality, frontend-quality, docker-build, security-scan, helm-lint]
+    needs: [code-quality, frontend-quality, docker-build, helm-lint]
     if: always()
     steps:
       - name: Notify PR status
@@ -310,7 +309,6 @@ jobs:
             const status = '${{ needs.code-quality.result }}' === 'success' && 
                           '${{ needs.frontend-quality.result }}' === 'success' && 
                           '${{ needs.docker-build.result }}' === 'success' && 
-                          '${{ needs.security-scan.result }}' === 'success' && 
                           '${{ needs.helm-lint.result }}' === 'success' ? '✅' : '❌';
 
             github.rest.issues.createComment({

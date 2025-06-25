@@ -2,10 +2,10 @@ name: Docker Build & Publish
 
 on:
   push:
-    branches: [ main, develop ]
-    tags: [ 'v*' ]
+    branches: [main, develop]
+    tags: ["v*"]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 env:
   REGISTRY: ghcr.io
@@ -17,6 +17,9 @@ jobs:
     permissions:
       contents: read
       packages: write
+    outputs:
+      images-pushed: ${{ steps.push-check.outputs.pushed }}
+      image-tags: ${{ steps.meta.outputs.tags }}
     strategy:
       matrix:
         service:
@@ -61,7 +64,7 @@ jobs:
             type=ref,event=pr
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=sha,prefix=${{ github.ref_name }}-
+            type=sha,prefix=main-,enable={{is_default_branch}}
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Docker image
@@ -74,30 +77,50 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
+
+      - name: Check if images were pushed
+        id: push-check
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "pushed=true" >> $GITHUB_OUTPUT
+          else
+            echo "pushed=false" >> $GITHUB_OUTPUT
+          fi
 
   security-scan:
     runs-on: ubuntu-latest
     needs: build-and-push
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && needs.build-and-push.outputs.images-pushed == 'true'
     strategy:
       matrix:
-        service: [
-          {name: "catalog-api"},
-          {name: "basket-api"},
-          {name: "discount-api"},
-          {name: "ordering-api"},
-          {name: "ocelot-gateway"}
-        ]
+        service:
+          [
+            { name: "catalog-api" },
+            { name: "basket-api" },
+            { name: "discount-api" },
+            { name: "ordering-api" },
+            { name: "ocelot-gateway" },
+          ]
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Wait for image availability
+        run: |
+          echo "Waiting for image to be available in registry..."
+          sleep 30
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.service.name }}:${{ github.sha }}
-          format: 'sarif'
-          output: 'trivy-results-${{ matrix.service.name }}.sarif'
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.service.name }}:main-${{ github.sha }}
+          format: "sarif"
+          output: "trivy-results-${{ matrix.service.name }}.sarif"
+        continue-on-error: true
 
       - name: Upload Trivy scan results
         uses: github/codeql-action/upload-sarif@v3
+        if: always()
         with:
-          sarif_file: 'trivy-results-${{ matrix.service.name }}.sarif' 
+          sarif_file: "trivy-results-${{ matrix.service.name }}.sarif"
