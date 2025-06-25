@@ -106,11 +106,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Wait for image availability
-        run: |
-          echo "Waiting for image to be available in registry..."
-          sleep 30
-
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
