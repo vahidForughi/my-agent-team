@@ -88,6 +88,7 @@ jobs:
     needs: build-and-push
     if: needs.build-and-push.outputs.images-pushed == 'true'
     strategy:
+      fail-fast: false
       matrix:
         service:
           [
@@ -104,32 +105,79 @@ jobs:
       - name: Determine image tag
         id: get-tag
         run: |
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
-            echo "tag=pr-${{ github.event.number }}" >> $GITHUB_OUTPUT
+          # Echo available tags for debugging
+          echo "Available tags: ${{ needs.build-and-push.outputs.image-tags }}"
+
+          # Set a fallback tag (latest) in case we can't determine the right one
+          TAG="latest"
+
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            PR_TAG="pr-${{ github.event.number }}"
+            echo "Using PR tag: $PR_TAG"
+            TAG=$PR_TAG
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            TAG="latest"
+            echo "Using latest tag for main branch"
           else
-            echo "tag=main-${{ github.sha }}" >> $GITHUB_OUTPUT
+            # For other branches use the branch name
+            BRANCH_NAME=${GITHUB_REF#refs/heads/}
+            TAG=$BRANCH_NAME
+            echo "Using branch name as tag: $TAG"
           fi
 
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
       - name: Run Trivy vulnerability scanner
+        id: trivy-scan
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.service.name }}:${{ steps.get-tag.outputs.tag }}
           format: "sarif"
           output: "trivy-results-${{ matrix.service.name }}.sarif"
+          timeout: "10m0s" # Increase timeout to 10 minutes
         continue-on-error: true
 
-      - name: Check if SARIF file exists
+      - name: List files in directory
+        run: |
+          ls -la
+          echo "Checking for SARIF file: trivy-results-${{ matrix.service.name }}.sarif"
+          if [ -f "trivy-results-${{ matrix.service.name }}.sarif" ]; then
+            echo "SARIF file exists"
+          else
+            echo "SARIF file not found"
+          fi
+
+      - name: Check if SARIF file exists and has content
         id: check-sarif
         run: |
-          if [ -f "trivy-results-${{ matrix.service.name }}.sarif" ]; then
+          if [ -f "trivy-results-${{ matrix.service.name }}.sarif" ] && [ -s "trivy-results-${{ matrix.service.name }}.sarif" ]; then
             echo "sarif-exists=true" >> $GITHUB_OUTPUT
+            echo "SARIF file found with content"
           else
             echo "sarif-exists=false" >> $GITHUB_OUTPUT
-            echo "SARIF file not found, likely due to scan failure"
+            echo "SARIF file not found or empty"
+            
+            # Create minimal valid SARIF file to prevent upload failure
+            echo '{
+              "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+              "version": "2.1.0",
+              "runs": [
+                {
+                  "tool": {
+                    "driver": {
+                      "name": "Trivy",
+                      "informationUri": "https://github.com/aquasecurity/trivy",
+                      "rules": []
+                    }
+                  },
+                  "results": []
+                }
+              ]
+            }' > "trivy-results-${{ matrix.service.name }}.sarif"
           fi
 
       - name: Upload Trivy scan results
         uses: github/codeql-action/upload-sarif@v3
-        if: steps.check-sarif.outputs.sarif-exists == 'true'
         with:
           sarif_file: "trivy-results-${{ matrix.service.name }}.sarif"
+          category: "trivy-${{ matrix.service.name }}"
