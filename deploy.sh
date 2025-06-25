@@ -149,6 +149,13 @@ deploy_apis() {
     
     cd ../..
     
+    # Fix ordering database connection string
+    log_info "Fixing ordering database connection string..."
+    kubectl patch configmap cfg-ordering -n default --type merge -p '{"data":{"ConnectionStrings__OrderingConnectionString":"Server=eshopping-orderdb;Database=OrderDb;User Id=sa;Password=SqlPassword123;TrustServerCertificate=True"}}'
+    
+    # Restart ordering pod to pick up new configuration
+    kubectl rollout restart deployment ordering -n default
+    
     log_success "API microservices deployed"
 }
 
