@@ -159,7 +159,9 @@ deploy_monitoring() {
     log_info "Applying permanent Grafana-Prometheus fix..."
     if [ -f "apply-permanent-grafana-fix.sh" ]; then
         ./apply-permanent-grafana-fix.sh
-    fi    log_info "Deploying monitoring stack..."
+    fi
+    
+    log_info "Deploying monitoring stack..." 
     
     # Create monitoring namespace
     kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
@@ -186,7 +188,7 @@ deploy_monitoring() {
 
     # Wait for Grafana pod to be ready
     log_info "Waiting for Grafana to be ready..."
-    kubectl wait --for=condition=ready pod -l app=grafana -n istio-system --timeout=300s || log_warning "Grafana pod may not be ready yet"
+    kubectl wait --for=condition=ready pod -l app=grafana -n istio-system --timeout=600s || log_warning "Grafana pod may not be ready yet, but continuing deployment"
 
     # Apply permanent Grafana fix
     log_info "Applying Grafana configuration..."
