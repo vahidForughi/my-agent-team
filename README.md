@@ -283,6 +283,7 @@ For detailed deployment instructions, please refer to our comprehensive deployme
 
 - [Quick Start Guide](DEPLOYMENT-QUICKSTART.md) - Get up and running in minutes
 - [Complete Deployment Guide](DEPLOYMENT-GUIDE-COMPLETE.md) - Detailed step-by-step instructions
+- [Deployment Configuration Guide](Deployments/DEPLOYMENT-CONFIGURATION.md) - Current service configurations and port mappings
 - **Deployment Scripts**:
   - `./deploy.sh` - Full deployment with monitoring
   - `./quick-deploy.sh` - Minimal deployment for development

@@ -1,19 +1,14 @@
-{{- $name := include "basket.fullname" . -}}
-{{- $cfgname := printf "%s-%s" "cfg" $name -}}
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "basket.fullname" . }}
+  name: {{ include "portainer.fullname" . }}
   labels:
-    {{- include "basket.labels" . | nindent 4 }}
+    {{- include "portainer.labels" . | nindent 4 }}
 spec:
-  {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
-  {{- end }}
   selector:
     matchLabels:
-      {{- include "basket.selectorLabels" . | nindent 6 }}
+      {{- include "portainer.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -21,13 +16,13 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "basket.selectorLabels" . | nindent 8 }}
+        {{- include "portainer.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "basket.serviceAccountName" . }}
+      serviceAccountName: {{ include "portainer.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
@@ -38,24 +33,11 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http
-              containerPort: 80
+              containerPort: 9000
               protocol: TCP
-          env:
-          {{- if .Values.env.values -}}
-          {{- range .Values.env.values }}
-            - name: {{ .name }}
-              value: {{ .value | quote }}
-          {{- end -}}
-          {{- end -}}
-          {{- if .Values.env.configmap -}}
-          {{- range .Values.env.configmap }}
-            - name: {{ .name }}
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ $cfgname }}
-                  key: {{ .key }}
-          {{- end -}}
-          {{- end }}                           
+          volumeMounts:
+            - name: portainer-data
+              mountPath: /data
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}
@@ -70,3 +52,11 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      volumes:
+        - name: portainer-data
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "portainer.fullname" . }}-pvc
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
