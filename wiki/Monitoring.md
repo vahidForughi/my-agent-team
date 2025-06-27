@@ -17,13 +17,28 @@ Our platform uses a comprehensive monitoring stack to ensure visibility into sys
 
 After deployment, you can access the monitoring tools at:
 
-| Tool | URL | Credentials |
-|------|-----|-------------|
-| **Prometheus** | <http://localhost:9090> | - |
-| **Grafana** | <http://localhost:3000> | admin/prom-operator |
-| **Kibana** | <http://localhost:5601> | - |
-| **Jaeger** | <http://localhost:16686> | - |
-| **Kiali** | <http://localhost:20001> | - |
+| Tool | URL | Credentials | Port Forward Command |
+|------|-----|-------------|---------------------|
+| **Prometheus** | <http://localhost:9090> | - | `kubectl port-forward svc/prometheus-server 9090:80 -n monitoring` |
+| **Grafana** | <http://localhost:3000> | admin/prom-operator | `kubectl port-forward svc/grafana 3000:3000 -n istio-system` |
+| **Kibana** | <http://localhost:5601> | - | `kubectl port-forward svc/kibana 5601:5601 -n default` |
+| **Jaeger** | <http://localhost:16686> | - | `kubectl port-forward svc/tracing 16686:80 -n istio-system` |
+| **Kiali** | <http://localhost:20001> | - | `kubectl port-forward svc/kiali 20001:20001 -n istio-system` |
+
+### **Quick Access Script**
+
+Use the interactive service access script for easy access to all monitoring tools:
+
+```bash
+./access-services.sh
+```
+
+This script provides:
+
+- ✅ Service health checks
+- 🚀 Automatic port forwarding setup
+- 🌐 Direct browser access to services
+- 📊 Quick health checks for all APIs
 
 ## Logging
 
@@ -129,6 +144,34 @@ To access dashboards:
 1. Open Grafana at <http://localhost:3000>
 2. Log in with admin/prom-operator
 3. Navigate to "Dashboards" in the left sidebar
+
+### **Grafana-Prometheus Connection**
+
+The platform includes permanent fixes for Grafana-Prometheus connectivity:
+
+- **Fixed ConfigMap**: `Deployments/monitoring/grafana/grafana-configmap-fixed.yaml`
+- **Service Alias**: `Deployments/monitoring/grafana/prometheus-service-alias.yaml`
+- **Helm Values**: `Deployments/monitoring/grafana/grafana-helm-values.yaml`
+
+**Validation Scripts:**
+
+```bash
+# Validate the connection
+./validate-grafana-fix.sh
+
+# Monitor Grafana health
+./monitor-grafana-health.sh
+```
+
+**Manual Fix (if needed):**
+
+```bash
+# Apply the fixed configuration
+kubectl apply -f Deployments/monitoring/grafana/grafana-configmap-fixed.yaml
+
+# Restart Grafana to pick up changes
+kubectl rollout restart deployment/grafana -n istio-system
+```
 
 ## Distributed Tracing
 

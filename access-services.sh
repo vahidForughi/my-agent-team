@@ -17,7 +17,7 @@ WHITE='\033[1;37m'
 NC='\033[0m' # No Color
 
 # Service configuration arrays (compatible with older Bash)
-SERVICES_KEYS="frontend api-gateway prometheus grafana jaeger kiali rabbitmq kibana elasticsearch minikube-dashboard portainer pgadmin"
+SERVICES_KEYS="frontend api-gateway prometheus grafana jaeger kiali rabbitmq kibana elasticsearch minikube-dashboard portainer portainer-edge pgadmin"
 
 # Function to get service URL
 get_service_url() {
@@ -33,6 +33,7 @@ get_service_url() {
         "elasticsearch") echo "http://localhost:9200" ;;
         "minikube-dashboard") echo "minikube dashboard" ;;
         "portainer") echo "http://localhost:9000" ;;
+        "portainer-edge") echo "http://localhost:9080" ;;
         "pgadmin") echo "http://localhost:5050" ;;
         *) echo "" ;;
     esac
@@ -51,7 +52,8 @@ get_service_description() {
         "kibana") echo "Kibana Logs - Elasticsearch log visualization" ;;
         "elasticsearch") echo "Elasticsearch - Search and analytics engine" ;;
         "minikube-dashboard") echo "Kubernetes Dashboard - Cluster management interface" ;;
-        "portainer") echo "Portainer - Container management platform" ;;
+        "portainer") echo "Portainer - Container management platform (Main UI)" ;;
+        "portainer-edge") echo "Portainer Edge - Edge agent tunnel server (Advanced)" ;;
         "pgadmin") echo "pgAdmin - PostgreSQL administration tool" ;;
         *) echo "" ;;
     esac
@@ -69,6 +71,7 @@ get_port_forward_cmd() {
         "kibana") echo "kubectl port-forward svc/kibana 5601:5601 -n default" ;;
         "elasticsearch") echo "kubectl port-forward svc/elasticsearch 9200:9200 -n default" ;;
         "portainer") echo "kubectl port-forward svc/portainer 9000:9000 -n default" ;;
+        "portainer-edge") echo "kubectl port-forward svc/portainer 9080:8000 -n default" ;;
         "pgadmin") echo "kubectl port-forward svc/pgadmin 5050:80 -n default" ;;
         *) echo "" ;;
     esac
@@ -160,7 +163,7 @@ start_port_forwards() {
     sleep 2
 
     # Start port forwards for services that need them
-    local services_with_forwards="api-gateway prometheus grafana jaeger kiali rabbitmq kibana elasticsearch portainer pgadmin"
+    local services_with_forwards="api-gateway prometheus grafana jaeger kiali rabbitmq kibana elasticsearch portainer portainer-edge pgadmin"
 
     for service in $services_with_forwards; do
         local cmd=$(get_port_forward_cmd "$service")
@@ -202,6 +205,15 @@ open_service() {
         return
     fi
 
+    # Special handling for portainer-edge (not a web UI)
+    if [[ "$service" == "portainer-edge" ]]; then
+        log_info "Portainer Edge Agent tunnel server is for remote agent connections"
+        log_info "This is not a web interface - it's used by Edge agents to connect"
+        log_info "Port forward command: kubectl port-forward svc/portainer 9080:8000 -n default"
+        echo -e "${YELLOW}ℹ️  This service is for Edge agent tunneling, not direct browser access${NC}"
+        return
+    fi
+
     if check_service_health "$service" "$url"; then
         log_info "Opening $desc..."
         if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -219,7 +231,7 @@ open_service() {
         fi
     else
         log_error "Service $service is not accessible at $url"
-        log_info "Try starting port forwards first (option 11)"
+        log_info "Try starting port forwards first (option 14)"
     fi
 }
 
@@ -248,16 +260,17 @@ display_menu() {
     echo ""
 
     echo -e "${CYAN}🛠️  MANAGEMENT TOOLS:${NC}"
-    echo " 11) Portainer              - Container management platform"
-    echo " 12) pgAdmin                - PostgreSQL administration tool"
+    echo " 11) Portainer              - Container management platform (Main UI)"
+    echo " 12) Portainer Edge         - Edge agent tunnel server (Advanced)"
+    echo " 13) pgAdmin                - PostgreSQL administration tool"
     echo ""
 
     echo -e "${CYAN}⚙️  MANAGEMENT OPTIONS:${NC}"
-    echo " 13) Start All Port Forwards - Enable access to all services"
-    echo " 14) Stop All Port Forwards  - Disable service access"
-    echo " 15) Service Status Check    - Check which services are online"
-    echo " 16) Open All Monitoring     - Open all monitoring tools"
-    echo " 17) Quick Health Check      - Test all API endpoints"
+    echo " 14) Start All Port Forwards - Enable access to all services"
+    echo " 15) Stop All Port Forwards  - Disable service access"
+    echo " 16) Service Status Check    - Check which services are online"
+    echo " 17) Open All Monitoring     - Open all monitoring tools"
+    echo " 18) Quick Health Check      - Test all API endpoints"
     echo ""
     
     echo -e "${CYAN}🚪 EXIT:${NC}"
@@ -345,12 +358,13 @@ handle_menu_choice() {
         9) open_service "elasticsearch" ;;
         10) open_service "minikube-dashboard" ;;
         11) open_service "portainer" ;;
-        12) open_service "pgadmin" ;;
-        13) start_port_forwards ;;
-        14) stop_port_forwards ;;
-        15) display_service_status ;;
-        16) open_all_monitoring ;;
-        17) quick_health_check ;;
+        12) open_service "portainer-edge" ;;
+        13) open_service "pgadmin" ;;
+        14) start_port_forwards ;;
+        15) stop_port_forwards ;;
+        16) display_service_status ;;
+        17) open_all_monitoring ;;
+        18) quick_health_check ;;
         0)
             log_info "Goodbye! 👋"
             exit 0
@@ -367,7 +381,7 @@ main() {
         display_header
         display_menu
 
-        echo -n -e "${WHITE}Enter your choice (0-17): ${NC}"
+        echo -n -e "${WHITE}Enter your choice (0-18): ${NC}"
         read -r choice
         echo ""
 
