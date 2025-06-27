@@ -1,19 +1,14 @@
-{{- $name := include "basket.fullname" . -}}
-{{- $cfgname := printf "%s-%s" "cfg" $name -}}
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "basket.fullname" . }}
+  name: {{ include "pgadmin.fullname" . }}
   labels:
-    {{- include "basket.labels" . | nindent 4 }}
+    {{- include "pgadmin.labels" . | nindent 4 }}
 spec:
-  {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
-  {{- end }}
   selector:
     matchLabels:
-      {{- include "basket.selectorLabels" . | nindent 6 }}
+      {{- include "pgadmin.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -21,13 +16,13 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "basket.selectorLabels" . | nindent 8 }}
+        {{- include "pgadmin.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "basket.serviceAccountName" . }}
+      serviceAccountName: {{ include "pgadmin.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
@@ -41,21 +36,13 @@ spec:
               containerPort: 80
               protocol: TCP
           env:
-          {{- if .Values.env.values -}}
-          {{- range .Values.env.values }}
-            - name: {{ .name }}
-              value: {{ .value | quote }}
-          {{- end -}}
-          {{- end -}}
-          {{- if .Values.env.configmap -}}
-          {{- range .Values.env.configmap }}
-            - name: {{ .name }}
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ $cfgname }}
-                  key: {{ .key }}
-          {{- end -}}
-          {{- end }}                           
+            - name: PGADMIN_DEFAULT_EMAIL
+              value: {{ .Values.env.pgadminEmail | quote }}
+            - name: PGADMIN_DEFAULT_PASSWORD
+              value: {{ .Values.env.pgadminPassword | quote }}
+          volumeMounts:
+            - name: pgadmin-data
+              mountPath: /var/lib/pgadmin
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}
@@ -70,3 +57,11 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      volumes:
+        - name: pgadmin-data
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "pgadmin.fullname" . }}-pvc
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
