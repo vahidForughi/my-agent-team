@@ -301,89 +301,13 @@ jobs:
             fi
           done
 
-      - name: Validate YAML syntax
+      - name: Install yamllint
+        run: pip install yamllint
+
+      - name: Validate Kubernetes manifests
         run: |
-          echo "🔍 Validating YAML syntax..."
-          find Deployments/k8s -name "*.yaml" -type f | while read -r manifest; do
-            echo "Checking $manifest"
-            if ! python3 -c "import sys, yaml; yaml.safe_load(open('$manifest'))" 2>/dev/null; then
-              echo "❌ YAML validation failed for $manifest"
-              exit 1
-            else
-              echo "✅ $manifest is valid YAML"
-            fi
-          done
-
-      - name: Validate Kubernetes manifests with kubeval
-        run: |
-          echo "🔍 Validating Kubernetes manifests with kubeval..."
-          find Deployments/k8s -name "*.yaml" -type f | while read -r manifest; do
-            echo "Validating $manifest"
-            if ! kubeval "$manifest"; then
-              echo "❌ Kubernetes validation failed for $manifest"
-              exit 1
-            else
-              echo "✅ $manifest is valid Kubernetes manifest"
-            fi
-          done
-
-      - name: Security and best practices check with kube-score
-        run: |
-          echo "🔍 Running security and best practices check..."
-          find Deployments/k8s -name "*.yaml" -type f | while read -r manifest; do
-            echo "Checking $manifest with kube-score"
-            kube-score score "$manifest" || echo "⚠️ kube-score found issues in $manifest"
-          done
-        continue-on-error: true
-
-      - name: Validate deployment scripts
-        run: |
-          echo "🔍 Validating deployment scripts..."
-          chmod +x Deployments/k8s/*.sh
-
-          # Check script syntax
-          for script in Deployments/k8s/*.sh; do
-            echo "Checking $script"
-            if ! bash -n "$script"; then
-              echo "❌ Syntax error in $script"
-              exit 1
-            else
-              echo "✅ $script syntax is valid"
-            fi
-          done
-
-      - name: Test Kubernetes deployment dry-run
-        run: |
-          echo "🔍 Testing Kubernetes deployment with dry-run..."
-
-          # Create a temporary kubeconfig for dry-run testing
-          mkdir -p ~/.kube
-          cat > ~/.kube/config << EOF
-          apiVersion: v1
-          kind: Config
-          clusters:
-          - cluster:
-              server: https://fake-server
-            name: fake-cluster
-          contexts:
-          - context:
-              cluster: fake-cluster
-              user: fake-user
-            name: fake-context
-          current-context: fake-context
-          users:
-          - name: fake-user
-          EOF
-
-          # Test dry-run for each manifest
-          find Deployments/k8s -name "*.yaml" -type f | while read -r manifest; do
-            echo "Testing dry-run for $manifest"
-            if kubectl apply --dry-run=client -f "$manifest" 2>/dev/null; then
-              echo "✅ $manifest passed dry-run validation"
-            else
-              echo "⚠️ $manifest failed dry-run (may be expected for some manifests)"
-            fi
-          done
+          chmod +x .github/scripts/validate-k8s-manifests.sh
+          .github/scripts/validate-k8s-manifests.sh
 
   notify-status:
     runs-on: ubuntu-latest
