@@ -121,9 +121,14 @@ deploy_infrastructure() {
     log_info "Installing logging stack..."
     helm install eshopping-elasticsearch ./elasticsearch --namespace default --timeout 600s
     helm install eshopping-kibana ./kibana --namespace default --timeout 600s
-    
+
+    # Install management tools
+    log_info "Installing management tools..."
+    helm install eshopping-portainer ./portainer --namespace default --timeout 600s
+    helm install eshopping-pgadmin ./pgadmin --namespace default --timeout 600s
+
     cd ../..
-    
+
     log_success "Infrastructure services deployed"
 }
 
@@ -154,12 +159,6 @@ deploy_apis() {
 
 # Function to deploy monitoring stack
 deploy_monitoring() {
-    
-    # Apply permanent Grafana fix
-    log_info "Applying permanent Grafana-Prometheus fix..."
-    if [ -f "apply-permanent-grafana-fix.sh" ]; then
-        ./apply-permanent-grafana-fix.sh
-    fi
     
     log_info "Deploying monitoring stack..." 
     

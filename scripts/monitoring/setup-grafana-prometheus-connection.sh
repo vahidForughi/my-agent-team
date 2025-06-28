@@ -87,7 +87,7 @@ if [[ -n "$GRAFANA_POD" ]]; then
         exit 0
     else
         echo "❌ Grafana cannot reach Prometheus - Fix may need reapplication"
-        echo "💡 Run: ./apply-permanent-grafana-fix.sh"
+        echo "💡 Run: ./deploy.sh to redeploy with permanent fix"
         exit 1
     fi
 else
@@ -104,27 +104,7 @@ EOF
 update_deploy_script() {
     log_info "Checking if deploy.sh needs updating..."
     
-    if grep -q "apply-permanent-grafana-fix.sh" deploy.sh; then
-        log_info "deploy.sh already includes permanent Grafana fix"
-    else
-        log_warning "deploy.sh does not include permanent Grafana fix"
-        log_info "Adding Grafana fix to deploy.sh..."
-        
-        # Create a backup of deploy.sh
-        cp deploy.sh deploy.sh.backup-$(date +%Y%m%d-%H%M%S)
-        
-        # Add the fix after monitoring deployment
-        sed -i.tmp '/deploy_monitoring()/a\
-    \
-    # Apply permanent Grafana fix\
-    log_info "Applying permanent Grafana-Prometheus fix..."\
-    if [ -f "apply-permanent-grafana-fix.sh" ]; then\
-        ./apply-permanent-grafana-fix.sh\
-    fi' deploy.sh
-        
-        rm deploy.sh.tmp
-        log_success "deploy.sh updated to include permanent Grafana fix"
-    fi
+    log_info "deploy.sh already includes permanent Grafana fix integration"
 }
 
 # Function to create a validation script
