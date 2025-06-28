@@ -121,9 +121,19 @@ deploy_infrastructure() {
     log_info "Installing logging stack..."
     helm install eshopping-elasticsearch ./elasticsearch --namespace default --timeout 600s
     helm install eshopping-kibana ./kibana --namespace default --timeout 600s
-    
+
+    # Install management tools
+    log_info "Installing management tools..."
+    helm install eshopping-portainer ./portainer --namespace default --timeout 600s
+    helm install eshopping-pgadmin ./pgadmin --namespace default --timeout 600s
+
+    # Wait for management tools to be ready
+    log_info "Waiting for management tools to be ready..."
+    kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=portainer -n default --timeout=600s || log_warning "Portainer pod may not be ready yet"
+    kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=pgadmin -n default --timeout=600s || log_warning "pgAdmin pod may not be ready yet"
+
     cd ../..
-    
+
     log_success "Infrastructure services deployed"
 }
 
@@ -155,12 +165,6 @@ deploy_apis() {
 # Function to deploy monitoring stack
 deploy_monitoring() {
     
-    # Apply permanent Grafana fix
-    log_info "Applying permanent Grafana-Prometheus fix..."
-    if [ -f "apply-permanent-grafana-fix.sh" ]; then
-        ./apply-permanent-grafana-fix.sh
-    fi
-    
     log_info "Deploying monitoring stack..." 
     
     # Create monitoring namespace
@@ -182,13 +186,33 @@ deploy_monitoring() {
     
     # Install Istio addons
     log_info "Installing Istio addons..."
-    kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.20/samples/addons/grafana.yaml
-    kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.20/samples/addons/jaeger.yaml
-    kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.20/samples/addons/kiali.yaml
+    kubectl apply -f ./istio-*/samples/addons/grafana.yaml
+    kubectl apply -f ./istio-*/samples/addons/jaeger.yaml
+    kubectl apply -f ./istio-*/samples/addons/kiali.yaml
 
     # Wait for Grafana pod to be ready
     log_info "Waiting for Grafana to be ready..."
     kubectl wait --for=condition=ready pod -l app=grafana -n istio-system --timeout=600s || log_warning "Grafana pod may not be ready yet, but continuing deployment"
+
+    # Wait for Kiali pod to be ready
+    log_info "Waiting for Kiali to be ready..."
+    kubectl wait --for=condition=ready pod -l app=kiali -n istio-system --timeout=600s || log_warning "Kiali pod may not be ready yet, but continuing deployment"
+
+    # Fix Kiali-Prometheus connection
+    log_info "Applying Kiali-Prometheus connection fix..."
+    if [ -f "scripts/monitoring/fix-kiali-prometheus-connection.sh" ]; then
+        ./scripts/monitoring/fix-kiali-prometheus-connection.sh
+    else
+        log_warning "Kiali fix script not found, Kiali may have connectivity issues"
+    fi
+
+    # Enable Istio metrics collection
+    log_info "Enabling Istio metrics collection..."
+    if [ -f "scripts/monitoring/enable-istio-metrics.sh" ]; then
+        ./scripts/monitoring/enable-istio-metrics.sh
+    else
+        log_warning "Istio metrics script not found, Grafana dashboards may show no data"
+    fi
 
     # Apply permanent Grafana fix
     log_info "Applying Grafana configuration..."
