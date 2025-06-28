@@ -41,3 +41,10 @@ persistence:
   storageClass: ""
   accessMode: ReadWriteOnce
   size: 1Gi
+
+# Environment variables for Portainer configuration
+env:
+  - name: PORTAINER_SESSION_TIMEOUT
+    value: "24h"
+  - name: PORTAINER_LOGO
+    value: "https://portainer.io/images/logos/portainer.png"
