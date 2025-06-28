@@ -25,9 +25,9 @@ roleRef:
   kind: ClusterRole
   name: cluster-admin
 subjects:
-- kind: ServiceAccount
-  name: portainer-sa
-  namespace: ecommerce
+  - kind: ServiceAccount
+    name: portainer-sa
+    namespace: ecommerce
 ---
 apiVersion: apps/v1
 kind: Deployment

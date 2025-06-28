@@ -15,18 +15,33 @@ spec:
       labels:
         app: catalog-api
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 2000
       containers:
         - name: catalog-api
-          image: eshop/catalog.api:latest
+          image: eshop/catalog.api:v1.0.0
           ports:
             - containerPort: 80
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 1000
+            capabilities:
+              drop:
+                - ALL
           resources:
             requests:
               memory: "256Mi"
               cpu: "250m"
+              ephemeral-storage: "1Gi"
             limits:
               memory: "512Mi"
               cpu: "500m"
+              ephemeral-storage: "2Gi"
           envFrom:
             - configMapRef:
                 name: catalog-config
@@ -37,19 +52,33 @@ spec:
               value: "CatalogDb"
             - name: ELASTICSEARCH_URL
               value: "http://elasticsearch-service:9200"
+          volumeMounts:
+            - name: tmp-volume
+              mountPath: /tmp
+            - name: var-log-volume
+              mountPath: /var/log
           livenessProbe:
             httpGet:
               path: /health
               port: 80
             initialDelaySeconds: 30
             periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
           readinessProbe:
             httpGet:
               path: /health/ready
               port: 80
             initialDelaySeconds: 10
             periodSeconds: 10
-          imagePullPolicy: IfNotPresent
+            timeoutSeconds: 3
+            failureThreshold: 3
+          imagePullPolicy: Always
+      volumes:
+        - name: tmp-volume
+          emptyDir: {}
+        - name: var-log-volume
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
@@ -90,3 +119,59 @@ spec:
         target:
           type: Utilization
           averageUtilization: 80
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: catalog-api-pdb
+  namespace: ecommerce
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: catalog-api
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: catalog-api-netpol
+  namespace: ecommerce
+spec:
+  podSelector:
+    matchLabels:
+      app: catalog-api
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ecommerce
+        - podSelector:
+            matchLabels:
+              app: ocelot-gateway
+      ports:
+        - protocol: TCP
+          port: 80
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: mongodb
+      ports:
+        - protocol: TCP
+          port: 27017
+    - to:
+        - podSelector:
+            matchLabels:
+              app: elasticsearch
+      ports:
+        - protocol: TCP
+          port: 9200
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 53
+        - protocol: UDP
+          port: 53

@@ -9,10 +9,10 @@ metadata:
     nginx.ingress.kubernetes.io/use-regex: "true"
 spec:
   rules:
-  - host: localhost
-    http:
-      paths:
-      - path: /catalog
+    - host: localhost
+      http:
+        paths:
+          - path: /catalog
         pathType: Prefix
         backend:
           service:
