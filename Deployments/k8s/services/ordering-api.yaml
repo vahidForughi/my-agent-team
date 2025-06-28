@@ -47,7 +47,8 @@ spec:
                 name: ordering-config
           env:
             - name: ConnectionStrings__OrderingConnectionString
-              value: "Server=sqlserver-service;Database=OrderDb;User Id=sa;Password=Password123;TrustServerCertificate=true"
+              value: >-
+                Server=sqlserver-service;Database=OrderDb;User Id=sa;Password=Password123;TrustServerCertificate=true
             - name: EventBusSettings__HostAddress
               value: "amqp://guest:guest@rabbitmq-service:5672"
           volumeMounts:

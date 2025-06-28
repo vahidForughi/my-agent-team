@@ -26,7 +26,8 @@ metadata:
   name: discount-config
   namespace: ecommerce
 data:
-  DatabaseSettings__ConnectionString: "Server=postgres-service;Port=5432;Database=DiscountDb;User Id=admin;Password=password123;"
+  DatabaseSettings__ConnectionString: >-
+    Server=postgres-service;Port=5432;Database=DiscountDb;User Id=admin;Password=password123;
   ASPNETCORE_ENVIRONMENT: "Development"
 ---
 apiVersion: v1
@@ -35,7 +36,8 @@ metadata:
   name: ordering-config
   namespace: ecommerce
 data:
-  ConnectionStrings__OrderingConnectionString: "Server=sqlserver-service;Database=OrderDb;User Id=sa;Password=Password123;TrustServerCertificate=true"
+  ConnectionStrings__OrderingConnectionString: >-
+    Server=sqlserver-service;Database=OrderDb;User Id=sa;Password=Password123;TrustServerCertificate=true
   EventBusSettings__HostAddress: "amqp://guest:guest@rabbitmq-service:5672"
   ASPNETCORE_ENVIRONMENT: "Development"
 ---

@@ -47,7 +47,8 @@ spec:
                 name: discount-config
           env:
             - name: DatabaseSettings__ConnectionString
-              value: "Server=postgres-service;Port=5432;Database=DiscountDb;User Id=admin;Password=password123;"
+              value: >-
+                Server=postgres-service;Port=5432;Database=DiscountDb;User Id=admin;Password=password123;
           volumeMounts:
             - name: tmp-volume
               mountPath: /tmp
