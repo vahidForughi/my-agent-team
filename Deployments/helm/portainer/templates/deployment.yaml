@@ -35,6 +35,13 @@ spec:
             - name: http
               containerPort: 9000
               protocol: TCP
+          env:
+            {{- if .Values.env }}
+            {{- range .Values.env }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+            {{- end }}
+            {{- end }}
           volumeMounts:
             - name: portainer-data
               mountPath: /data
