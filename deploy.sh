@@ -206,6 +206,14 @@ deploy_monitoring() {
         log_warning "Kiali fix script not found, Kiali may have connectivity issues"
     fi
 
+    # Enable Istio metrics collection
+    log_info "Enabling Istio metrics collection..."
+    if [ -f "scripts/monitoring/enable-istio-metrics.sh" ]; then
+        ./scripts/monitoring/enable-istio-metrics.sh
+    else
+        log_warning "Istio metrics script not found, Grafana dashboards may show no data"
+    fi
+
     # Apply permanent Grafana fix
     log_info "Applying Grafana configuration..."
     if [ -f "scripts/setup-grafana.sh" ]; then
