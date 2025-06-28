@@ -15,37 +15,66 @@ spec:
       labels:
         app: discount-api
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 2000
       containers:
         - name: discount-api
-          image: eshop/discount.grpc:latest
+          image: eshop/discount.grpc:v1.0.0
           ports:
             - containerPort: 80
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 1000
+            capabilities:
+              drop:
+                - ALL
           resources:
             requests:
               memory: "256Mi"
               cpu: "250m"
+              ephemeral-storage: "1Gi"
             limits:
               memory: "512Mi"
               cpu: "500m"
+              ephemeral-storage: "2Gi"
           envFrom:
             - configMapRef:
                 name: discount-config
           env:
             - name: DatabaseSettings__ConnectionString
               value: "Server=postgres-service;Port=5432;Database=DiscountDb;User Id=admin;Password=password123;"
+          volumeMounts:
+            - name: tmp-volume
+              mountPath: /tmp
+            - name: var-log-volume
+              mountPath: /var/log
           livenessProbe:
             httpGet:
               path: /
               port: 80
             initialDelaySeconds: 30
             periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
           readinessProbe:
             httpGet:
               path: /
               port: 80
             initialDelaySeconds: 10
             periodSeconds: 10
-          imagePullPolicy: IfNotPresent
+            timeoutSeconds: 3
+            failureThreshold: 3
+          imagePullPolicy: Always
+      volumes:
+        - name: tmp-volume
+          emptyDir: {}
+        - name: var-log-volume
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service

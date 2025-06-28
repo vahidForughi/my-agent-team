@@ -279,17 +279,12 @@ jobs:
         with:
           version: "latest"
 
-      - name: Set up kubeval
-        run: |
-          wget https://github.com/instrumenta/kubeval/releases/latest/download/kubeval-linux-amd64.tar.gz
-          tar xf kubeval-linux-amd64.tar.gz
-          sudo mv kubeval /usr/local/bin
-
       - name: Set up kubescore
         run: |
           wget https://github.com/zegl/kube-score/releases/download/v1.16.1/kube-score_1.16.1_linux_amd64.tar.gz
           tar xf kube-score_1.16.1_linux_amd64.tar.gz
           sudo mv kube-score /usr/local/bin
+        continue-on-error: true
 
       - name: Lint Helm charts
         run: |

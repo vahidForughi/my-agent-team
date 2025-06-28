@@ -27,18 +27,32 @@ spec:
       labels:
         app: mongodb
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
       containers:
         - name: mongodb
           image: mongo:7.0
           ports:
             - containerPort: 27017
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 999
+            capabilities:
+              drop:
+                - ALL
           resources:
             requests:
               memory: "1Gi"
               cpu: "500m"
+              ephemeral-storage: "2Gi"
             limits:
               memory: "2Gi"
               cpu: "1000m"
+              ephemeral-storage: "4Gi"
           env:
             - name: MONGO_INITDB_ROOT_USERNAME
               valueFrom:

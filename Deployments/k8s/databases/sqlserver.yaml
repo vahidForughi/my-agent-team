@@ -27,18 +27,30 @@ spec:
       labels:
         app: sqlserver
     spec:
+      securityContext:
+        runAsUser: 10001
+        runAsGroup: 0
+        fsGroup: 0
       containers:
         - name: sqlserver
           image: mcr.microsoft.com/mssql/server:2022-latest
           ports:
             - containerPort: 1433
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsUser: 10001
+            capabilities:
+              drop:
+                - ALL
           resources:
             requests:
               memory: "2Gi"
               cpu: "1000m"
+              ephemeral-storage: "2Gi"
             limits:
               memory: "4Gi"
               cpu: "2000m"
+              ephemeral-storage: "4Gi"
           env:
             - name: ACCEPT_EULA
               value: "Y"

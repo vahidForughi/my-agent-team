@@ -16,8 +16,8 @@ spec:
     spec:
       containers:
         - name: catalog-api
-          image: sloweyyy/catalogapi:latest
-          imagePullPolicy: IfNotPresent
+          image: sloweyyy/catalogapi:v1.0.0
+          imagePullPolicy: Always
           ports:
             - containerPort: 80
           env:
@@ -61,7 +61,7 @@ kind: Service
 metadata:
   name: catalog-api-service
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
     app: catalog-api
   ports:
