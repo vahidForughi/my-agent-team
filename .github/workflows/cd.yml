@@ -2,14 +2,14 @@ name: Continuous Deployment
 
 on:
   push:
-    branches: [ main ]
-    tags: [ 'v*' ]
+    branches: [main]
+    tags: ["v*"]
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Environment to deploy to'
+        description: "Environment to deploy to"
         required: true
-        default: 'staging'
+        default: "staging"
         type: choice
         options:
           - staging
@@ -18,10 +18,71 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  DOTNET_VERSION: "8.0.x"
 
 jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+      image-digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+
+      - name: Build and push Docker images
+        id: build
+        run: |
+          # Build and push all service images
+          services=(
+            "catalog-api:Services/Catalog/Catalog.API"
+            "basket-api:Services/Basket/Basket.API"
+            "discount-api:Services/Discount/Discount.API"
+            "ordering-api:Services/Ordering/Ordering.API"
+            "ocelot-gateway:ApiGateways/Ocelot.ApiGateway"
+          )
+
+          for service in "${services[@]}"; do
+            name=$(echo $service | cut -d: -f1)
+            path=$(echo $service | cut -d: -f2)
+
+            echo "Building and pushing $name..."
+            docker build -f $path/Dockerfile -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/$name:${{ github.sha }} .
+            docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/$name:${{ github.sha }}
+
+            # Also tag as latest for main branch
+            if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+              docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/$name:${{ github.sha }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/$name:latest
+              docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/$name:latest
+            fi
+          done
+
   deploy-staging:
     runs-on: ubuntu-latest
+    needs: build-and-push
     if: github.ref == 'refs/heads/main' || github.event.inputs.environment == 'staging'
     environment:
       name: staging
@@ -29,16 +90,71 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: "latest"
+
+      - name: Configure kubectl for staging
+        run: |
+          # Configure kubectl for staging cluster
+          # This would typically involve setting up kubeconfig with cluster credentials
+          echo "Configuring kubectl for staging cluster..."
+          # kubectl config set-cluster staging --server=${{ secrets.STAGING_CLUSTER_URL }}
+          # kubectl config set-credentials staging-user --token=${{ secrets.STAGING_TOKEN }}
+          # kubectl config set-context staging --cluster=staging --user=staging-user
+          # kubectl config use-context staging
+
+      - name: Update image tags for staging
+        run: |
+          echo "Updating image tags for staging deployment..."
+          # Update image tags in Kubernetes manifests or Helm values
+          # This could be done with sed, yq, or a custom script
+
+          # Example: Update image tags in k8s manifests
+          find Deployments/k8s -name "*.yaml" -type f -exec sed -i "s|eshop/catalog.api:latest|${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/catalog-api:${{ github.sha }}|g" {} \;
+          find Deployments/k8s -name "*.yaml" -type f -exec sed -i "s|eshop/basket.api:latest|${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/basket-api:${{ github.sha }}|g" {} \;
+          find Deployments/k8s -name "*.yaml" -type f -exec sed -i "s|eshop/discount.grpc:latest|${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/discount-api:${{ github.sha }}|g" {} \;
+          find Deployments/k8s -name "*.yaml" -type f -exec sed -i "s|eshop/ordering.api:latest|${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/ordering-api:${{ github.sha }}|g" {} \;
+          find Deployments/k8s -name "*.yaml" -type f -exec sed -i "s|eshop/ocelot.apigw:latest|${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/ocelot-gateway:${{ github.sha }}|g" {} \;
+
       - name: Deploy to staging
         run: |
-          echo "Deploying to staging environment"
-          # Add actual deployment commands here
-      
+          echo "Deploying to staging environment..."
+          cd Deployments/k8s
+
+          # Make scripts executable
+          chmod +x *.sh
+
+          # Deploy using Kubernetes manifests
+          ./deploy-k8s.sh
+
+          echo "✅ Deployment to staging completed"
+
+      - name: Wait for deployment
+        run: |
+          echo "Waiting for deployment to be ready..."
+          kubectl wait --for=condition=ready pod --all -n ecommerce --timeout=600s
+          kubectl wait --for=condition=ready pod --all -n monitoring --timeout=600s
+          echo "✅ All pods are ready"
+
       - name: Run smoke tests
         run: |
-          echo "Running smoke tests on staging"
-          # Add smoke tests here
+          echo "Running smoke tests on staging..."
+          cd Deployments/k8s
+
+          # Run validation script
+          ./validate-deployment.sh
+
+          # Additional smoke tests
+          kubectl port-forward svc/ocelotapigw-service 8010:80 -n ecommerce &
+          sleep 10
+
+          # Test API Gateway health
+          curl -f http://localhost:8010 || exit 1
+
+          echo "✅ Smoke tests passed"
 
   deploy-production:
     runs-on: ubuntu-latest
@@ -49,13 +165,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      
+
       - name: Deploy to production
         run: |
           echo "Deploying to production environment"
           # Add actual deployment commands here
-      
+
       - name: Run production tests
         run: |
           echo "Running production smoke tests"
-          # Add production tests here 
+          # Add production tests here
