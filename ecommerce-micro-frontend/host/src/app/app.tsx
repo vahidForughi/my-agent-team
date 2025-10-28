@@ -32,8 +32,9 @@ export function App() {
             ? theme.darkAlgorithm
             : theme.defaultAlgorithm,
         token: {
-          colorPrimary: '#1890ff',
+          colorPrimary: '#3048a5', // NextTech primary color
           borderRadius: 6,
+          fontFamily: "'Poppins', sans-serif",
         },
       }}
     >
