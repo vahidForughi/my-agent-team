@@ -1,13 +1,16 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, useRoutes } from 'react-router-dom';
 import { ConfigProvider, theme } from 'antd';
 import { AppConfigProvider } from '../context/AppConfigContext';
-import AppLayout from '../components/Layout/Layout';
-import HomePage from '../pages/HomePage/HomePage';
-import LoginPage from '../pages/LoginPage/LoginPage';
-import StoreApp from '../microFe/StoreApp';
-import CheckoutApp from '../microFe/CheckoutApp';
-import AccountApp from '../microFe/AccountApp';
+import { routes } from '../routes';
+
+/**
+ * Router Component that uses useRoutes hook
+ */
+function AppRoutes() {
+  const element = useRoutes(routes);
+  return element;
+}
 
 /**
  * Main Application Component
@@ -15,14 +18,14 @@ import AccountApp from '../microFe/AccountApp';
  * This component sets up the routing and layout for the host application.
  * It wraps all micro-frontends with the AppConfigProvider to provide
  * centralized configuration and context.
+ *
+ * Routes are defined in routes.tsx using the refactored micro frontend architecture.
  */
 export function App() {
-  const [currentTheme, setCurrentTheme] = React.useState<'light' | 'dark'>(
-    () => {
-      const storedTheme = localStorage.getItem('theme');
-      return (storedTheme as 'light' | 'dark') || 'light';
-    }
-  );
+  const [currentTheme] = React.useState<'light' | 'dark'>(() => {
+    const storedTheme = localStorage.getItem('theme');
+    return (storedTheme as 'light' | 'dark') || 'light';
+  });
 
   return (
     <ConfigProvider
@@ -40,28 +43,7 @@ export function App() {
     >
       <BrowserRouter>
         <AppConfigProvider>
-          <Routes>
-            {/* Public routes */}
-            <Route path="/login" element={<LoginPage />} />
-
-            {/* Protected routes with layout */}
-            <Route path="/" element={<AppLayout />}>
-              <Route index element={<HomePage />} />
-              <Route path="store/*" element={<StoreApp />} />
-              <Route path="checkout/*" element={<CheckoutApp />} />
-              <Route path="account/*" element={<AccountApp />} />
-            </Route>
-
-            {/* Fallback route */}
-            <Route
-              path="*"
-              element={
-                <div style={{ textAlign: 'center', padding: '100px 0' }}>
-                  <h1>404 - Page Not Found</h1>
-                </div>
-              }
-            />
-          </Routes>
+          <AppRoutes />
         </AppConfigProvider>
       </BrowserRouter>
     </ConfigProvider>

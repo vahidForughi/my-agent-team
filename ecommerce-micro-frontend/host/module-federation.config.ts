@@ -2,7 +2,13 @@ import { ModuleFederationConfig } from '@nx/module-federation';
 
 const config: ModuleFederationConfig = {
   name: 'host',
-  remotes: ['store', 'checkout', 'account'],
+  /**
+   * NO static remotes!
+   * All micro frontends are loaded dynamically at runtime via @module-federation/enhanced/runtime
+   * This enables true runtime independence and zero coupling between host and consumers.
+   * 
+   * See: host/src/microFe/MicroFrontendApp.tsx for dynamic loading implementation
+   */
   shared: (libraryName, defaultConfig) => {
     // Critical shared libraries that MUST be singletons
     if (libraryName === 'react' || libraryName === 'react-dom') {

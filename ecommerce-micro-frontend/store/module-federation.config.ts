@@ -3,7 +3,11 @@ import { ModuleFederationConfig } from '@nx/module-federation';
 const config: ModuleFederationConfig = {
   name: 'store',
   exposes: {
-    './Module': './src/remote-entry.ts',
+    /**
+     * Standardized exposed module name for all micro frontends
+     * Host expects './ConsoleMicroApp' from all consumers
+     */
+    './ConsoleMicroApp': './src/remote-entry.ts',
   },
   shared: (libraryName, defaultConfig) => {
     // Critical shared libraries that MUST be singletons

@@ -1,8 +1,10 @@
-import React from 'react';
-import { Typography, Card, Row, Col, Button, message } from 'antd';
+import React, { useState } from 'react';
+import { Typography, Card, Row, Col, Button, message, Spin, Alert } from 'antd';
 import { ShoppingOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { AppInjectorProps } from '@ecommerce/app-injector';
+import { useGetProducts } from '../services/products/hooks';
+import { StoreParamsInput, Product } from '../services/products';
 
 const { Title, Text } = Typography;
 
@@ -15,7 +17,19 @@ const ProductList: React.FC<ProductListProps> = ({ config }) => {
   const { appContext, onError } = config || {};
   const { user, theme = 'light' } = appContext || {};
 
-  const handleAddToCart = (_productId: number, productName: string) => {
+  const [params] = useState<StoreParamsInput>({
+    pageNumber: 1,
+    pageSize: 20,
+    useMock: true, // Enable mock data
+  });
+
+  const { data: productsResponse, isLoading, error } = useGetProducts(params);
+
+  // Extract products with proper type checking
+  const products: Product[] = ((productsResponse as any)?.data?.data) || [];
+  const totalCount = ((productsResponse as any)?.data?.count) || 0;
+
+  const handleAddToCart = (_productId: string, productName: string) => {
     try {
       message.success(`${productName} added to cart!`);
     } catch (error) {
@@ -27,18 +41,30 @@ const ProductList: React.FC<ProductListProps> = ({ config }) => {
     }
   };
 
-  const handleViewDetails = (productId: number) => {
+  const handleViewDetails = (productId: string) => {
     navigate(`/product/${productId}`);
   };
 
-  const products = [
-    { id: 1, name: 'Wireless Headphones', price: 99.99 },
-    { id: 2, name: 'Smart Watch', price: 199.99 },
-    { id: 3, name: 'Laptop Stand', price: 49.99 },
-    { id: 4, name: 'USB-C Cable', price: 19.99 },
-    { id: 5, name: 'Phone Case', price: 29.99 },
-    { id: 6, name: 'Portable Charger', price: 39.99 },
-  ];
+  if (error) {
+    return (
+      <div style={{ padding: '24px' }}>
+        <Alert
+          message="Error Loading Products"
+          description="Failed to load products. Please try again later."
+          type="error"
+          showIcon
+        />
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div style={{ padding: '24px', textAlign: 'center' }}>
+        <Spin size="large" tip="Loading products..." />
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding: '24px' }}>
@@ -49,13 +75,18 @@ const ProductList: React.FC<ProductListProps> = ({ config }) => {
         </Title>
         {user && (
           <Text type="secondary">
-            Welcome back, {user.firstName}! Browse our latest products.
+            Welcome back, {(user as any).name || 'Guest'}! Browse our latest products.
           </Text>
         )}
+        <div style={{ marginTop: '8px' }}>
+          <Text type="secondary">
+            Showing {products.length} of {totalCount} products
+          </Text>
+        </div>
       </div>
 
       <Row gutter={[16, 16]}>
-        {products.map((product) => (
+        {products.map((product: Product) => (
           <Col xs={24} sm={12} md={8} lg={6} key={product.id}>
             <Card
               hoverable
@@ -85,7 +116,21 @@ const ProductList: React.FC<ProductListProps> = ({ config }) => {
             >
               <Card.Meta
                 title={<span data-testid="product-name">{product.name}</span>}
-                description={`$${product.price.toFixed(2)}`}
+                description={
+                  <div>
+                    <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#1890ff' }}>
+                      ${product.price.toFixed(2)}
+                    </div>
+                    {product.hasDiscount && product.originalPrice && (
+                      <div style={{ fontSize: '12px', color: '#999', textDecoration: 'line-through' }}>
+                        ${product.originalPrice.toFixed(2)}
+                      </div>
+                    )}
+                    <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                      {product.description}
+                    </div>
+                  </div>
+                }
               />
               <Button
                 type="primary"

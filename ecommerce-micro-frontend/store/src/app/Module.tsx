@@ -1,7 +1,9 @@
 import React, { useMemo, useEffect } from 'react';
 import { MemoryRouter, useRoutes, useLocation } from 'react-router-dom';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { AppInjectorProps } from '@ecommerce/app-injector';
 import { createStoreRoutes } from '../routes';
+import { queryClient } from '../services/queryClient';
 
 type StoreModuleProps = AppInjectorProps;
 
@@ -52,9 +54,11 @@ const StoreModule: React.FC<StoreModuleProps> = ({ config }) => {
   const initialPath = getInitialPath();
 
   return (
-    <MemoryRouter initialEntries={[initialPath]} initialIndex={0}>
-      <StoreRouter config={config} />
-    </MemoryRouter>
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={[initialPath]} initialIndex={0}>
+        <StoreRouter config={config} />
+      </MemoryRouter>
+    </QueryClientProvider>
   );
 };
 
