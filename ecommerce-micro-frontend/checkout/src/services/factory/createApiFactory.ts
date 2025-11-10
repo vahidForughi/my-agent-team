@@ -121,7 +121,9 @@ export function createApiFactory(
 
     if (isApiErrorResponse(response)) {
       console.error('[API Error]', response.error.message);
-      throw new Error('Something went wrong', { cause: response });
+      const error = new Error('Something went wrong');
+      (error as any).cause = response;
+      throw error;
     }
 
     if (options?.responseSchema && isApiResponse(response)) {
@@ -146,8 +148,8 @@ export function createApiFactory(
 
     if (
       typeof options?.transformer === 'function' &&
-      isApiResponse(validResponse) &&
-      validResponse
+      validResponse &&
+      isApiResponse(validResponse)
     ) {
       const transformed = options.transformer(validResponse.data);
       if (transformed === null || transformed === undefined) {

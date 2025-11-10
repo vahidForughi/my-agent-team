@@ -6,7 +6,7 @@ import { z, ZodType } from 'zod';
  */
 export function createApiResponseSchemaFactory<T>(
   dataSchema: ZodType<T>
-): ZodType<{ data: T; meta?: any }> {
+): z.ZodObject<any> {
   return z.object({
     data: dataSchema,
     meta: z

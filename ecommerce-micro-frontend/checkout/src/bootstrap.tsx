@@ -1,10 +1,20 @@
 import { StrictMode } from 'react';
 import * as ReactDOM from 'react-dom/client';
+import { QueryClientProvider } from '@tanstack/react-query';
 import Module from './app/Module';
+import { queryClient } from './services/queryClient';
+import { setupMocks } from './services/mocks';
 
-const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
+// Setup mock adapter for development
+setupMocks();
+
+const root = ReactDOM.createRoot(
+  document.getElementById('root') as HTMLElement
+);
 root.render(
   <StrictMode>
-    <Module />
+    <QueryClientProvider client={queryClient}>
+      <Module />
+    </QueryClientProvider>
   </StrictMode>
 );
