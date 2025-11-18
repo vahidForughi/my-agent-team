@@ -27,11 +27,6 @@ spec:
       labels:
         app: rabbitmq
     spec:
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 999
-        runAsGroup: 999
-        fsGroup: 999
       containers:
         - name: rabbitmq
           image: rabbitmq:3.12-management-alpine
@@ -40,22 +35,13 @@ spec:
               name: amqp
             - containerPort: 15672
               name: management
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
-            runAsUser: 999
-            capabilities:
-              drop:
-                - ALL
           resources:
             requests:
               memory: "512Mi"
               cpu: "250m"
-              ephemeral-storage: "1Gi"
             limits:
               memory: "1Gi"
               cpu: "500m"
-              ephemeral-storage: "2Gi"
           env:
             - name: RABBITMQ_DEFAULT_USER
               valueFrom:
@@ -76,16 +62,18 @@ spec:
                 - rabbitmq-diagnostics
                 - -q
                 - ping
-            initialDelaySeconds: 60
+            initialDelaySeconds: 120
             periodSeconds: 30
+            timeoutSeconds: 15
           readinessProbe:
             exec:
               command:
                 - rabbitmq-diagnostics
                 - -q
                 - check_port_connectivity
-            initialDelaySeconds: 20
-            periodSeconds: 10
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            timeoutSeconds: 10
       volumes:
         - name: rabbitmq-storage
           persistentVolumeClaim:
