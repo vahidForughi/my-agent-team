@@ -1,275 +1,272 @@
-# Kubernetes Raw Manifests Deployment
+# Kubernetes Deployment for E-Commerce Platform
 
-This directory contains raw Kubernetes manifests for deploying the Cloud Native E-commerce Platform without Helm.
+This directory contains complete Kubernetes manifests for deploying the cloud-native e-commerce platform.
 
-## 📁 Directory Structure
+## Architecture
 
-```
-k8s/
-├── README.md                    # This file
-├── namespace.yaml               # Namespace definitions
-├── secrets.yaml                 # All secrets
-├── configmaps.yaml             # Configuration maps
-├── databases/                   # Database deployments
-│   ├── mongodb.yaml            # MongoDB for Catalog service
-│   ├── redis.yaml              # Redis for Basket service
-│   ├── postgresql.yaml         # PostgreSQL for Discount service
-│   └── sqlserver.yaml          # SQL Server for Ordering service
-├── infrastructure/             # Infrastructure services
-│   ├── rabbitmq.yaml           # Message broker
-│   ├── elasticsearch.yaml     # Search and logging
-│   └── kibana.yaml             # Log visualization
-├── services/                   # Microservices
-│   ├── catalog-api.yaml        # Catalog API service
-│   ├── basket-api.yaml         # Basket API service
-│   ├── discount-api.yaml       # Discount API service
-│   └── ordering-api.yaml       # Ordering API service
-├── gateway/                    # API Gateway
-│   └── ocelot-gateway.yaml     # Ocelot API Gateway
-├── monitoring/                 # Monitoring stack
-│   ├── rbac.yaml               # RBAC for monitoring
-│   ├── prometheus.yaml         # Prometheus monitoring
-│   └── grafana.yaml            # Grafana dashboards
-├── management/                 # Management tools
-│   ├── portainer.yaml          # Container management
-│   └── pgadmin.yaml            # PostgreSQL admin
-├── ingress/                    # Ingress configurations
-│   ├── api-ingress.yaml        # API services ingress
-│   └── monitoring-ingress.yaml # Monitoring services ingress
-├── deploy-k8s.sh              # Main deployment script
-├── cleanup-k8s.sh             # Cleanup script
-└── port-forward.sh            # Port forwarding script
-```
+The platform consists of the following components:
 
-## 🚀 Quick Start
+### Microservices
+- **Catalog API**: Product catalog management (MongoDB)
+- **Basket API**: Shopping basket management (Redis)
+- **Discount API**: Discount and coupon management (PostgreSQL)
+- **Ordering API**: Order processing (SQL Server)
 
-### Prerequisites
+### Infrastructure
+- **RabbitMQ**: Message broker for async communication
+- **Elasticsearch**: Centralized logging
+- **Kibana**: Log visualization
 
-1. **Kubernetes Cluster**: Minikube, Docker Desktop, or any K8s cluster
-2. **kubectl**: Configured to connect to your cluster
-3. **Docker Images**: Build the application images first
+### API Gateway
+- **Ocelot API Gateway**: Routes requests to microservices
 
-### Build Docker Images
+### Monitoring
+- **Prometheus**: Metrics collection
+- **Grafana**: Metrics visualization
 
-```bash
-# From the project root
-docker build -f Services/Catalog/Catalog.API/Dockerfile -t eshop/catalog.api:latest .
-docker build -f Services/Basket/Basket.API/Dockerfile -t eshop/basket.api:latest .
-docker build -f Services/Discount/Discount.API/Dockerfile -t eshop/discount.grpc:latest .
-docker build -f Services/Ordering/Ordering.API/Dockerfile -t eshop/ordering.api:latest .
-docker build -f ApiGateways/Ocelot.ApiGateway/Dockerfile -t eshop/ocelot.apigw:latest .
-```
+### Management Tools
+- **Portainer**: Kubernetes management UI
+- **pgAdmin**: PostgreSQL administration
+
+## Prerequisites
+
+- Kubernetes cluster (minikube, kind, or cloud provider)
+- kubectl configured
+- At least 8GB RAM available for the cluster
+- Docker images built and pushed (or available in registry)
+
+## Quick Start
 
 ### Deploy Everything
 
 ```bash
-# Navigate to k8s directory
 cd Deployments/k8s
-
-# Make scripts executable
-chmod +x *.sh
-
-# Deploy the complete platform
-./deploy-k8s.sh
+chmod +x deploy-all.sh cleanup-all.sh
+./deploy-all.sh
 ```
 
-### Access Services
+### Clean Up Everything
 
 ```bash
-# Start port forwarding for all services
-./port-forward.sh
+./cleanup-all.sh
 ```
 
-## 📋 Deployment Order
+## Manual Deployment
 
-The deployment script follows this order to ensure dependencies are met:
+If you prefer to deploy components individually:
 
-1. **Namespaces** (`ecommerce`, `monitoring`)
-2. **Secrets & ConfigMaps** (credentials and configuration)
-3. **Databases** (MongoDB, Redis, PostgreSQL, SQL Server)
-4. **Infrastructure** (RabbitMQ, Elasticsearch, Kibana)
-5. **Microservices** (Catalog, Basket, Discount, Ordering APIs)
-6. **API Gateway** (Ocelot)
-7. **Monitoring** (Prometheus, Grafana)
-8. **Management Tools** (Portainer, pgAdmin)
-9. **Ingress** (routing configuration)
-
-## 🔧 Configuration
-
-### Secrets
-
-All secrets are base64 encoded in `secrets.yaml`:
-
-- **MongoDB**: admin/password123
-- **PostgreSQL**: admin/password123
-- **SQL Server**: sa/Password123
-- **RabbitMQ**: guest/guest
-- **Grafana**: admin/prom-operator
-- **Portainer**: admin/portainer123
-- **pgAdmin**: admin@example.com/admin123
-
-### Resource Limits
-
-Each service has defined resource requests and limits:
-
-- **Databases**: 1-4GB memory, 0.5-2 CPU cores
-- **APIs**: 256-512MB memory, 0.25-0.5 CPU cores
-- **Monitoring**: 512MB-1GB memory, 0.25-0.5 CPU cores
-
-### Persistent Storage
-
-Persistent volumes are created for:
-
-- MongoDB (10GB)
-- Redis (5GB)
-- PostgreSQL (10GB)
-- SQL Server (15GB)
-- RabbitMQ (5GB)
-- Elasticsearch (10GB)
-- Prometheus (10GB)
-- Grafana (5GB)
-- Portainer (2GB)
-- pgAdmin (2GB)
-
-## 🌐 Service Access
-
-### Via Port Forwarding
+### 1. Infrastructure
 
 ```bash
-# API Services
-kubectl port-forward svc/ocelotapigw-service 8010:80 -n ecommerce
-kubectl port-forward svc/catalog-service 8001:80 -n ecommerce
-kubectl port-forward svc/basket-service 8002:80 -n ecommerce
+# RabbitMQ
+kubectl apply -f infrastructure/rabbitmq/
 
-# Monitoring
-kubectl port-forward svc/grafana-service 3000:3000 -n monitoring
-kubectl port-forward svc/prometheus-service 9090:9090 -n monitoring
-
-# Management
-kubectl port-forward svc/portainer-service 9000:9000 -n ecommerce
-kubectl port-forward svc/pgadmin-service 8080:80 -n ecommerce
+# Elasticsearch & Kibana
+kubectl apply -f infrastructure/elasticsearch/
+kubectl apply -f infrastructure/kibana/
 ```
 
-### Via Ingress (if ingress controller is installed)
-
-- API Gateway: `http://localhost/`
-- Grafana: `http://localhost/grafana`
-- Prometheus: `http://localhost/prometheus`
-- Portainer: `http://localhost/portainer`
-
-## 🔍 Monitoring & Observability
-
-### Prometheus Metrics
-
-Prometheus is configured to scrape:
-
-- Kubernetes API server
-- Kubernetes nodes
-- Application pods (with annotations)
-- Ecommerce services
-
-### Grafana Dashboards
-
-Pre-configured dashboards for:
-
-- E-commerce platform overview
-- Service uptime monitoring
-- Resource utilization
-
-### Health Checks
-
-All services include:
-
-- **Liveness probes**: Restart unhealthy containers
-- **Readiness probes**: Route traffic only to ready pods
-
-## 🛠️ Management Commands
-
-### Check Deployment Status
+### 2. Databases
 
 ```bash
-# Check all pods
-kubectl get pods -n ecommerce
-kubectl get pods -n monitoring
+# MongoDB (Catalog)
+kubectl apply -f catalog/catalog-db/
 
-# Check services
-kubectl get svc -n ecommerce
-kubectl get svc -n monitoring
+# Redis (Basket)
+kubectl apply -f basket/basket-db/
 
-# Check ingress
-kubectl get ingress -n ecommerce
-kubectl get ingress -n monitoring
+# PostgreSQL (Discount)
+kubectl apply -f discount/discount-db/
+
+# SQL Server (Ordering)
+kubectl apply -f ordering/ordering-db/
 ```
 
-### Scale Services
+### 3. Microservices
 
 ```bash
-# Scale microservices
-kubectl scale deployment catalog-api-deployment --replicas=3 -n ecommerce
-kubectl scale deployment basket-api-deployment --replicas=3 -n ecommerce
-
-# Scale API Gateway
-kubectl scale deployment ocelot-gateway-deployment --replicas=3 -n ecommerce
+kubectl apply -f catalog/catalog-api/
+kubectl apply -f discount/discount-api/
+kubectl apply -f basket/basket-api/
+kubectl apply -f ordering/ordering-api/
 ```
 
-### View Logs
+### 4. API Gateway
 
 ```bash
-# View service logs
-kubectl logs -f deployment/catalog-api-deployment -n ecommerce
-kubectl logs -f deployment/grafana-deployment -n monitoring
-
-# View all logs for a service
-kubectl logs -l app=catalog-api -n ecommerce --tail=100
+kubectl apply -f gateway/
 ```
 
-## 🧹 Cleanup
-
-### Remove Everything
+### 5. Monitoring
 
 ```bash
-# Run cleanup script
-./cleanup-k8s.sh
+kubectl apply -f monitoring/prometheus/
+kubectl apply -f monitoring/grafana/
 ```
 
-### Manual Cleanup
+### 6. Management Tools
 
 ```bash
-# Delete namespaces (removes everything)
-kubectl delete namespace ecommerce
-kubectl delete namespace monitoring
-
-# Or delete individual components
-kubectl delete -f services/
-kubectl delete -f databases/
-kubectl delete -f monitoring/
+kubectl apply -f management/portainer/
+kubectl apply -f management/pgadmin/
 ```
 
-## 🔧 Troubleshooting
+## Access Points
+
+After deployment, services are accessible via NodePort:
+
+| Service | URL | Credentials |
+|---------|-----|-------------|
+| API Gateway | http://localhost:31080 | - |
+| Catalog API | http://localhost:31000 | - |
+| Basket API | http://localhost:31001 | - |
+| Discount API | http://localhost:31002 | - |
+| Ordering API | http://localhost:31003 | - |
+| RabbitMQ Management | http://localhost:31672 | guest/guest |
+| Kibana | http://localhost:31601 | - |
+| Prometheus | http://localhost:31090 | - |
+| Grafana | http://localhost:31300 | admin/admin |
+| Portainer | http://localhost:30900 | (setup on first login) |
+| pgAdmin | http://localhost:30950 | admin@admin.com/admin |
+
+## Configuration
+
+### Environment Variables
+
+Each microservice uses ConfigMaps and Secrets for configuration:
+
+- **ConfigMaps**: Non-sensitive configuration (connection strings with placeholders, URLs)
+- **Secrets**: Sensitive data (passwords, tokens)
+
+### Database Credentials
+
+Default credentials (should be changed for production):
+
+- **MongoDB**: No authentication
+- **Redis**: No authentication
+- **PostgreSQL**: admin/admin1234
+- **SQL Server**: sa/SwN12345678!
+
+### Image Tags
+
+All images use the `latest` tag by default. For production:
+
+1. Build with specific version tags
+2. Update image references in deployment YAML files
+3. Set `imagePullPolicy: Always` if needed
+
+## Networking
+
+### Service Discovery
+
+Services communicate using Kubernetes DNS:
+- `catalog-api-service:9000`
+- `basket-api-service:9001`
+- `discount-api-service:80`
+- `ordering-api-service:9003`
+- `redis-service:6379`
+- `postgres-service:5432`
+- `sqlserver-service:1433`
+- `rabbitmq-service:5672`
+- `elasticsearch-service:9200`
+
+### Ingress
+
+Ingress resources are available in the `ingress/` directory for production deployments with a proper ingress controller.
+
+## Security Considerations
+
+### RBAC
+
+- **Prometheus**: Limited to read-only cluster access for metrics scraping
+- **Portainer**: Restricted role (not cluster-admin) following least-privilege principle
+
+### Secrets Management
+
+For production:
+1. Use external secrets management (Vault, AWS Secrets Manager, etc.)
+2. Enable encryption at rest for secrets
+3. Rotate credentials regularly
+
+### Network Policies
+
+Consider implementing network policies to restrict pod-to-pod communication.
+
+## Resource Requirements
+
+Minimum recommended resources per component:
+
+| Component | CPU Request | Memory Request | CPU Limit | Memory Limit |
+|-----------|-------------|----------------|-----------|--------------|
+| Catalog API | 250m | 64Mi | 500m | 128Mi |
+| Basket API | 250m | 64Mi | 500m | 128Mi |
+| Discount API | 250m | 64Mi | 500m | 128Mi |
+| Ordering API | 250m | 128Mi | 500m | 256Mi |
+| MongoDB | 250m | 128Mi | 500m | 256Mi |
+| Redis | 250m | 64Mi | 500m | 128Mi |
+| PostgreSQL | 250m | 128Mi | 500m | 256Mi |
+| SQL Server | 500m | 512Mi | 1000m | 1Gi |
+| RabbitMQ | 250m | 256Mi | 500m | 512Mi |
+| Elasticsearch | 500m | 1Gi | 1000m | 2Gi |
+| Prometheus | 250m | 512Mi | 500m | 1Gi |
+| Grafana | 250m | 256Mi | 500m | 512Mi |
+
+## Troubleshooting
+
+### Check Pod Status
+
+```bash
+kubectl get pods
+kubectl describe pod <pod-name>
+kubectl logs <pod-name>
+```
+
+### Check Services
+
+```bash
+kubectl get svc
+kubectl describe svc <service-name>
+```
 
 ### Common Issues
 
-1. **Images not found**: Build Docker images first
-2. **Pods stuck in Pending**: Check resource availability
-3. **Services not accessible**: Verify port-forwarding or ingress
-4. **Database connection issues**: Check service names and ports
+1. **ImagePullBackOff**: Verify Docker images exist and are accessible
+2. **CrashLoopBackOff**: Check pod logs for application errors
+3. **Pending Pods**: Check resource availability and PVC binding
+4. **Connection Issues**: Verify service names and ports in configuration
 
-### Debug Commands
+### Database Initialization
+
+Some databases may need initialization scripts. Check the logs if services can't connect:
 
 ```bash
-# Describe problematic pods
-kubectl describe pod <pod-name> -n ecommerce
-
-# Check events
-kubectl get events -n ecommerce --sort-by='.lastTimestamp'
-
-# Check resource usage
-kubectl top pods -n ecommerce
-kubectl top nodes
+kubectl logs -l app=sqlserver
+kubectl logs -l app=postgres
+kubectl logs -l app=catalogdb
 ```
 
-## 📚 Additional Resources
+## Production Recommendations
 
-- [Kubernetes Documentation](https://kubernetes.io/docs/)
-- [kubectl Cheat Sheet](https://kubernetes.io/docs/reference/kubectl/cheatsheet/)
-- [Troubleshooting Guide](../../wiki/Troubleshooting.md)
+1. **Use Persistent Volumes** instead of emptyDir for databases
+2. **Implement Health Checks** (liveness/readiness probes) for all services
+3. **Set up Horizontal Pod Autoscaling** (HPA) for microservices
+4. **Enable Resource Quotas** and Limit Ranges per namespace
+5. **Implement Network Policies** for pod-to-pod communication
+6. **Use Ingress with TLS** for external access
+7. **External Secrets Management** (not hardcoded in manifests)
+8. **Monitoring and Alerting** with Prometheus AlertManager
+9. **Backup Strategy** for databases
+10. **CI/CD Pipeline** for automated deployments
+
+## Migrating from Helm
+
+This directory provides raw Kubernetes manifests as an alternative to Helm charts. Key differences:
+
+- No templating - direct YAML manifests
+- Simpler to understand and debug
+- Manual version management
+- Easier to customize per environment
+
+## License
+
+See main repository LICENSE file.

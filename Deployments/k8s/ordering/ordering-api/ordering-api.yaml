@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ordering-api-deployment
+  labels:
+    app: ordering-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ordering-api
+  template:
+    metadata:
+      labels:
+        app: ordering-api
+    spec:
+      containers:
+        - name: ordering-api
+          image: sloweyyy/orderingapi:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Development
+            - name: SQLSERVER_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: sqlserver-configmap
+                  key: sqlserver-url
+            - name: RABBITMQ_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: rabbitmq-configmap
+                  key: rabbitmq-url
+            - name: ELASTICSEARCH_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: elasticsearch-configmap
+                  key: elasticsearch-url
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "250m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ordering-api-service
+spec:
+  type: NodePort
+  selector:
+    app: ordering-api
+  ports:
+    - protocol: TCP
+      port: 9003
+      targetPort: 80
+      nodePort: 31003
