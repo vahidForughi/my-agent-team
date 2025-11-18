@@ -27,30 +27,18 @@ spec:
       labels:
         app: sqlserver
     spec:
-      securityContext:
-        runAsUser: 10001
-        runAsGroup: 0
-        fsGroup: 0
       containers:
         - name: sqlserver
           image: mcr.microsoft.com/mssql/server:2022-latest
           ports:
             - containerPort: 1433
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsUser: 10001
-            capabilities:
-              drop:
-                - ALL
           resources:
             requests:
               memory: "2Gi"
-              cpu: "1000m"
-              ephemeral-storage: "2Gi"
+              cpu: "500m"
             limits:
-              memory: "4Gi"
-              cpu: "2000m"
-              ephemeral-storage: "4Gi"
+              memory: "3Gi"
+              cpu: "1500m"
           env:
             - name: ACCEPT_EULA
               value: "Y"
@@ -67,31 +55,21 @@ spec:
           livenessProbe:
             exec:
               command:
-                - /opt/mssql-tools/bin/sqlcmd
-                - -S
-                - localhost
-                - -U
-                - sa
-                - -P
-                - Password123
-                - -Q
-                - "SELECT 1"
-            initialDelaySeconds: 60
+                - /bin/sh
+                - -c
+                - /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$SA_PASSWORD" -C -Q "SELECT 1" || /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "$SA_PASSWORD" -Q "SELECT 1"
+            initialDelaySeconds: 120
             periodSeconds: 30
+            timeoutSeconds: 10
           readinessProbe:
             exec:
               command:
-                - /opt/mssql-tools/bin/sqlcmd
-                - -S
-                - localhost
-                - -U
-                - sa
-                - -P
-                - Password123
-                - -Q
-                - "SELECT 1"
-            initialDelaySeconds: 30
+                - /bin/sh
+                - -c
+                - /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$SA_PASSWORD" -C -Q "SELECT 1" || /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "$SA_PASSWORD" -Q "SELECT 1"
+            initialDelaySeconds: 60
             periodSeconds: 10
+            timeoutSeconds: 10
       volumes:
         - name: sqlserver-storage
           persistentVolumeClaim:
