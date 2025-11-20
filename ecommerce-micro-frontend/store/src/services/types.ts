@@ -2,6 +2,7 @@ import { UseMutationOptions, UseQueryOptions } from '@tanstack/react-query';
 import { AxiosRequestConfig } from 'axios';
 
 // https://x.com/mattpocockuk/status/1622730173446557697/photo/1
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export type Prettify<T> = {
   [K in keyof T]: T[K];
 } & {};
@@ -17,7 +18,9 @@ export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder];
 
 export type Enumerable<T> = T | Array<T>;
 
-export type FilterOptions<TAdditionalParams = {}> = {
+export type FilterOptions<
+  TAdditionalParams = Record<string, never>
+> = {
   page?: number;
   limit?: number;
   orderBy?: Record<string, SortOrder>;
@@ -79,6 +82,9 @@ export type ReactMutationOptions = Pick<
   'onSuccess' | 'onError'
 >;
 
+/**
+ * Pagination metadata for list responses
+ */
 export type PaginationMeta = {
   currentPage: number;
   totalPages: number;
@@ -86,8 +92,16 @@ export type PaginationMeta = {
   itemsPerPage: number;
 };
 
+/**
+ * Error detail object for API error responses
+ */
 export type ErrorDetail = Record<string, unknown>;
 
+/**
+ * Standard API error response structure
+ *
+ * Used when API returns an error instead of successful data
+ */
 export type ApiErrorResponse = {
   error: {
     code: string;
@@ -97,10 +111,18 @@ export type ApiErrorResponse = {
   };
 };
 
-export type ApiResponse<T> = {
-  data: T;
-  meta?: PaginationMeta;
-};
+/**
+ * API response type - currently unwrapped data
+ *
+ * In the future, this may include metadata envelope:
+ * { data: T, meta: { timestamp: string, ... } }
+ */
+export type ApiResponse<T> = T;
 
+/**
+ * Union type representing either successful data or error response
+ *
+ * Used as return type for API calls before validation
+ */
 export type ApiResult<T> = ApiResponse<T> | ApiErrorResponse;
 

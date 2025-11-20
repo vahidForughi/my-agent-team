@@ -33,7 +33,10 @@ const config: ModuleFederationConfig = {
     }
 
     // Share Ant Design Icons
-    if (libraryName === '@ant-design/icons' || libraryName.startsWith('@ant-design/icons/')) {
+    if (
+      libraryName === '@ant-design/icons' ||
+      libraryName.startsWith('@ant-design/icons/')
+    ) {
       return {
         singleton: true,
         strictVersion: false,
@@ -65,6 +68,6 @@ const config: ModuleFederationConfig = {
 };
 
 /**
-* Nx requires a default export of the config to allow correct resolution of the module federation graph.
-**/
+ * Nx requires a default export of the config to allow correct resolution of the module federation graph.
+ **/
 export default config;

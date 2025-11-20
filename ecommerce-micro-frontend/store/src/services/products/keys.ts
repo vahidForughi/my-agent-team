@@ -2,18 +2,25 @@ import {
   createCacheKeyWithScope,
   createCacheSection,
 } from '../factory/createCacheKeyFactory';
-import { StoreParams } from './types';
+import { StoreParamsInput } from './input';
 
 const createProductKeys = createCacheKeyWithScope('_product');
 
 export const productKeys = {
-  getAll: createCacheSection((input?: StoreParams) =>
+  // Aligned with useGetProducts hook
+  products: createCacheSection((input?: StoreParamsInput) =>
     createProductKeys(['products', input])
   ),
-  getById: createCacheSection((id?: string) =>
+  // Aligned with useGetProductById hook
+  productById: createCacheSection((id?: string) =>
     createProductKeys(['product', id])
   ),
-  getBrands: createCacheSection(() => createProductKeys(['brands'])),
-  getTypes: createCacheSection(() => createProductKeys(['types'])),
+  // Aligned with useGetProductReviews hook
+  productReviews: createCacheSection((productId?: string) =>
+    createProductKeys(['reviews', productId])
+  ),
+  // Aligned with useGetBrands hook
+  brands: createCacheSection(() => createProductKeys(['brands'])),
+  // Aligned with useGetTypes hook
+  types: createCacheSection(() => createProductKeys(['types'])),
 };
-

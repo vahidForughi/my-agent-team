@@ -1,48 +1,195 @@
 import { z } from 'zod';
 
+export const stockStatusEnum = z.enum([
+  'in-stock',
+  'low-stock',
+  'out-of-stock',
+]);
+
+export const brandResponseSchema = z.object({
+  Id: z.string(),
+  Name: z.string(),
+});
+
+export const productTypeResponseSchema = z.object({
+  Id: z.string(),
+  Name: z.string(),
+});
+
+export const productResponseSchema = z.object({
+  Id: z.string(),
+  Name: z.string(),
+  Summary: z.string(),
+  Description: z.string(),
+  ImageFile: z.string(),
+  Brands: brandResponseSchema,
+  Types: productTypeResponseSchema,
+  Price: z.number().nonnegative(),
+});
+
+export const productsResponseSchema = z.object({
+  PageIndex: z.number().nonnegative(),
+  PageSize: z.number().positive(),
+  Count: z.number().nonnegative(),
+  Data: z.array(productResponseSchema),
+});
+
+export const reviewResponseSchema = z.object({
+  reviewId: z.string(),
+  userId: z.string(),
+  userName: z.string(),
+  rating: z.number().min(1).max(5),
+  date: z.string(), // ISO date string
+  comment: z.string(),
+  helpfulCount: z.number().nonnegative().optional(),
+});
+
+export const reviewsResponseSchema = z.array(reviewResponseSchema);
+
+export const productDetailResponseSchema = z.object({
+  Id: z.string(),
+  Name: z.string(),
+  Summary: z.string(),
+  Description: z.string(),
+  ImageFile: z.string(),
+  Brands: brandResponseSchema,
+  Types: productTypeResponseSchema,
+  Price: z.number().nonnegative(),
+
+  Images: z.array(z.string()).optional(),
+  Features: z.array(z.string()).optional(),
+  Specifications: z.record(z.string()).optional(),
+
+  Stock: z
+    .object({
+      quantity: z.number().nonnegative(),
+      inStock: z.boolean(),
+      lowStockThreshold: z.number().nonnegative().optional(),
+    })
+    .optional(),
+
+  Rating: z
+    .object({
+      average: z.number().min(0).max(5),
+      count: z.number().nonnegative(),
+      distribution: z.record(z.number()).optional(),
+    })
+    .optional(),
+
+  Shipping: z
+    .object({
+      freeShipping: z.boolean().optional(),
+      estimatedDeliveryDays: z.number().positive().optional(),
+      shippingCost: z.number().nonnegative().optional(),
+    })
+    .optional(),
+
+  RelatedProductIds: z.array(z.string()).optional(),
+
+  Meta: z
+    .object({
+      title: z.string().optional(),
+      description: z.string().optional(),
+      keywords: z.array(z.string()).optional(),
+    })
+    .optional(),
+});
+
+export const productDetailWithReviewsResponseSchema = z.object({
+  Id: z.string(),
+  Name: z.string(),
+  Summary: z.string(),
+  Description: z.string(),
+  ImageFile: z.string(),
+  Brands: brandResponseSchema,
+  Types: productTypeResponseSchema,
+  Price: z.number().nonnegative(),
+  Images: z.array(z.string()).optional(),
+  Features: z.array(z.string()).optional(),
+  Specifications: z.record(z.string()).optional(),
+  Stock: z
+    .object({
+      quantity: z.number().nonnegative(),
+      inStock: z.boolean(),
+      lowStockThreshold: z.number().nonnegative().optional(),
+    })
+    .optional(),
+  Rating: z
+    .object({
+      average: z.number().min(0).max(5),
+      count: z.number().nonnegative(),
+      distribution: z.record(z.number()).optional(),
+    })
+    .optional(),
+  Shipping: z
+    .object({
+      freeShipping: z.boolean().optional(),
+      estimatedDeliveryDays: z.number().positive().optional(),
+      shippingCost: z.number().nonnegative().optional(),
+    })
+    .optional(),
+  RelatedProductIds: z.array(z.string()).optional(),
+  Meta: z
+    .object({
+      title: z.string().optional(),
+      description: z.string().optional(),
+      keywords: z.array(z.string()).optional(),
+    })
+    .optional(),
+
+  // Additional field for reviews
+  Reviews: z.array(reviewResponseSchema).optional(),
+});
+
+export const reviewSchema = z.object({
+  reviewId: z.string(),
+  userId: z.string(),
+  userName: z.string(),
+  rating: z.number().min(1).max(5),
+  date: z.string(),
+  comment: z.string(),
+  helpfulCount: z.number().nonnegative().default(0),
+});
+
 export const productSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string(),
   imageFile: z.string(),
-  price: z.number(),
+  price: z.number().nonnegative(),
   productType: z.string(),
   productBrand: z.string(),
-  originalPrice: z.number().optional(),
-  discountAmount: z.number().optional(),
-  hasDiscount: z.boolean().optional(),
-});
 
-export const productWithDiscountSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  description: z.string(),
-  imageFile: z.string(),
-  price: z.number(),
-  productType: z.string(),
-  productBrand: z.string(),
-  originalPrice: z.number(),
-  discountAmount: z.number(),
-  hasDiscount: z.boolean(),
+  originalPrice: z.number().nonnegative().optional(),
+  discountAmount: z.number().nonnegative().optional(),
+  hasDiscount: z.boolean().default(false),
+
+  images: z.array(z.string()).default([]),
+  features: z.array(z.string()).default([]),
+  specifications: z.record(z.string()).default({}),
+
+  stockQuantity: z.number().nonnegative().optional(),
+  stockInStock: z.boolean().optional(),
+  stockLowStockThreshold: z.number().nonnegative().optional(),
+  stockStatus: stockStatusEnum.optional(),
+
+  ratingAverage: z.number().min(0).max(5).optional(),
+  ratingCount: z.number().nonnegative().optional(),
+  ratingDistribution: z.record(z.number()).optional(),
+
+  shippingFreeShipping: z.boolean().default(false),
+  shippingEstimatedDeliveryDays: z.number().positive().optional(),
+  shippingCost: z.number().nonnegative().optional(),
+
+  metaTitle: z.string().optional(),
+  metaDescription: z.string().optional(),
+  metaKeywords: z.array(z.string()).default([]),
+
+  relatedProductIds: z.array(z.string()).default([]),
+  reviews: z.array(reviewSchema).default([]),
 });
 
 export const productArraySchema = z.array(productSchema);
-export const productWithDiscountArraySchema = z.array(
-  productWithDiscountSchema
-);
-
-export const paginationSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
-  z.object({
-    pageIndex: z.number(),
-    pageSize: z.number(),
-    count: z.number(),
-    data: dataSchema,
-  });
-
-export const paginationProductsSchema = paginationSchema(productArraySchema);
-export const paginationProductsWithDiscountSchema = paginationSchema(
-  productWithDiscountArraySchema
-);
 
 export const brandSchema = z.object({
   id: z.string(),
@@ -51,6 +198,8 @@ export const brandSchema = z.object({
 
 export const brandArraySchema = z.array(brandSchema);
 
+export const brandArrayResponseSchema = z.array(brandResponseSchema);
+
 export const productTypeSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -58,21 +207,6 @@ export const productTypeSchema = z.object({
 
 export const productTypeArraySchema = z.array(productTypeSchema);
 
-export const storeParamsSchema = z.object({
-  brandId: z.string().optional(),
-  typeId: z.string().optional(),
-  sort: z.string().optional(),
-  pageNumber: z.number().optional(),
-  pageSize: z.number().optional(),
-  search: z.string().optional(),
-  useMock: z.boolean().optional(),
-});
-
-// Zod-inferred types (these will be used internally by schemas)
-export type ProductArray = z.infer<typeof productArraySchema>;
-export type ProductWithDiscountArray = z.infer<
-  typeof productWithDiscountArraySchema
->;
-export type PaginationProducts = z.infer<typeof paginationProductsSchema>;
-export type BrandArray = z.infer<typeof brandArraySchema>;
-export type ProductTypeArray = z.infer<typeof productTypeArraySchema>;
+export const productTypeArrayResponseSchema = z.array(
+  productTypeResponseSchema
+);

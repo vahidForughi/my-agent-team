@@ -1,12 +1,17 @@
-import React, { useState } from 'react';
-import { Typography, Card, Row, Col, Button, message, Spin, Alert } from 'antd';
-import { ShoppingOutlined } from '@ant-design/icons';
+import React, { useState, useMemo } from 'react';
+import { message } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { AppInjectorProps } from '@ecommerce/app-injector';
-import { useGetProducts } from '../services/products/hooks';
-import { StoreParamsInput, Product } from '../services/products';
-
-const { Title, Text } = Typography;
+import { useGetProducts, useGetTypes } from '../services/products/hooks';
+import { StoreParamsInput } from '../services/products';
+import {
+  ProductHeader,
+  ProductGrid,
+  LoadingState,
+  ErrorState,
+  ProductFilterType,
+  SortOption,
+} from '../components/ProductList';
 
 type ProductListProps = {
   config?: AppInjectorProps['config'];
@@ -14,136 +19,119 @@ type ProductListProps = {
 
 const ProductList: React.FC<ProductListProps> = ({ config }) => {
   const navigate = useNavigate();
-  const { appContext, onError } = config || {};
-  const { user, theme = 'light' } = appContext || {};
+  const { onError } = config || {};
 
-  const [params] = useState<StoreParamsInput>({
-    pageNumber: 1,
-    pageSize: 20,
-    useMock: true, // Enable mock data
+  const [selectedTypeId, setSelectedTypeId] = useState<string | undefined>();
+  const [selectedFilter, setSelectedFilter] =
+    useState<ProductFilterType>('all');
+  const [sortOption, setSortOption] = useState<SortOption>('default');
+
+  const { data: productTypes } = useGetTypes({ useMock: true });
+
+  const params = useMemo<StoreParamsInput>(() => {
+    const baseParams: StoreParamsInput = {
+      page: 1,
+      limit: 20,
+    };
+
+    if (selectedTypeId) {
+      baseParams.TypeId = selectedTypeId;
+    }
+
+    if (sortOption !== 'default') {
+      baseParams.Sort = sortOption;
+    }
+
+    return baseParams;
+  }, [selectedTypeId, sortOption]);
+
+  const { data: products, isLoading, error } = useGetProducts(params, {
+    useMock: true,
   });
 
-  const { data: productsResponse, isLoading, error } = useGetProducts(params);
+  const productCount = useMemo(() => {
+    return products?.length || 0;
+  }, [products]);
 
-  // Extract products with proper type checking
-  const products: Product[] = ((productsResponse as any)?.data?.data) || [];
-  const totalCount = ((productsResponse as any)?.data?.count) || 0;
+  const totalCount = useMemo(() => {
+    return products?.length || 0;
+  }, [products]);
 
-  const handleAddToCart = (_productId: string, productName: string) => {
+  function handleAddToCart(_productId: string, productName: string) {
     try {
       message.success(`${productName} added to cart!`);
-    } catch (error) {
+    } catch (err) {
       if (onError) {
-        onError(error as Error);
+        onError(err as Error);
       } else {
         message.error('Failed to add item to cart');
       }
     }
-  };
+  }
 
-  const handleViewDetails = (productId: string) => {
+  function handleViewDetails(productId: string) {
     navigate(`/product/${productId}`);
-  };
+  }
 
   if (error) {
-    return (
-      <div style={{ padding: '24px' }}>
-        <Alert
-          message="Error Loading Products"
-          description="Failed to load products. Please try again later."
-          type="error"
-          showIcon
-        />
-      </div>
-    );
+    return <ErrorState />;
   }
 
   if (isLoading) {
+    return <LoadingState />;
+  }
+
+  function handleTypeChange(typeId: string | undefined) {
+    setSelectedTypeId(typeId);
+  }
+
+  function handleFilterChange(filter: ProductFilterType) {
+    setSelectedFilter(filter);
+    if (filter !== 'all') {
+      setSelectedTypeId(undefined);
+    }
+  }
+
+  function handleSortChange(sort: SortOption) {
+    setSortOption(sort);
+  }
+
+  if (!products || products.length === 0) {
     return (
-      <div style={{ padding: '24px', textAlign: 'center' }}>
-        <Spin size="large" tip="Loading products..." />
+      <div style={{ padding: '24px' }}>
+        <ProductHeader
+          productCount={0}
+          totalCount={0}
+          productTypes={productTypes || undefined}
+          selectedTypeId={selectedTypeId}
+          selectedFilter={selectedFilter}
+          sortOption={sortOption}
+          onTypeChange={handleTypeChange}
+          onFilterChange={handleFilterChange}
+          onSortChange={handleSortChange}
+        />
       </div>
     );
   }
 
   return (
     <div style={{ padding: '24px' }}>
-      <div style={{ marginBottom: '24px' }}>
-        <Title level={2}>
-          <ShoppingOutlined style={{ marginRight: '12px' }} />
-          Product Store
-        </Title>
-        {user && (
-          <Text type="secondary">
-            Welcome back, {(user as any).name || 'Guest'}! Browse our latest products.
-          </Text>
-        )}
-        <div style={{ marginTop: '8px' }}>
-          <Text type="secondary">
-            Showing {products.length} of {totalCount} products
-          </Text>
-        </div>
-      </div>
-
-      <Row gutter={[16, 16]}>
-        {products.map((product: Product) => (
-          <Col xs={24} sm={12} md={8} lg={6} key={product.id}>
-            <Card
-              hoverable
-              data-testid="product-card"
-              data-product-id={product.id}
-              cover={
-                <div
-                  style={{
-                    height: 200,
-                    background: theme === 'dark' ? '#333' : '#f0f0f0',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                  }}
-                  onClick={() => handleViewDetails(product.id)}
-                  data-testid="product-cover"
-                >
-                  <ShoppingOutlined
-                    style={{
-                      fontSize: 48,
-                      color: theme === 'dark' ? '#666' : '#d9d9d9',
-                    }}
-                  />
-                </div>
-              }
-            >
-              <Card.Meta
-                title={<span data-testid="product-name">{product.name}</span>}
-                description={
-                  <div>
-                    <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#1890ff' }}>
-                      ${product.price.toFixed(2)}
-                    </div>
-                    {product.hasDiscount && product.originalPrice && (
-                      <div style={{ fontSize: '12px', color: '#999', textDecoration: 'line-through' }}>
-                        ${product.originalPrice.toFixed(2)}
-                      </div>
-                    )}
-                    <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
-                      {product.description}
-                    </div>
-                  </div>
-                }
-              />
-              <Button
-                type="primary"
-                block
-                style={{ marginTop: 16 }}
-                onClick={() => handleAddToCart(product.id, product.name)}
-              >
-                Add to Cart
-              </Button>
-            </Card>
-          </Col>
-        ))}
-      </Row>
+      <ProductHeader
+        productCount={productCount}
+        totalCount={totalCount}
+        productTypes={productTypes || undefined}
+        selectedTypeId={selectedTypeId}
+        selectedFilter={selectedFilter}
+        sortOption={sortOption}
+        onTypeChange={handleTypeChange}
+        onFilterChange={handleFilterChange}
+        onSortChange={handleSortChange}
+      />
+      <ProductGrid
+        products={products}
+        onAddToCart={handleAddToCart}
+        onViewDetails={handleViewDetails}
+      />
     </div>
   );
 };

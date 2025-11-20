@@ -1,63 +1,236 @@
 import { useQuery } from '@tanstack/react-query';
 import { ReactQueryOptions } from '../types';
-import * as apis from './apis';
+import { ReactQueryUnwrapPromise } from '../../typings/common';
+import { storeClient } from '../index';
 import { productKeys } from './keys';
 import { StoreParamsInput } from './input';
 
 /**
- * Product Hooks
- * 
- * TanStack Query hooks for product-related data fetching.
- * Following fdw-iraps pattern - useMock is handled in apis layer.
- */
-
-/**
- * Hook to get all products with pagination and filtering
+ * Hook to fetch all products with pagination and filters
+ *
+ * @param params - Filter and pagination parameters
+ * @param params.BrandId - Filter by brand ID
+ * @param params.TypeId - Filter by product type ID
+ * @param params.Sort - Sort order
+ * @param params.Search - Search query
+ * @param params.page - Page number (default: 0)
+ * @param params.limit - Items per page (default: 10)
+ * @param options - React Query options (enabled, initialData, etc.)
+ * @returns Query result with product list, loading state, and error
+ *
+ * @example
+ * ```tsx
+ * const { data, isLoading, error } = useGetProducts({
+ *   BrandId: 'brand-123',
+ *   page: 0,
+ *   limit: 20
+ * });
+ *
+ * if (isLoading) return <Loading />;
+ * if (error) return <Error />;
+ *
+ * return <ProductList products={data?.data} />;
+ * ```
  */
 export const useGetProducts = (
   params?: StoreParamsInput,
-  options?: ReactQueryOptions,
+  options?: ReactQueryOptions & { useMock?: boolean }
 ) => {
+  const { enabled = true, initialData, useMock, ...rest } = options || {};
+
+  // Use useMock from options, or fallback to params, or default to false
+  const shouldUseMock = useMock ?? params?.useMock ?? false;
+
   return useQuery({
-    queryKey: [productKeys.getAll.create(params)],
-    queryFn: () => apis.getProducts({ params }),
-    ...options,
+    ...rest,
+    enabled: Boolean(enabled),
+    queryKey: [productKeys.products.create(params)],
+    queryFn: () =>
+      storeClient.products.getProducts({
+        params: { ...params, useMock: shouldUseMock },
+      }),
+    initialData: initialData as ReactQueryUnwrapPromise<
+      typeof storeClient.products.getProducts
+    >,
   });
 };
 
 /**
- * Hook to get product by ID
+ * Hook to fetch a single product by ID with full details
+ *
+ * @param id - The product ID to fetch
+ * @param options - React Query options (enabled, initialData, etc.)
+ * @returns Query result with product details including stock, rating, shipping
+ *
+ * @example
+ * ```tsx
+ * const { data: product, isLoading, error } = useGetProductById('product-123');
+ *
+ * if (isLoading) return <Loading />;
+ * if (error) return <Error />;
+ *
+ * return (
+ *   <ProductDetails
+ *     product={product?.data}
+ *     stock={product?.data?.stockQuantity}
+ *     rating={product?.data?.ratingAverage}
+ *   />
+ * );
+ * ```
  */
 export const useGetProductById = (
   id: string,
-  options?: ReactQueryOptions,
+  options?: ReactQueryOptions & { useMock?: boolean }
 ) => {
+  const {
+    enabled = true,
+    initialData,
+    useMock = false,
+    ...rest
+  } = options || {};
+
   return useQuery({
-    queryKey: [productKeys.getById.create(id)],
-    queryFn: () => apis.getProductById({ params: { id } }),
-    enabled: !!id,
-    ...options,
+    ...rest,
+    enabled: !!id && Boolean(enabled),
+    queryKey: [productKeys.productById.create(id)],
+    queryFn: () =>
+      storeClient.products.getProductById({ params: { id, useMock } }),
+    initialData: initialData as ReactQueryUnwrapPromise<
+      typeof storeClient.products.getProductById
+    >,
   });
 };
 
 /**
- * Hook to get all brands
+ * Hook to fetch all reviews for a specific product
+ *
+ * @param productId - The product ID to get reviews for
+ * @param options - React Query options (enabled, initialData, etc.)
+ * @returns Query result with list of product reviews
+ *
+ * @example
+ * ```tsx
+ * const { data: reviews, isLoading } = useGetProductReviews('product-123');
+ *
+ * if (isLoading) return <Loading />;
+ *
+ * return (
+ *   <ReviewsList reviews={reviews?.data}>
+ *     {reviews?.data?.map(review => (
+ *       <ReviewCard key={review.reviewId} review={review} />
+ *     ))}
+ *   </ReviewsList>
+ * );
+ * ```
  */
-export const useGetBrands = (options?: ReactQueryOptions) => {
+export const useGetProductReviews = (
+  productId: string,
+  options?: ReactQueryOptions & { useMock?: boolean }
+) => {
+  const {
+    enabled = true,
+    initialData,
+    useMock = false,
+    ...rest
+  } = options || {};
+
   return useQuery({
-    queryKey: [productKeys.getBrands.create()],
-    queryFn: () => apis.getBrands(),
-    ...options,
+    ...rest,
+    enabled: !!productId && Boolean(enabled),
+    queryKey: [productKeys.productReviews.create(productId)],
+    queryFn: () =>
+      storeClient.products.getProductReviews({
+        params: { id: productId, useMock },
+      }),
+    initialData: initialData as ReactQueryUnwrapPromise<
+      typeof storeClient.products.getProductReviews
+    >,
   });
 };
 
 /**
- * Hook to get all product types
+ * Hook to fetch all available product brands
+ *
+ * @param options - React Query options (enabled, initialData, etc.)
+ * @returns Query result with list of all brands
+ *
+ * @example
+ * ```tsx
+ * const { data: brands, isLoading } = useGetBrands();
+ *
+ * return (
+ *   <Select placeholder="Select Brand">
+ *     {brands?.data?.map(brand => (
+ *       <Select.Option key={brand.id} value={brand.id}>
+ *         {brand.name}
+ *       </Select.Option>
+ *     ))}
+ *   </Select>
+ * );
+ * ```
  */
-export const useGetTypes = (options?: ReactQueryOptions) => {
+export const useGetBrands = (
+  options?: ReactQueryOptions & { useMock?: boolean }
+) => {
+  const {
+    enabled = true,
+    initialData,
+    useMock = false,
+    ...rest
+  } = options || {};
   return useQuery({
-    queryKey: [productKeys.getTypes.create()],
-    queryFn: () => apis.getTypes(),
-    ...options,
+    ...rest,
+    enabled: Boolean(enabled),
+    queryKey: [productKeys.brands.create()],
+    queryFn: () =>
+      storeClient.products.getBrands({
+        params: { useMock },
+      }),
+    initialData: initialData as ReactQueryUnwrapPromise<
+      typeof storeClient.products.getBrands
+    >,
+  });
+};
+
+/**
+ * Hook to fetch all available product types/categories
+ *
+ * @param options - React Query options (enabled, initialData, etc.)
+ * @returns Query result with list of all product types
+ *
+ * @example
+ * ```tsx
+ * const { data: types, isLoading } = useGetTypes();
+ *
+ * return (
+ *   <Tabs>
+ *     <Tabs.TabPane key="all" tab="All Products" />
+ *     {types?.data?.map(type => (
+ *       <Tabs.TabPane key={type.id} tab={type.name} />
+ *     ))}
+ *   </Tabs>
+ * );
+ * ```
+ */
+export const useGetTypes = (
+  options?: ReactQueryOptions & { useMock?: boolean }
+) => {
+  const {
+    enabled = true,
+    initialData,
+    useMock = false,
+    ...rest
+  } = options || {};
+  return useQuery({
+    ...rest,
+    enabled: Boolean(enabled),
+    queryKey: [productKeys.types.create()],
+    queryFn: () =>
+      storeClient.products.getTypes({
+        params: { useMock },
+      }),
+    initialData: initialData as ReactQueryUnwrapPromise<
+      typeof storeClient.products.getTypes
+    >,
   });
 };

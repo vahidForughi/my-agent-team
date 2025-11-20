@@ -1,24 +1,20 @@
-/**
- * Products Service Index
- * 
- * Central export point for all product-related services.
- * Following fdw-iraps pattern with complete service layer.
- */
+// Export all types
+export type * from './types';
 
-// Export types from types.ts (original interfaces)
-export type { Product, ProductWithDiscount, Brand, ProductType, StoreParams, Pagination } from './types';
+// Export input types (needed by consumers for params)
+export type { StoreParamsInput, ProductByIdInput } from './input';
 
-// Export schemas and zod-inferred types from schemas.ts
-export * from './schemas';
-
-// Export input schemas and types
-export * from './input';
-
-// Export mappers
-export * from './mappers';
-
-// Export APIs, hooks, and keys
-export * from './apis';
+// Export hooks (primary way to interact with products service)
 export * from './hooks';
+
+// Export cache keys for query invalidation
 export * from './keys';
 
+// Export only necessary schemas for external validation
+export {
+  productSchema,
+  brandSchema,
+  productTypeSchema,
+  reviewSchema,
+  stockStatusEnum,
+} from './schemas';

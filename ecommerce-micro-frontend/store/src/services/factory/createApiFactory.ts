@@ -14,8 +14,7 @@ import {
   RequestParams,
   RequestPayload,
 } from '../types';
-import { isApiErrorResponse, isApiResponse } from '../utils/common';
-import { createApiResponseSchemaFactory } from './createApiResponseSchemaFactory';
+import { isApiErrorResponse } from '../utils/common';
 
 export type ApiFactoryOptions<TResponse, TTransformed = TResponse> = {
   transformer?: (data: TResponse) => Nullable<TTransformed>;
@@ -29,12 +28,61 @@ type CreateApiFactoryOptions = {
   version?: string;
 };
 
+/**
+ * Helper function to determine the base URL based on mock flag
+ *
+ * @param useMock - Whether to use mock API
+ * @param defaultBaseURL - Default base URL from axios client
+ * @returns Appropriate base URL
+ */
+function getBaseURL(useMock: boolean, defaultBaseURL: string): string {
+  return useMock ? '/api' : defaultBaseURL;
+}
+
+/**
+ * Creates an API factory function for making HTTP requests with validation and transformation
+ *
+ * This factory provides:
+ * - Automatic request/response validation using Zod schemas
+ * - Data transformation via mapper functions
+ * - Mock API support for development/testing
+ * - URL parameter interpolation
+ * - Consistent error handling
+ *
+ * @param rootEndpoint - Base endpoint path (e.g., '/Catalog', '/Orders')
+ * @param options - Configuration options
+ * @param options.version - API version prefix (defaults to 'v1')
+ *
+ * @returns API factory function for making requests
+ *
+ * @example
+ * ```typescript
+ * // Create factory for product endpoints
+ * const apiFactory = createApiFactory('/Catalog');
+ *
+ * // Make GET request with query params
+ * const products = await apiFactory('GET', '/GetAllProducts', {
+ *   params: { page: 1, limit: 10 }
+ * }, {
+ *   transformer: productMapper.toListDto,
+ *   paramsSchema: listProductsInput
+ * });
+ *
+ * // Make POST request with payload
+ * const newProduct = await apiFactory('POST', '/CreateProduct', {
+ *   payload: { name: 'New Product', price: 99.99 }
+ * }, {
+ *   transformer: productMapper.toDto,
+ *   payloadSchema: createProductSchema
+ * });
+ * ```
+ */
 export function createApiFactory(
   rootEndpoint: string,
   options: CreateApiFactoryOptions = { version: 'v1' }
 ) {
   const { version = 'v1' } = options;
-  
+
   return async function <
     TResponse,
     TTransformed = TResponse,
@@ -43,7 +91,7 @@ export function createApiFactory(
       TTransformed
     > = ApiFactoryOptions<TResponse, TTransformed>,
     TParams extends RequestParams = RequestParams,
-    TPayload extends RequestPayload = RequestPayload,
+    TPayload extends RequestPayload = RequestPayload
   >(
     method: Method | string,
     path: `/${string}` | null,
@@ -52,32 +100,23 @@ export function createApiFactory(
   ): Promise<Nullable<ApiResponse<TTransformed>>> {
     const { params = {}, payload = {} } = request ?? {};
 
-    // Process rootEndpoint for placeholders
     const { finalPath: processedRootEndpoint, usedKeys: rootPathUsedKeys } =
-      buildPath(
-        rootEndpoint, // rootEndpoint from createApiFactory closure
-        params,
-        payload
-      );
+      buildPath(rootEndpoint, params, payload);
 
-    // Process pathSegment (original 'path' argument) for placeholders
     const pathSegment = path ?? '';
     const { finalPath: processedPathSegment, usedKeys: segmentPathUsedKeys } =
       buildPath(pathSegment, params, payload);
 
-    // Combine the processed parts to form the final path for the URL
     const finalUrlPath = processedRootEndpoint + processedPathSegment;
 
-    // Combine all keys used in path construction (root + segment)
     const allKeysUsedInPath = new Set<string>([
       ...rootPathUsedKeys,
       ...segmentPathUsedKeys,
     ]);
 
-    const { baseURL: defaultBaseURL } = axiosClient.defaults;
-    const baseURL = options?.useMock ? `/api` : `${defaultBaseURL}`;
+    const defaultBaseURL = axiosClient.defaults.baseURL ?? '';
+    const baseURL = getBaseURL(options?.useMock ?? false, defaultBaseURL);
 
-    // Remove leading slash from finalUrlPath to prevent double slashes
     const cleanPath = finalUrlPath.startsWith('/')
       ? finalUrlPath.slice(1)
       : finalUrlPath;
@@ -98,11 +137,11 @@ export function createApiFactory(
 
     const filteredParams = filterUsedKeys(
       validParams as Record<PropertyKey, unknown>,
-      allKeysUsedInPath // Use combined keys
+      allKeysUsedInPath
     );
     const filteredPayload = filterUsedKeys(
       payload as Record<PropertyKey, unknown>,
-      allKeysUsedInPath // Use combined keys
+      allKeysUsedInPath
     );
 
     const response = await axiosClient<ApiResult<TResponse>>({
@@ -115,25 +154,25 @@ export function createApiFactory(
       },
       data: filteredPayload,
       ...request?.options,
-    }).then((res) => res.data); // destructure the data from the axios
+    }).then((res) => res.data);
 
     let validResponse: Nullable<ApiResult<TResponse>>;
 
     if (isApiErrorResponse(response)) {
       console.error('[API Error]', response.error.message);
-      const error = new Error('Something went wrong');
-      (error as any).cause = response;
+      const error = new Error(
+        `API Error: ${response.error.message} (${response.error.code})`
+      ) as Error & { cause?: typeof response };
+      error.cause = response;
       throw error;
     }
 
-    if (options?.responseSchema && isApiResponse(response)) {
-      const apiResponseSchema = createApiResponseSchemaFactory(
+    if (options?.responseSchema) {
+      validResponse = parseResponse(
+        response,
         options.responseSchema
-      );
-      validResponse = parseResponse(response, apiResponseSchema) as Nullable<
-        ApiResult<TResponse>
-      >;
-    } else if (response && 'data' in response) {
+      ) as Nullable<ApiResult<TResponse>>;
+    } else {
       validResponse = response;
     }
 
@@ -146,23 +185,15 @@ export function createApiFactory(
       ApiResponse<TTransformed>
     >;
 
-    if (
-      typeof options?.transformer === 'function' &&
-      validResponse &&
-      isApiResponse(validResponse)
-    ) {
-      const transformed = options.transformer(validResponse.data);
+    if (typeof options?.transformer === 'function' && validResponse) {
+      const transformed = options.transformer(validResponse as TResponse);
       if (transformed === null || transformed === undefined) {
         throw new Error('Transformed data cannot be null or undefined');
       }
 
-      transformedData = {
-        data: transformed,
-        meta: validResponse.meta,
-      };
+      transformedData = transformed;
     }
 
     return transformedData;
   };
 }
-

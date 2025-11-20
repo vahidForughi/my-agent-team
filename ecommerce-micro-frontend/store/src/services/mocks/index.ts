@@ -1,30 +1,29 @@
 import MockAdapter from 'axios-mock-adapter';
 import { axiosClient } from '../httpClient';
-import registerProductMocks from './products/apis';
+import registerProductsMocks from './products/apis';
 
 let mockAdapter: MockAdapter | null = null;
 
 /**
  * Setup mock adapter for Axios client
- * This should be called before any API requests
  */
 export function setupMocks() {
-  if (!mockAdapter) {
-    mockAdapter = new MockAdapter(axiosClient, { 
-      delayResponse: 500, // Simulate network delay
-      onNoMatch: 'passthrough', // Pass through requests that don't match any mock
-    });
-    
-    // Register all mock endpoints
-    registerProductMocks(mockAdapter);
-    
-    console.log('[Mocks] Mock adapter initialized');
+  if (mockAdapter) {
+    console.warn('[Mocks] Mock adapter already initialized');
+    return;
   }
-  return mockAdapter;
+
+  mockAdapter = new MockAdapter(axiosClient, {
+    delayResponse: 500,
+  });
+
+  registerProductsMocks(mockAdapter);
+
+  console.log('[Mocks] Store mock adapter initialized with products endpoints');
 }
 
 /**
- * Reset all mocks
+ * Reset mock adapter
  */
 export function resetMocks() {
   if (mockAdapter) {
@@ -34,7 +33,7 @@ export function resetMocks() {
 }
 
 /**
- * Restore original axios behavior (disable mocks)
+ * Restore Axios to its original state
  */
 export function restoreMocks() {
   if (mockAdapter) {
@@ -43,4 +42,3 @@ export function restoreMocks() {
     console.log('[Mocks] Mock adapter restored');
   }
 }
-
