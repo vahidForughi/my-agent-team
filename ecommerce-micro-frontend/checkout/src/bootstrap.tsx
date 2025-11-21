@@ -5,7 +5,6 @@ import Module from './app/Module';
 import { queryClient } from './services/queryClient';
 import { setupMocks } from './services/mocks';
 
-// Setup mock adapter for development
 setupMocks();
 
 const root = ReactDOM.createRoot(

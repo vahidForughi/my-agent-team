@@ -33,7 +33,7 @@ jobs:
               - '*.sln'
               - '**/*.csproj'
             frontend:
-              - 'client/**'
+              - 'ecommerce-micro-frontend/**'
             docker:
               - 'docker-compose*.yml'
               - '**/Dockerfile'
