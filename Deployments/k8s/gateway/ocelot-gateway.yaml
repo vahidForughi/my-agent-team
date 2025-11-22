@@ -93,7 +93,7 @@ metadata:
   labels:
     app: ocelot-gateway
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: ocelot-gateway
@@ -109,7 +109,7 @@ spec:
         fsGroup: 2000
       containers:
         - name: ocelot-gateway
-          image: eshop/ocelot.apigw:v1.0.0
+          image: eshop/ocelot.apigw:latest
           ports:
             - containerPort: 80
           securityContext:
@@ -156,7 +156,7 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 3
             failureThreshold: 3
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
       volumes:
         - name: ocelot-config-volume
           configMap:
@@ -190,7 +190,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: ocelot-gateway-deployment
-  minReplicas: 2
+  minReplicas: 1
   maxReplicas: 5
   metrics:
     - type: Resource

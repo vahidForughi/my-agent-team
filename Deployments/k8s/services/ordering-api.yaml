@@ -6,7 +6,7 @@ metadata:
   labels:
     app: ordering-api
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: ordering-api
@@ -22,7 +22,7 @@ spec:
         fsGroup: 2000
       containers:
         - name: ordering-api
-          image: eshop/ordering.api:v1.0.0
+          image: eshop/ordering.api:latest
           ports:
             - containerPort: 80
           securityContext:
@@ -72,7 +72,7 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 3
             failureThreshold: 3
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
       volumes:
         - name: tmp-volume
           emptyDir: {}
@@ -103,7 +103,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: ordering-api-deployment
-  minReplicas: 2
+  minReplicas: 1
   maxReplicas: 10
   metrics:
     - type: Resource
