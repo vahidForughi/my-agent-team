@@ -33,7 +33,7 @@ jobs:
           driver: docker
           container-runtime: docker
           cpus: 4
-          memory: 8192
+          memory: 12288
 
       - name: Verify Minikube
         run: |
@@ -77,14 +77,39 @@ jobs:
       - name: Wait for pods to be ready
         run: |
           echo "⏳ Waiting for pods to be ready..."
-          
-          # Wait for ecommerce namespace pods
-          kubectl wait --for=condition=ready pod --all -n ecommerce --timeout=600s || true
-          
-          # Wait for monitoring namespace pods
-          kubectl wait --for=condition=ready pod --all -n monitoring --timeout=600s || true
-          
+
+          # Wait for critical services first (databases and core services)
+          echo "Waiting for databases..."
+          kubectl wait --for=condition=ready pod -l app=mongodb -n ecommerce --timeout=300s || echo "MongoDB timeout"
+          kubectl wait --for=condition=ready pod -l app=redis -n ecommerce --timeout=300s || echo "Redis timeout"
+          kubectl wait --for=condition=ready pod -l app=postgres -n ecommerce --timeout=300s || echo "Postgres timeout"
+          kubectl wait --for=condition=ready pod -l app=sqlserver -n ecommerce --timeout=300s || echo "SQLServer timeout"
+
+          echo "Waiting for infrastructure services..."
+          kubectl wait --for=condition=ready pod -l app=rabbitmq -n ecommerce --timeout=300s || echo "RabbitMQ timeout"
+          kubectl wait --for=condition=ready pod -l app=elasticsearch -n ecommerce --timeout=300s || echo "Elasticsearch timeout"
+
+          echo "Waiting for microservices..."
+          kubectl wait --for=condition=ready pod -l app=catalog-api -n ecommerce --timeout=300s || echo "Catalog API timeout"
+          kubectl wait --for=condition=ready pod -l app=basket-api -n ecommerce --timeout=300s || echo "Basket API timeout"
+          kubectl wait --for=condition=ready pod -l app=discount-api -n ecommerce --timeout=300s || echo "Discount API timeout"
+          kubectl wait --for=condition=ready pod -l app=ordering-api -n ecommerce --timeout=300s || echo "Ordering API timeout"
+          kubectl wait --for=condition=ready pod -l app=ocelot-gateway -n ecommerce --timeout=300s || echo "Gateway timeout"
+
+          echo "Waiting for monitoring stack..."
+          kubectl wait --for=condition=ready pod -l app=prometheus -n monitoring --timeout=300s || echo "Prometheus timeout"
+          kubectl wait --for=condition=ready pod -l app=grafana -n monitoring --timeout=300s || echo "Grafana timeout"
+
+          # Kibana is allowed to take longer - non-blocking
+          echo "Checking Kibana status (non-blocking)..."
+          kubectl wait --for=condition=ready pod -l app=kibana -n ecommerce --timeout=60s || echo "⚠️ Kibana still starting (this is expected and OK)"
+
+          echo ""
           echo "✅ Pod readiness check completed"
+          echo ""
+          echo "📊 Final pod status:"
+          kubectl get pods -n ecommerce
+          kubectl get pods -n monitoring
 
       - name: Validate deployment
         run: |

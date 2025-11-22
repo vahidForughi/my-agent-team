@@ -101,17 +101,23 @@ deploy_databases() {
 # Deploy infrastructure services
 deploy_infrastructure() {
     log_info "Deploying infrastructure services..."
-    
+
     kubectl apply -f infrastructure/rabbitmq.yaml
     kubectl apply -f infrastructure/elasticsearch.yaml
     kubectl apply -f infrastructure/kibana.yaml
-    
+
     log_info "Waiting for infrastructure services to be ready..."
     kubectl wait --for=condition=ready pod -l app=rabbitmq -n ecommerce --timeout=300s
     kubectl wait --for=condition=ready pod -l app=elasticsearch -n ecommerce --timeout=300s
-    kubectl wait --for=condition=ready pod -l app=kibana -n ecommerce --timeout=300s
-    
-    log_success "Infrastructure services deployed and ready"
+
+    # Kibana can take longer to start, make it non-blocking for CI
+    log_info "Waiting for Kibana to be ready (this may take a while)..."
+    if ! kubectl wait --for=condition=ready pod -l app=kibana -n ecommerce --timeout=600s; then
+        log_warning "Kibana is taking longer than expected to start. It will continue starting in the background."
+        log_warning "Check status with: kubectl get pods -l app=kibana -n ecommerce"
+    fi
+
+    log_success "Infrastructure services deployed (Kibana may still be starting)"
 }
 
 # Deploy microservices
