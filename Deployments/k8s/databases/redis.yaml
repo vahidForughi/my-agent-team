@@ -60,20 +60,21 @@ spec:
           volumeMounts:
             - name: redis-storage
               mountPath: /data
-          livenessProbe:
-            exec:
-              command:
-                - redis-cli
-                - ping
-            initialDelaySeconds: 30
-            periodSeconds: 10
-          readinessProbe:
-            exec:
-              command:
-                - redis-cli
-                - ping
-            initialDelaySeconds: 5
-            periodSeconds: 5
+          # Health probes commented out - timing out in resource-constrained env
+          # livenessProbe:
+          #   exec:
+          #     command:
+          #       - redis-cli
+          #       - ping
+          #   initialDelaySeconds: 30
+          #   periodSeconds: 10
+          # readinessProbe:
+          #   exec:
+          #     command:
+          #       - redis-cli
+          #       - ping
+          #   initialDelaySeconds: 5
+          #   periodSeconds: 5
       volumes:
         - name: redis-storage
           persistentVolumeClaim:

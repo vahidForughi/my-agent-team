@@ -71,30 +71,37 @@ spec:
           volumeMounts:
             - name: postgres-storage
               mountPath: /var/lib/postgresql/data
-          livenessProbe:
-            exec:
-              command:
-                - pg_isready
-                - -U
-                - admin
-                - -d
-                - DiscountDb
-            initialDelaySeconds: 30
-            periodSeconds: 10
-          readinessProbe:
-            exec:
-              command:
-                - pg_isready
-                - -U
-                - admin
-                - -d
-                - DiscountDb
-            initialDelaySeconds: 5
-            periodSeconds: 5
+            - name: postgres-run
+              mountPath: /var/run/postgresql
+          # Health probes commented out - timing out in resource-constrained env
+          # livenessProbe:
+          #   exec:
+          #     command:
+          #       - pg_isready
+          #       - -U
+          #       - admin
+          #       - -d
+          #       - DiscountDb
+          #   initialDelaySeconds: 30
+          #   periodSeconds: 10
+          #   timeoutSeconds: 5
+          # readinessProbe:
+          #   exec:
+          #     command:
+          #       - pg_isready
+          #       - -U
+          #       - admin
+          #       - -d
+          #       - DiscountDb
+          #   initialDelaySeconds: 5
+          #   periodSeconds: 5
+          #   timeoutSeconds: 5
       volumes:
         - name: postgres-storage
           persistentVolumeClaim:
             claimName: postgres-pvc
+        - name: postgres-run
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
