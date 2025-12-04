@@ -186,17 +186,17 @@ function CouponDetailsDrawer(props: CouponDetailsDrawerProps) {
       open={open}
       onClose={onClose}
       footer={
-          <Button
-            type="primary"
-            size="large"
-            icon={isApplied ? <CheckCircleFilled /> : <CheckOutlined />}
-            onClick={() => handleApply(coupon)}
-            disabled={isApplied || isApplying}
-            loading={isApplying}
+        <Button
+          type="primary"
+          size="large"
+          icon={isApplied ? <CheckCircleFilled /> : <CheckOutlined />}
+          onClick={() => handleApply(coupon)}
+          disabled={isApplied || isApplying}
+          loading={isApplying}
           block
-          >
-            {isApplied ? 'Already Applied' : 'Apply Coupon'}
-          </Button>
+        >
+          {isApplied ? 'Already Applied' : 'Apply Coupon'}
+        </Button>
       }
     >
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
@@ -204,7 +204,7 @@ function CouponDetailsDrawer(props: CouponDetailsDrawerProps) {
         <Space
           style={{
             height: 8,
-            background: `linear-gradient(135deg, ${couponBrandTokens.brandPrimary} 0%, ${couponBrandTokens.brandPrimarySoft} 100%)`,
+            background: couponBrandTokens.brandPrimary,
             width: '100%',
             borderRadius: 4,
           }}
@@ -247,8 +247,8 @@ function CouponDetailsDrawer(props: CouponDetailsDrawerProps) {
                 <CouponDetailItem key={item.label} label={item.label}>
                   <Text {...textProps} style={item.style}>
                     {item.value}
-              </Text>
-            </CouponDetailItem>
+                  </Text>
+                </CouponDetailItem>
               );
             })}
           </Space>

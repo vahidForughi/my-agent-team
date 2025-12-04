@@ -33,7 +33,7 @@ function CouponDiscountBadge(props: CouponDiscountBadgeProps) {
         width: size,
         height: size,
         borderRadius: '50%',
-        background: `linear-gradient(135deg, ${couponBrandTokens.brandPrimary} 0%, ${couponBrandTokens.brandPrimarySoft} 100%)`,
+        background: couponBrandTokens.brandPrimary,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

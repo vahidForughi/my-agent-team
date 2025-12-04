@@ -1,8 +1,11 @@
 import React from 'react';
 import { BrowserRouter, useRoutes } from 'react-router-dom';
 import { ConfigProvider, theme } from 'antd';
-import { AppConfigProvider } from '../context/AppConfigContext';
+import { AppConfigProvider, useAppConfig } from '../context/AppConfigContext';
 import { routes } from '../routes';
+import { themeConfig } from '../config/theme';
+import '../i18n/config';
+import '../styles.less';
 
 /**
  * Router Component that uses useRoutes hook
@@ -13,6 +16,31 @@ function AppRoutes() {
 }
 
 /**
+ * Theme Wrapper Component
+ *
+ * This internal component consumes the theme from AppConfigContext
+ * and applies it to the Ant Design ConfigProvider.
+ * Must be rendered inside AppConfigProvider.
+ */
+function ThemedApp() {
+  const { appContext } = useAppConfig();
+
+  return (
+    <ConfigProvider
+      theme={{
+        ...themeConfig,
+        algorithm:
+          appContext.theme === 'dark'
+            ? theme.darkAlgorithm
+            : theme.defaultAlgorithm,
+      }}
+    >
+      <AppRoutes />
+    </ConfigProvider>
+  );
+}
+
+/**
  * Main Application Component
  *
  * This component sets up the routing and layout for the host application.
@@ -20,33 +48,17 @@ function AppRoutes() {
  * centralized configuration and context.
  *
  * Routes are defined in routes.tsx using the refactored micro frontend architecture.
+ *
+ * Theme is now managed through AppConfigContext for proper state management
+ * and synchronization across the application.
  */
 export function App() {
-  const [currentTheme] = React.useState<'light' | 'dark'>(() => {
-    const storedTheme = localStorage.getItem('theme');
-    return (storedTheme as 'light' | 'dark') || 'light';
-  });
-
   return (
-    <ConfigProvider
-      theme={{
-        algorithm:
-          currentTheme === 'dark'
-            ? theme.darkAlgorithm
-            : theme.defaultAlgorithm,
-        token: {
-          colorPrimary: '#3048a5', // NextTech primary color
-          borderRadius: 6,
-          fontFamily: "'Poppins', sans-serif",
-        },
-      }}
-    >
-      <BrowserRouter>
-        <AppConfigProvider>
-          <AppRoutes />
-        </AppConfigProvider>
-      </BrowserRouter>
-    </ConfigProvider>
+    <BrowserRouter>
+      <AppConfigProvider>
+        <ThemedApp />
+      </AppConfigProvider>
+    </BrowserRouter>
   );
 }
 

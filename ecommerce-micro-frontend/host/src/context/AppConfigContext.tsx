@@ -15,18 +15,11 @@ const AppConfigContext = createContext<AppConfigContextType | undefined>(
   undefined
 );
 
-/**
- * App Configuration Provider
- *
- * Provides centralized configuration for all micro-frontends in the application.
- * This includes user context, navigation handlers, error handlers, and theme settings.
- */
 export const AppConfigProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const navigate = useNavigate();
 
-  // Initialize user from localStorage if authenticated
   const [user, setUser] = useState<User | null>(() => {
     if (isAuthenticated()) {
       const storedUser = localStorage.getItem('user');
@@ -37,12 +30,9 @@ export const AppConfigProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const storedTheme = localStorage.getItem('theme');
-    return (storedTheme as 'light' | 'dark') || 'light';
+    return storedTheme === 'dark' ? 'dark' : 'light';
   });
 
-  /**
-   * Update user in context and localStorage
-   */
   const updateUser = useCallback((newUser: User | null) => {
     setUser(newUser);
     if (newUser) {
@@ -52,18 +42,11 @@ export const AppConfigProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
-  /**
-   * Update theme in context and localStorage
-   */
   const updateTheme = useCallback((newTheme: 'light' | 'dark') => {
     setTheme(newTheme);
     localStorage.setItem('theme', newTheme);
   }, []);
 
-  /**
-   * Navigation handler for micro-frontends
-   * This allows remote apps to navigate within the host app
-   */
   const handleNavigate = useCallback(
     (path: string) => {
       try {
@@ -76,10 +59,6 @@ export const AppConfigProvider: React.FC<{ children: React.ReactNode }> = ({
     [navigate]
   );
 
-  /**
-   * Logout handler for micro-frontends
-   * Clears user data and navigates to login page
-   */
   const handleLogout = useCallback(() => {
     try {
       logout();
@@ -92,19 +71,11 @@ export const AppConfigProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [navigate, updateUser]);
 
-  /**
-   * Error handler for micro-frontends
-   * Provides centralized error handling and logging
-   */
   const handleError = useCallback((error: Error) => {
     console.error('[AppConfig] Micro-frontend error:', error);
     message.error(error.message || 'An error occurred');
-
-    // Optional: Send errors to monitoring service
-    // sendErrorToMonitoring(error);
   }, []);
 
-  // App context shared with all micro-frontends
   const appContext: AppContext = {
     user,
     token: getAuthToken(),
@@ -114,7 +85,6 @@ export const AppConfigProvider: React.FC<{ children: React.ReactNode }> = ({
     apiBaseUrl: process.env.NX_API_BASE_URL || 'http://localhost:3000/api',
   };
 
-  // Configuration object passed to micro-frontends
   const config: MicroFrontendConfig = {
     appContext,
     onNavigate: handleNavigate,
@@ -136,20 +106,6 @@ export const AppConfigProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 };
 
-/**
- * Hook to access app configuration
- *
- * @example
- * ```tsx
- * const { config, appContext, updateUser } = useAppConfig();
- *
- * // Use config to inject micro-frontends
- * StoreApp.inject('container', { config });
- *
- * // Update user after login
- * updateUser(loggedInUser);
- * ```
- */
 export const useAppConfig = (): AppConfigContextType => {
   const context = useContext(AppConfigContext);
   if (!context) {

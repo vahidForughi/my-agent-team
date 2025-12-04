@@ -1,10 +1,12 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Empty } from 'antd';
+import { Card, Button, Empty, Spin, List, Typography, Flex, Space } from 'antd';
 import { DeleteOutlined } from '@ant-design/icons';
-import './CartPreview.less';
+import { brandGradient } from '../../config/theme';
 
-interface CartItem {
+const { Text } = Typography;
+
+export interface CartItem {
   id: string;
   name: string;
   price: number;
@@ -14,102 +16,179 @@ interface CartItem {
 
 interface CartPreviewProps {
   visible: boolean;
+  items?: CartItem[];
+  isLoading?: boolean;
+  onRemoveItem?: (id: string) => void;
 }
 
-const CartPreview: React.FC<CartPreviewProps> = ({ visible }) => {
+const CartPreview: React.FC<CartPreviewProps> = ({
+  visible,
+  items = [],
+  isLoading = false,
+  onRemoveItem,
+}) => {
   const navigate = useNavigate();
 
-  // TODO: Connect to actual cart store
-  const cartItems: CartItem[] = [
-    {
-      id: '1',
-      name: 'Gaming Keyboard RGB Mechanical',
-      price: 89.99,
-      quantity: 1,
-      image:
-        'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=100&h=100&fit=crop',
-    },
-    {
-      id: '2',
-      name: 'Wireless Mouse Pro',
-      price: 49.99,
-      quantity: 2,
-      image:
-        'https://images.unsplash.com/photo-1527814050087-3793815479db?w=100&h=100&fit=crop',
-    },
-    {
-      id: '3',
-      name: 'USB-C Charging Cable',
-      price: 19.99,
-      quantity: 1,
-      image:
-        'https://images.unsplash.com/photo-1620570483311-5f58e615b050?w=100&h=100&fit=crop',
-    },
-  ];
+  if (!visible) return null;
 
-  const totalAmount = cartItems.reduce(
+  const totalAmount = items.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
 
   const handleRemoveItem = (id: string) => {
-    // TODO: Implement remove from cart
-    console.log('Remove item:', id);
+    onRemoveItem?.(id);
   };
 
-  if (!visible) return null;
-
   return (
-    <div className="cart-preview">
-      <div className="cart-preview-header">
-        <h3>Shopping Cart ({cartItems.length} items)</h3>
-      </div>
-
-      <div className="cart-preview-body">
-        {cartItems.length === 0 ? (
+    <Card
+      style={{
+        position: 'absolute',
+        top: 'calc(100% + 16px)',
+        right: 0,
+        width: 400,
+        borderRadius: 16,
+        boxShadow: '0 12px 48px rgba(15, 23, 42, 0.12)',
+        zIndex: 1002,
+        border: '1px solid #f1f5f9',
+      }}
+      styles={{
+        header: {
+          padding: '20px 24px',
+          borderBottom: '1px solid #f1f5f9',
+          background: 'rgba(102, 126, 234, 0.03)',
+          borderRadius: '16px 16px 0 0',
+        },
+        body: {
+          padding: 0,
+          maxHeight: 420,
+          overflowY: 'auto',
+        },
+      }}
+      title={
+        <Text strong style={{ fontSize: 16, fontWeight: 600 }}>
+          Shopping Cart ({items.length} items)
+        </Text>
+      }
+    >
+      {isLoading ? (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '60px 20px', minHeight: 200 }}>
+          <Spin tip="Loading cart..." />
+        </div>
+      ) : items.length === 0 ? (
+        <div style={{ padding: '40px 20px' }}>
           <Empty
             description="Your cart is empty"
             image={Empty.PRESENTED_IMAGE_SIMPLE}
           />
-        ) : (
-          <>
-            <div className="cart-items">
-              {cartItems.map((item) => (
-                <div key={item.id} className="cart-item">
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="cart-item-image"
-                  />
-                  <div className="cart-item-info">
-                    <div className="cart-item-name">{item.name}</div>
-                    <div className="cart-item-price">
-                      ${item.price.toFixed(2)} x {item.quantity}
-                    </div>
-                  </div>
-                  <button
-                    className="cart-item-remove"
+        </div>
+      ) : (
+        <>
+          <List
+            dataSource={items}
+            style={{ padding: 16 }}
+            renderItem={(item) => (
+              <List.Item
+                style={{
+                  padding: '14px',
+                  borderRadius: 12,
+                  marginBottom: 10,
+                  border: '1px solid transparent',
+                }}
+                actions={[
+                  <Button
+                    key="remove"
+                    type="text"
+                    icon={<DeleteOutlined />}
                     onClick={() => handleRemoveItem(item.id)}
-                  >
-                    <DeleteOutlined />
-                  </button>
-                </div>
-              ))}
-            </div>
+                    aria-label={`Remove ${item.name} from cart`}
+                    style={{
+                      color: '#94a3b8',
+                    }}
+                  />,
+                ]}
+              >
+                <List.Item.Meta
+                  avatar={
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      style={{
+                        width: 70,
+                        height: 70,
+                        objectFit: 'cover',
+                        borderRadius: 10,
+                        border: '1px solid #f1f5f9',
+                        boxShadow: '0 2px 8px rgba(15, 23, 42, 0.06)',
+                      }}
+                    />
+                  }
+                  title={
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 500,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {item.name}
+                    </Text>
+                  }
+                  description={
+                    <Text
+                      style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: brandGradient.start,
+                      }}
+                    >
+                      ${item.price.toFixed(2)} x {item.quantity}
+                    </Text>
+                  }
+                />
+              </List.Item>
+            )}
+          />
 
-            <div className="cart-preview-footer">
-              <div className="cart-total">
-                <span>Subtotal:</span>
-                <span className="cart-total-amount">
-                  ${totalAmount.toFixed(2)}
-                </span>
-              </div>
+          <div
+            style={{
+              padding: '20px 24px',
+              borderTop: '1px solid #f1f5f9',
+              background: '#fafbfc',
+              borderRadius: '0 0 16px 16px',
+            }}
+          >
+            <Flex justify="space-between" align="center" style={{ marginBottom: 18 }}>
+              <Text style={{ fontSize: 16, fontWeight: 600 }}>Subtotal:</Text>
+              <Text
+                style={{
+                  fontSize: 22,
+                  fontWeight: 700,
+                  color: brandGradient.start,
+                  letterSpacing: '-0.5px',
+                }}
+              >
+                ${totalAmount.toFixed(2)}
+              </Text>
+            </Flex>
+            <Space direction="vertical" style={{ width: '100%' }} size="small">
               <Button
                 type="primary"
                 size="large"
                 block
                 onClick={() => navigate('/checkout')}
-                className="cart-checkout-btn"
+                style={{
+                  background: brandGradient.start,
+                  border: 'none',
+                  height: 48,
+                  fontWeight: 600,
+                  fontSize: 14,
+                  letterSpacing: '0.3px',
+                  borderRadius: 12,
+                  boxShadow: '0 4px 16px rgba(102, 126, 234, 0.25)',
+                }}
               >
                 Proceed to Checkout
               </Button>
@@ -117,15 +196,21 @@ const CartPreview: React.FC<CartPreviewProps> = ({ visible }) => {
                 size="large"
                 block
                 onClick={() => navigate('/cart')}
-                style={{ marginTop: '8px' }}
+                style={{
+                  height: 44,
+                  borderRadius: 12,
+                  border: '2px solid #e2e8f0',
+                  fontWeight: 600,
+                  color: '#64748b',
+                }}
               >
                 View Full Cart
               </Button>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
+            </Space>
+          </div>
+        </>
+      )}
+    </Card>
   );
 };
 

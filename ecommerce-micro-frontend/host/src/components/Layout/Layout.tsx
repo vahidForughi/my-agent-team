@@ -1,9 +1,10 @@
 import React from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
-import TopBar from '../TopBar/TopBar';
+import { Layout as AntLayout } from 'antd';
 import Navbar from '../Navbar/Navbar';
 import Footer from '../Footer/Footer';
-import './Layout.less';
+
+const { Content } = AntLayout;
 
 /**
  * AppLayout Component
@@ -15,18 +16,27 @@ const AppLayout: React.FC = () => {
   const isLoginPage = location.pathname === '/login';
 
   return (
-    <div className="app-layout">
-      {!isLoginPage && (
-        <>
-          <TopBar />
-          <Navbar />
-        </>
-      )}
-      <main className="app-content">
+    <AntLayout
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      {!isLoginPage && <Navbar />}
+      <Content
+        style={{
+          flex: 1,
+          marginTop: isLoginPage ? 0 : 176,
+          minHeight: isLoginPage ? '100vh' : 'calc(100vh - 176px)',
+          background: '#ffffff',
+          padding: isLoginPage ? 0 : '32px 0',
+        }}
+      >
         <Outlet />
-      </main>
+      </Content>
       {!isLoginPage && <Footer />}
-    </div>
+    </AntLayout>
   );
 };
 

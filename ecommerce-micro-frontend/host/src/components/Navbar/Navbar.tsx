@@ -1,267 +1,138 @@
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import {
-  ShoppingCartOutlined,
-  UserOutlined,
-  SearchOutlined,
-  MenuOutlined,
-  HeartOutlined,
-  BellOutlined,
-} from '@ant-design/icons';
-import { Badge, Input, Dropdown, Avatar } from 'antd';
-import type { MenuProps } from 'antd';
-import { isAuthenticated, logout } from '../../helpers/auth';
-import CartPreview from '../CartPreview/CartPreview';
-import './Navbar.less';
+import { useNavigate } from 'react-router-dom';
+import { Flex, Typography, Button } from 'antd';
+import NavbarSearch from './NavbarSearch';
+import NavbarActions from './NavbarActions';
+import NavbarCategories from './NavbarCategories';
+import NavbarQuickLinks from './NavbarQuickLinks';
+import LanguageSwitcher from '../LanguageSwitcher/LanguageSwitcher';
+import { CartItem } from '../CartPreview/CartPreview';
+import { brandGradient } from '../../config/theme';
+
+const { Title } = Typography;
 
 const Navbar: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const authenticated = isAuthenticated();
-  const basketCount = 3; // TODO: Connect to basket store
-  const [searchValue, setSearchValue] = React.useState('');
-  const [showCategories, setShowCategories] = React.useState(false);
-  const [showCartPreview, setShowCartPreview] = React.useState(false);
 
-  const handleLogin = () => {
-    navigate('/login');
+  // TODO: Connect to actual cart store
+  const basketCount = 0;
+  const cartItems: CartItem[] = [];
+
+  const handleRemoveCartItem = (id: string) => {
+    // TODO: Implement cart item removal
+    console.info('Remove cart item:', id);
   };
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
-
-  const handleSearch = () => {
-    if (searchValue.trim()) {
-      navigate(`/store?search=${encodeURIComponent(searchValue)}`);
-    }
-  };
-
-  const isActive = (path: string) => {
-    if (path === '/') {
-      return location.pathname === path;
-    }
-    return location.pathname.startsWith(path);
-  };
-
-  const categories = [
-    { key: 'laptops', label: '💻 Laptops', path: '/store?cat=laptops' },
-    { key: 'phones', label: '📱 Smartphones', path: '/store?cat=phones' },
-    { key: 'tablets', label: '📱 Tablets', path: '/store?cat=tablets' },
-    { key: 'audio', label: '🎧 Audio', path: '/store?cat=audio' },
-    {
-      key: 'accessories',
-      label: '⌨️ Accessories',
-      path: '/store?cat=accessories',
-    },
-    { key: 'gaming', label: '🎮 Gaming', path: '/store?cat=gaming' },
-    { key: 'wearables', label: '⌚ Wearables', path: '/store?cat=wearables' },
-    { key: 'cameras', label: '📷 Cameras', path: '/store?cat=cameras' },
-  ];
-
-  const userMenuItems: MenuProps['items'] = authenticated
-    ? [
-        {
-          key: 'profile',
-          icon: <UserOutlined />,
-          label: 'My Account',
-          onClick: () => navigate('/account/profile'),
-        },
-        {
-          key: 'orders',
-          icon: <ShoppingCartOutlined />,
-          label: 'My Orders',
-          onClick: () => navigate('/account/orders'),
-        },
-        {
-          key: 'wishlist',
-          icon: <HeartOutlined />,
-          label: 'Wishlist',
-          onClick: () => navigate('/account/wishlist'),
-        },
-        {
-          type: 'divider',
-        },
-        {
-          key: 'logout',
-          label: 'Logout',
-          danger: true,
-          onClick: handleLogout,
-        },
-      ]
-    : [
-        {
-          key: 'login',
-          label: 'Login',
-          onClick: handleLogin,
-        },
-        {
-          key: 'register',
-          label: 'Register',
-          onClick: () => navigate('/register'),
-        },
-      ];
 
   return (
-    <div className="enhanced-navbar">
-      {/* Main Navbar */}
-      <div className="navbar-main">
-        <div className="navbar-content">
-          {/* Logo */}
-          <div className="navbar-logo" onClick={() => navigate('/')}>
-            <h1>NextTech</h1>
-            <span className="logo-tagline">Tech Store</span>
-          </div>
-
-          {/* Search Bar - Most Important! */}
-          <div className="navbar-search">
-            <Input
-              size="large"
-              placeholder="Search for products, brands, and more..."
-              prefix={<SearchOutlined />}
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
-              onPressEnter={handleSearch}
-              className="search-input"
-              suffix={
-                <button className="search-button" onClick={handleSearch}>
-                  Search
-                </button>
-              }
-            />
-            {/* Search suggestions will go here */}
-          </div>
-
-          {/* Right Actions */}
-          <div className="navbar-actions">
-            {/* Notifications */}
-            {authenticated && (
-              <Badge count={5} size="small">
-                <button
-                  className="action-btn"
-                  onClick={() => navigate('/notifications')}
-                >
-                  <BellOutlined />
-                  <span className="action-label">Notifications</span>
-                </button>
-              </Badge>
-            )}
-
-            {/* Wishlist */}
-            <button
-              className="action-btn"
-              onClick={() => navigate('/wishlist')}
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 1000,
+        background: '#ffffff',
+        boxShadow: '0 2px 8px rgba(15, 23, 42, 0.1)',
+      }}
+    >
+      <Flex
+        vertical
+        style={{
+          background: '#ffffff',
+        }}
+      >
+        <Flex
+          style={{
+            background: '#ffffff',
+            padding: '16px 0',
+            borderBottom: '1px solid #f1f5f9',
+            height: 88,
+            alignItems: 'center',
+          }}
+        >
+          <Flex
+            style={{
+              maxWidth: 1400,
+              margin: '0 auto',
+              padding: '0 32px',
+              width: '100%',
+              alignItems: 'center',
+              gap: 40,
+            }}
+          >
+            <Button
+              type="text"
+              onClick={() => navigate('/')}
+              style={{
+                minWidth: 180,
+                padding: 0,
+                height: 'auto',
+                textAlign: 'left',
+              }}
+              aria-label="NextTech home"
             >
-              <HeartOutlined />
-              <span className="action-label">Wishlist</span>
-            </button>
-
-            {/* Cart with Preview */}
-            <div
-              className="cart-container"
-              onMouseEnter={() => setShowCartPreview(true)}
-              onMouseLeave={() => setShowCartPreview(false)}
-            >
-              <Badge
-                count={basketCount}
-                showZero={false}
-                className="cart-badge"
+              <Title
+                level={1}
+                style={{
+                  margin: 0,
+                  fontWeight: 800,
+                  lineHeight: 1,
+                  color: brandGradient.start,
+                  letterSpacing: '-0.5px',
+                }}
               >
-                <button
-                  className="action-btn cart-btn"
-                  onClick={() => navigate('/checkout')}
-                >
-                  <ShoppingCartOutlined />
-                  <span className="action-label">Cart</span>
-                </button>
-              </Badge>
-              <CartPreview visible={showCartPreview} />
+                NextTech
+              </Title>
+              <Typography.Text
+                type="secondary"
+                style={{
+                  fontSize: 10,
+                  letterSpacing: '1.5px',
+                  marginTop: 4,
+                  fontWeight: 500,
+                  textTransform: 'uppercase',
+                }}
+              >
+                Tech Store
+              </Typography.Text>
+            </Button>
+
+            <div style={{ flex: 1, maxWidth: 700 }}>
+              <NavbarSearch />
             </div>
 
-            {/* User Menu */}
-            <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
-              <button className="action-btn user-btn">
-                {authenticated ? (
-                  <Avatar size="small" icon={<UserOutlined />} />
-                ) : (
-                  <UserOutlined />
-                )}
-                <span className="action-label">
-                  {authenticated ? 'Account' : 'Login'}
-                </span>
-              </button>
-            </Dropdown>
-          </div>
-        </div>
-      </div>
+            <LanguageSwitcher />
 
-      {/* Navigation Links */}
-      <div className="navbar-links">
-        <div className="navbar-content">
-          {/* Categories Dropdown */}
-          <div className="categories-menu">
-            <button
-              className="categories-trigger"
-              onClick={() => setShowCategories(!showCategories)}
-            >
-              <MenuOutlined />
-              <span>All Categories</span>
-            </button>
-            {showCategories && (
-              <div className="categories-dropdown">
-                {categories.map((cat) => (
-                  <button
-                    key={cat.key}
-                    type="button"
-                    className="category-item"
-                    onClick={() => {
-                      navigate(cat.path);
-                      setShowCategories(false);
-                    }}
-                  >
-                    {cat.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+            <NavbarActions
+              basketCount={basketCount}
+              cartItems={cartItems}
+              onRemoveCartItem={handleRemoveCartItem}
+            />
+          </Flex>
+        </Flex>
 
-          {/* Quick Links */}
-          <nav className="quick-links">
-            <button
-              className={`nav-link ${isActive('/') ? 'active' : ''}`}
-              onClick={() => navigate('/')}
-            >
-              Home
-            </button>
-            <button
-              className={`nav-link ${isActive('/store') ? 'active' : ''}`}
-              onClick={() => navigate('/store')}
-            >
-              Store
-            </button>
-            <button
-              className="nav-link flash-sale"
-              onClick={() => navigate('/deals')}
-            >
-              <span className="fire-icon" role="img" aria-label="fire">
-                🔥
-              </span>{' '}
-              Flash Sale
-            </button>
-            <button className="nav-link" onClick={() => navigate('/deals')}>
-              Today's Deals
-            </button>
-            <button
-              className="nav-link"
-              onClick={() => navigate('/new-arrivals')}
-            >
-              New Arrivals
-            </button>
-          </nav>
-        </div>
-      </div>
+        <Flex
+          style={{
+            borderBottom: '1px solid #f1f1f1',
+            height: 64,
+            alignItems: 'center',
+          }}
+        >
+          <Flex
+            style={{
+              maxWidth: 1400,
+              margin: '0 auto',
+              padding: '0 32px',
+              width: '100%',
+              alignItems: 'center',
+              gap: 32,
+            }}
+          >
+            <NavbarCategories />
+            <NavbarQuickLinks />
+          </Flex>
+        </Flex>
+      </Flex>
     </div>
   );
 };

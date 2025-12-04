@@ -2,7 +2,7 @@ import { UseMutationOptions, UseQueryOptions } from '@tanstack/react-query';
 import { AxiosRequestConfig } from 'axios';
 
 // https://x.com/mattpocockuk/status/1622730173446557697/photo/1
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+ 
 export type Prettify<T> = {
   [K in keyof T]: T[K];
 } & {};
