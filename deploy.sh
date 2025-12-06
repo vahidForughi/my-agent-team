@@ -55,7 +55,7 @@ start_minikube() {
     fi
     
     # Start minikube with increased configuration for better stability
-    minikube start --driver=docker --memory=10240 --cpus=6 --disk-size=80g
+    minikube start --driver=docker --memory=10240 --cpus=8 --disk-size=80g
     
     # Enable required addons
     log_info "Enabling minikube addons..."
@@ -182,13 +182,16 @@ deploy_monitoring() {
         curl -L https://istio.io/downloadIstio | sh -
     fi
     
-    ./istio-*/bin/istioctl install --set values.defaultRevision=default -y
+    # Find the istio directory
+    ISTIO_DIR=$(find . -maxdepth 1 -name "istio-*" -type d | head -n 1)
+    
+    ${ISTIO_DIR}/bin/istioctl install --set values.defaultRevision=default -y
     
     # Install Istio addons
     log_info "Installing Istio addons..."
-    kubectl apply -f ./istio-*/samples/addons/grafana.yaml
-    kubectl apply -f ./istio-*/samples/addons/jaeger.yaml
-    kubectl apply -f ./istio-*/samples/addons/kiali.yaml
+    kubectl apply -f ${ISTIO_DIR}/samples/addons/grafana.yaml
+    kubectl apply -f ${ISTIO_DIR}/samples/addons/jaeger.yaml
+    kubectl apply -f ${ISTIO_DIR}/samples/addons/kiali.yaml
 
     # Wait for Grafana pod to be ready
     log_info "Waiting for Grafana to be ready..."
