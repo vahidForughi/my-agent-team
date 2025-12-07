@@ -28,13 +28,13 @@ import {
 export const productMapper = createMapper<ProductResponse, Product>(
   (response) => {
     return {
-      id: response.Id,
-      name: response.Name,
-      description: response.Description,
-      imageFile: response.ImageFile,
-      price: response.Price,
-      productType: response.Types?.Id ?? '',
-      productBrand: response.Brands?.Id ?? '',
+      id: response.id,
+      name: response.name,
+      description: response.description,
+      imageFile: response.imageFile,
+      price: response.price,
+      productType: response.types?.id ?? '',
+      productBrand: response.brands?.id ?? '',
       // Default values for optional fields (schema will handle these)
       images: [],
       features: [],
@@ -49,19 +49,24 @@ export const productMapper = createMapper<ProductResponse, Product>(
   productResponseSchema
 );
 
-export const productsMapper = createMapper<ProductsResponse, Product[]>(
+export const productsMapper = createMapper<ProductsResponse, import('./types').PaginatedProducts>(
   (response) => {
-    return response.Data.map((productResponse) =>
-      productMapper.toDto(productResponse)
-    ).filter((product): product is Product => product !== null);
+    return {
+      pageIndex: response.pageIndex,
+      pageSize: response.pageSize,
+      count: response.count,
+      data: response.data.map((productResponse) =>
+        productMapper.toDto(productResponse)
+      ).filter((product): product is Product => product !== null),
+    };
   },
   productsResponseSchema
 );
 
 export const brandMapper = createMapper<BrandResponse, Brand>((response) => {
   return {
-    id: response.Id,
-    name: response.Name,
+    id: response.id,
+    name: response.name,
   };
 }, brandResponseSchema);
 
@@ -77,8 +82,8 @@ export const brandArrayMapper = createMapper<BrandResponse[], Brand[]>(
 export const productTypeMapper = createMapper<ProductTypeResponse, ProductType>(
   (response) => {
     return {
-      id: response.Id,
-      name: response.Name,
+      id: response.id,
+      name: response.name,
     };
   },
   productTypeResponseSchema
@@ -115,12 +120,12 @@ export const productDetailMapper = createMapper<ProductDetailResponse, Product>(
   (response) => {
     // Compute stock status
     let stockStatus: 'in-stock' | 'low-stock' | 'out-of-stock' | undefined;
-    if (response.Stock) {
-      if (!response.Stock.inStock) {
+    if (response.stock) {
+      if (!response.stock.inStock) {
         stockStatus = 'out-of-stock';
       } else if (
-        response.Stock.lowStockThreshold &&
-        response.Stock.quantity <= response.Stock.lowStockThreshold
+        response.stock.lowStockThreshold &&
+        response.stock.quantity <= response.stock.lowStockThreshold
       ) {
         stockStatus = 'low-stock';
       } else {
@@ -129,36 +134,36 @@ export const productDetailMapper = createMapper<ProductDetailResponse, Product>(
     }
 
     return {
-      id: response.Id,
-      name: response.Name,
-      description: response.Description,
-      imageFile: response.ImageFile,
-      price: response.Price,
-      productType: response.Types?.Id ?? '',
-      productBrand: response.Brands?.Id ?? '',
+      id: response.id,
+      name: response.name,
+      description: response.description,
+      imageFile: response.imageFile,
+      price: response.price,
+      productType: response.types?.id ?? '',
+      productBrand: response.brands?.id ?? '',
       // Detail fields
-      images: response.Images ?? [],
-      features: response.Features ?? [],
-      specifications: response.Specifications ?? {},
+      images: response.images ?? [],
+      features: response.features ?? [],
+      specifications: response.specifications ?? {},
       // Stock fields
-      stockQuantity: response.Stock?.quantity,
-      stockInStock: response.Stock?.inStock,
-      stockLowStockThreshold: response.Stock?.lowStockThreshold,
+      stockQuantity: response.stock?.quantity,
+      stockInStock: response.stock?.inStock,
+      stockLowStockThreshold: response.stock?.lowStockThreshold,
       stockStatus,
       // Rating fields
-      ratingAverage: response.Rating?.average,
-      ratingCount: response.Rating?.count,
-      ratingDistribution: response.Rating?.distribution,
+      ratingAverage: response.rating?.average,
+      ratingCount: response.rating?.count,
+      ratingDistribution: response.rating?.distribution,
       // Shipping fields
-      shippingFreeShipping: response.Shipping?.freeShipping ?? false,
-      shippingEstimatedDeliveryDays: response.Shipping?.estimatedDeliveryDays,
-      shippingCost: response.Shipping?.shippingCost,
+      shippingFreeShipping: response.shipping?.freeShipping ?? false,
+      shippingEstimatedDeliveryDays: response.shipping?.estimatedDeliveryDays,
+      shippingCost: response.shipping?.shippingCost,
       // Meta fields
-      metaTitle: response.Meta?.title,
-      metaDescription: response.Meta?.description,
-      metaKeywords: response.Meta?.keywords ?? [],
+      metaTitle: response.meta?.title,
+      metaDescription: response.meta?.description,
+      metaKeywords: response.meta?.keywords ?? [],
       // Related products
-      relatedProductIds: response.RelatedProductIds ?? [],
+      relatedProductIds: response.relatedProductIds ?? [],
       // Defaults for other optional fields
       hasDiscount: false,
       reviews: [],

@@ -22,7 +22,7 @@ type ProductFiltersProps = {
 
 /**
  * ProductFilters Component
- * 
+ *
  * Single Responsibility: Render filter tags and handle filter interactions
  * Open/Closed Principle: Accepts specialFilters and productTypes as props
  * Interface Segregation: Only receives props needed for filtering
@@ -64,7 +64,11 @@ function ProductFilters(props: ProductFiltersProps) {
           <FilterTag
             key={filter.value}
             label={filter.label}
-            checked={selectedFilter === filter.value}
+            checked={
+              filter.value === 'all'
+                ? selectedFilter === filter.value && !selectedTypeId
+                : selectedFilter === filter.value
+            }
             icon={filter.icon}
             onChange={() => onFilterChange?.(filter.value)}
           />

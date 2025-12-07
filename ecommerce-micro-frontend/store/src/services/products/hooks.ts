@@ -4,6 +4,7 @@ import { ReactQueryUnwrapPromise } from '../../typings/common';
 import { storeClient } from '../index';
 import { productKeys } from './keys';
 import { StoreParamsInput } from './input';
+import { env } from '@ecommerce/shared/config';
 
 /**
  * Hook to fetch all products with pagination and filters
@@ -13,8 +14,8 @@ import { StoreParamsInput } from './input';
  * @param params.TypeId - Filter by product type ID
  * @param params.Sort - Sort order
  * @param params.Search - Search query
- * @param params.page - Page number (default: 0)
- * @param params.limit - Items per page (default: 10)
+ * @param params.PageIndex - Page number (default: 1)
+ * @param params.PageSize - Items per page (default: 10)
  * @param options - React Query options (enabled, initialData, etc.)
  * @returns Query result with product list, loading state, and error
  *
@@ -22,8 +23,8 @@ import { StoreParamsInput } from './input';
  * ```tsx
  * const { data, isLoading, error } = useGetProducts({
  *   BrandId: 'brand-123',
- *   page: 0,
- *   limit: 20
+ *   PageIndex: 1,
+ *   PageSize: 20
  * });
  *
  * if (isLoading) return <Loading />;
@@ -38,8 +39,16 @@ export const useGetProducts = (
 ) => {
   const { enabled = true, initialData, useMock, ...rest } = options || {};
 
-  // Use useMock from options, or fallback to params, or default to false
-  const shouldUseMock = useMock ?? params?.useMock ?? false;
+  // Use useMock from options, or fallback to params, or default to env config
+  const shouldUseMock = useMock ?? params?.useMock ?? env.useMockData;
+
+  // Debug logging to trace mock data usage
+  console.log('[useGetProducts] Mock data decision:', {
+    optionsUseMock: useMock,
+    paramsUseMock: params?.useMock,
+    envUseMockData: env.useMockData,
+    finalDecision: shouldUseMock
+  });
 
   return useQuery({
     ...rest,
@@ -85,7 +94,7 @@ export const useGetProductById = (
   const {
     enabled = true,
     initialData,
-    useMock = false,
+    useMock = env.useMockData,
     ...rest
   } = options || {};
 
@@ -130,7 +139,7 @@ export const useGetProductReviews = (
   const {
     enabled = true,
     initialData,
-    useMock = false,
+    useMock = env.useMockData,
     ...rest
   } = options || {};
 
@@ -175,7 +184,7 @@ export const useGetBrands = (
   const {
     enabled = true,
     initialData,
-    useMock = false,
+    useMock = env.useMockData,
     ...rest
   } = options || {};
   return useQuery({
@@ -218,7 +227,7 @@ export const useGetTypes = (
   const {
     enabled = true,
     initialData,
-    useMock = false,
+    useMock = env.useMockData,
     ...rest
   } = options || {};
   return useQuery({

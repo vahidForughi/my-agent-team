@@ -30,8 +30,8 @@ const SORT_NAME_DESC = 'nameDesc';
  */
 function normalizeParams(params: Record<string, any>) {
   return {
-    page: params.page || params.Page,
-    limit: params.limit || params.Limit,
+    page: params.PageIndex || params.page || params.Page,
+    limit: params.PageSize || params.limit || params.Limit,
     brandId: params.BrandId || params.brandId,
     typeId: params.TypeId || params.typeId,
     search: params.Search || params.search,
@@ -60,30 +60,30 @@ function transformProductToResponse(
       : product.description || product.name;
 
   return {
-    Id: product.id,
-    Name: product.name,
-    Summary: summary,
-    Description: product.description || product.name,
-    ImageFile: product.imageFile,
-    Brands: brand
+    id: product.id,
+    name: product.name,
+    summary: summary,
+    description: product.description || product.name,
+    imageFile: product.imageFile,
+    brands: brand
       ? {
-          Id: brand.id,
-          Name: brand.name,
+          id: brand.id,
+          name: brand.name,
         }
       : {
-          Id: '',
-          Name: product.productBrand,
+          id: '',
+          name: product.productBrand,
         },
-    Types: type
+    types: type
       ? {
-          Id: type.id,
-          Name: type.name,
+          id: type.id,
+          name: type.name,
         }
       : {
-          Id: '',
-          Name: product.productType,
+          id: '',
+          name: product.productType,
         },
-    Price: product.price,
+    price: product.price,
   };
 }
 
@@ -147,14 +147,14 @@ function transformProductDetailToResponse(
 
   return {
     ...baseResponse,
-    Images: product.images ?? [],
-    Features: product.features ?? [],
-    Specifications: product.specifications ?? {},
-    Stock,
-    Rating,
-    Shipping,
-    RelatedProductIds: product.relatedProductIds ?? [],
-    Meta,
+    images: product.images ?? [],
+    features: product.features ?? [],
+    specifications: product.specifications ?? {},
+    stock: Stock,
+    rating: Rating,
+    shipping: Shipping,
+    relatedProductIds: product.relatedProductIds ?? [],
+    meta: Meta,
   };
 }
 
@@ -185,7 +185,7 @@ function transformProductDetailWithReviewsToResponse(
 
   return {
     ...baseResponse,
-    Reviews: reviews,
+    reviews: reviews,
   };
 }
 
@@ -201,8 +201,8 @@ function transformBrandToResponse(
   brand: (typeof mockBrands)[0]
 ): BrandResponse {
   return {
-    Id: brand.id,
-    Name: brand.name,
+    id: brand.id,
+    name: brand.name,
   };
 }
 
@@ -218,8 +218,8 @@ function transformProductTypeToResponse(
   type: (typeof mockTypes)[0]
 ): ProductTypeResponse {
   return {
-    Id: type.id,
-    Name: type.name,
+    id: type.id,
+    name: type.name,
   };
 }
 
@@ -283,10 +283,10 @@ export default function register(mockAdapter: MockAdapter) {
       return [
         200,
         createResponse({
-          PageIndex: page,
-          PageSize: limit,
-          Count: filtered.length,
-          Data: paginatedData.map(transformProductToResponse),
+          pageIndex: page,
+          pageSize: limit,
+          count: filtered.length,
+          data: paginatedData.map(transformProductToResponse),
         }),
       ];
     });

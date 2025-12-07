@@ -38,6 +38,14 @@ export type Brand = z.infer<typeof brandSchema>;
 export type ProductType = z.infer<typeof productTypeSchema>;
 export type Review = z.infer<typeof reviewSchema>;
 
+// Paginated product list with metadata
+export type PaginatedProducts = {
+  pageIndex: number;
+  pageSize: number;
+  count: number;
+  data: Product[];
+};
+
 export type ProductArray = z.infer<typeof productArraySchema>;
 export type BrandArray = z.infer<typeof brandArraySchema>;
 export type ProductTypeArray = z.infer<typeof productTypeArraySchema>;

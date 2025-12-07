@@ -34,7 +34,7 @@ export function createApiFactory(
   options: CreateApiFactoryOptions = { version: 'v1' }
 ) {
   const { version = 'v1' } = options;
-  
+
   return async function <
     TResponse,
     TTransformed = TResponse,
@@ -115,7 +115,7 @@ export function createApiFactory(
       },
       data: filteredPayload,
       ...request?.options,
-    }).then((res) => res.data); // destructure the data from the axios
+    }).then((res: { data: unknown }) => res.data); // destructure the data from the axios
 
     let validResponse: Nullable<ApiResult<TResponse>>;
 

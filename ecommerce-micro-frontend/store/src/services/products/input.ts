@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { createApiInputFactory } from '../factory/createApiInputFactory';
 
 // Input for getting all products
-// createApiInputFactory automatically adds: page, limit, orderBy
+// createApiInputFactory automatically adds: PageIndex, PageSize, orderBy
 // Backend expects: PageIndex, PageSize, BrandId, TypeId, Sort, Search
 export const storeParamsInput = createApiInputFactory(
   z.object({

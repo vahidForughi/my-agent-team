@@ -54,15 +54,15 @@ export const apiFactory = createApiFactory('/Catalog');
  * const result = await getProducts({
  *   params: {
  *     BrandId: 'brand-123',
- *     page: 0,
- *     limit: 20,
+ *     PageIndex: 1,
+ *     PageSize: 20,
  *     useMock: true
  *   }
  * });
  * ```
  */
 export async function getProducts(request?: Request<StoreParamsInput>) {
-  return apiFactory<ProductsResponse, Product[]>(
+  return apiFactory<ProductsResponse, import('./types').PaginatedProducts>(
     'GET',
     '/GetAllProducts',
     request,

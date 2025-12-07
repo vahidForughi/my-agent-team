@@ -19,8 +19,11 @@ show_menu() {
     echo "8) All API Pods"
     echo "9) Prometheus"
     echo "10) Grafana"
-    echo "11) Recent Events"
-    echo "12) All Pods Status"
+    echo "11) Kibana"
+    echo "12) Metricbeat"
+    echo "13) Elasticsearch"
+    echo "14) Recent Events"
+    echo "15) All Pods Status"
     echo "q) Quit"
     echo ""
 }
@@ -84,10 +87,24 @@ while true; do
             kubectl logs $POD -n istio-system --tail=50
             ;;
         11)
+            POD=$(get_pod "default" "app.kubernetes.io/name=kibana")
+            echo "📋 Kibana Logs:"
+            kubectl logs $POD -n default --tail=50
+            ;;
+        12)
+            echo "📋 Metricbeat DaemonSet Logs (from all pods):"
+            kubectl logs -l app.kubernetes.io/name=metricbeat -n default --tail=30 --prefix=true
+            ;;
+        13)
+            POD=$(get_pod "default" "app.kubernetes.io/name=elasticsearch")
+            echo "📋 Elasticsearch Logs:"
+            kubectl logs $POD -n default --tail=50
+            ;;
+        14)
             echo "📋 Recent Events (last 20):"
             kubectl get events -n default --sort-by='.lastTimestamp' | tail -20
             ;;
-        12)
+        15)
             echo "📋 All Pods Status:"
             echo ""
             echo "Default Namespace:"

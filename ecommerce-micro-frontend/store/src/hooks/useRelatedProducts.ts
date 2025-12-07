@@ -13,12 +13,12 @@ export function useRelatedProducts(
   limit = 4
 ): UseRelatedProductsReturn {
   const {
-    data: productsData,
+    data: paginatedData,
     isLoading,
     isError,
   } = useGetProducts(
     {
-      useMock: true,
+      // No filters, just fetch all products
     },
     {
       enabled: !!relatedProductIds && relatedProductIds.length > 0,
@@ -26,11 +26,11 @@ export function useRelatedProducts(
   );
 
   const relatedProducts = useMemo(() => {
-    if (!relatedProductIds || !productsData) {
+    if (!relatedProductIds || !paginatedData) {
       return [];
     }
 
-    const allProducts = productsData;
+    const allProducts = paginatedData.data;
     const filtered = allProducts.filter((product: Product) =>
       relatedProductIds.includes(product.id)
     );
@@ -41,7 +41,7 @@ export function useRelatedProducts(
       .filter((product): product is Product => product !== undefined);
 
     return sorted.slice(0, limit);
-  }, [relatedProductIds, productsData, limit]);
+  }, [relatedProductIds, paginatedData, limit]);
 
   return {
     relatedProducts,

@@ -40,7 +40,6 @@ function ProductDetail(props: ProductDetailProps) {
     error,
   } = useGetProductById(id ?? '', {
     enabled: Boolean(id),
-    useMock: true,
   });
 
   const product = productData ?? null;

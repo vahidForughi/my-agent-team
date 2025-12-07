@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
-import { message } from 'antd';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useMemo, useEffect } from 'react';
+import { message, Pagination } from 'antd';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AppInjectorProps } from '@ecommerce/app-injector';
 import { useGetProducts, useGetTypes } from '../services/products/hooks';
 import { StoreParamsInput } from '../services/products';
@@ -19,19 +19,53 @@ type ProductListProps = {
 
 const ProductList: React.FC<ProductListProps> = ({ config }) => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { onError } = config || {};
 
   const [selectedTypeId, setSelectedTypeId] = useState<string | undefined>();
   const [selectedFilter, setSelectedFilter] =
     useState<ProductFilterType>('all');
   const [sortOption, setSortOption] = useState<SortOption>('default');
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10; // Backend returns max 10 items per page
 
-  const { data: productTypes } = useGetTypes({ useMock: true });
+  const { data: productTypes } = useGetTypes();
+
+  // Read typeId from URL query parameters
+  useEffect(() => {
+    const typeIdFromUrl = searchParams.get('typeId');
+    const catFromUrl = searchParams.get('cat');
+
+    if (typeIdFromUrl) {
+      // Direct typeId from URL (e.g., ?typeId=63ca5d8849bc19321b8be5f1)
+      setSelectedTypeId(typeIdFromUrl);
+      setSelectedFilter('all' as ProductFilterType); // Explicitly set to clear special filters
+    } else if (catFromUrl && productTypes) {
+      // Category name from URL (e.g., ?cat=laptops) - need to find matching type by name
+      const matchingType = productTypes.find(
+        (type) => type.name.toLowerCase() === catFromUrl.toLowerCase()
+      );
+      if (matchingType) {
+        setSelectedTypeId(matchingType.id);
+        setSelectedFilter('all' as ProductFilterType); // Explicitly set to clear special filters
+      } else {
+        // If no match found, clear the filter
+        setSelectedTypeId(undefined);
+        setSelectedFilter('all');
+      }
+    } else {
+      // No filter in URL, clear selection and set to 'all'
+      setSelectedTypeId(undefined);
+      if (selectedFilter !== 'all') {
+        setSelectedFilter('all');
+      }
+    }
+  }, [searchParams, productTypes]);
 
   const params = useMemo<StoreParamsInput>(() => {
     const baseParams: StoreParamsInput = {
-      page: 1,
-      limit: 20,
+      PageIndex: currentPage,
+      PageSize: pageSize,
     };
 
     if (selectedTypeId) {
@@ -42,20 +76,32 @@ const ProductList: React.FC<ProductListProps> = ({ config }) => {
       baseParams.Sort = sortOption;
     }
 
+    console.log('[ProductList] API params:', baseParams);
     return baseParams;
-  }, [selectedTypeId, sortOption]);
+  }, [selectedTypeId, sortOption, currentPage]);
 
-  const { data: products, isLoading, error } = useGetProducts(params, {
-    useMock: true,
+  const { data: paginatedProducts, isLoading, error } = useGetProducts(params);
+
+  console.log('[ProductList] Products data:', {
+    count: paginatedProducts?.data.length,
+    totalCount: paginatedProducts?.count,
+    pageIndex: paginatedProducts?.pageIndex,
+    pageSize: paginatedProducts?.pageSize,
+    selectedTypeId,
+    params
   });
 
+  const products = useMemo(() => {
+    return paginatedProducts?.data || [];
+  }, [paginatedProducts]);
+
   const productCount = useMemo(() => {
-    return products?.length || 0;
+    return products.length;
   }, [products]);
 
   const totalCount = useMemo(() => {
-    return products?.length || 0;
-  }, [products]);
+    return paginatedProducts?.count || 0;
+  }, [paginatedProducts]);
 
   function handleAddToCart(_productId: string, productName: string) {
     try {
@@ -83,17 +129,24 @@ const ProductList: React.FC<ProductListProps> = ({ config }) => {
 
   function handleTypeChange(typeId: string | undefined) {
     setSelectedTypeId(typeId);
+    setCurrentPage(1); // Reset to first page when filter changes
   }
 
   function handleFilterChange(filter: ProductFilterType) {
     setSelectedFilter(filter);
+    setCurrentPage(1); // Reset to first page when filter changes
     if (filter !== 'all') {
       setSelectedTypeId(undefined);
+    } else {
+      // When clicking "All Products", clear both category and URL
+      setSelectedTypeId(undefined);
+      navigate('/', { replace: true });
     }
   }
 
   function handleSortChange(sort: SortOption) {
     setSortOption(sort);
+    setCurrentPage(1); // Reset to first page when sort changes
   }
 
   if (!products || products.length === 0) {
@@ -132,6 +185,21 @@ const ProductList: React.FC<ProductListProps> = ({ config }) => {
         onAddToCart={handleAddToCart}
         onViewDetails={handleViewDetails}
       />
+      {totalCount > pageSize && (
+        <div style={{ marginTop: '32px', display: 'flex', justifyContent: 'center' }}>
+          <Pagination
+            current={currentPage}
+            pageSize={pageSize}
+            total={totalCount}
+            onChange={(page) => {
+              setCurrentPage(page);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            showSizeChanger={false}
+            showTotal={(total, range) => `${range[0]}-${range[1]} of ${total} products`}
+          />
+        </div>
+      )}
     </div>
   );
 };

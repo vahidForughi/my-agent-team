@@ -1,14 +1,15 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Card, Typography, Image, Row, Col } from 'antd';
-import { categories } from '../../data/categories';
+import { Card, Typography, Image, Row, Col, Spin } from 'antd';
+import { useCategories } from '../../../../hooks/useCategories';
 
 const { Title } = Typography;
 
 function CategoryGrid() {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
+  const { categories, isLoading } = useCategories();
 
   const handleCategoryClick = (path: string) => {
     navigate(path);
@@ -17,6 +18,14 @@ function CategoryGrid() {
   const getCategoryName = (category: typeof categories[0]) => {
     return i18n.language === 'vi' ? category.nameVi : category.name;
   };
+
+  if (isLoading) {
+    return (
+      <div style={{ margin: '48px 0', textAlign: 'center' }}>
+        <Spin size="large" />
+      </div>
+    );
+  }
 
   return (
     <div style={{ margin: '48px 0' }}>

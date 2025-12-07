@@ -13,9 +13,12 @@ const LocationSynchronizer: React.FC = () => {
 
   useEffect(() => {
     const internalPath = location.pathname === '/' ? '' : location.pathname;
-    const newPath = `/store${internalPath}`;
+    const queryString = location.search || '';
+    const newPath = `/store${internalPath}${queryString}`;
 
-    if (window.location.pathname !== newPath) {
+    const currentPath = window.location.pathname + window.location.search;
+
+    if (currentPath !== newPath) {
       if (isInitialMount.current) {
         window.history.replaceState({}, '', newPath);
       } else {
@@ -24,7 +27,7 @@ const LocationSynchronizer: React.FC = () => {
     }
 
     isInitialMount.current = false;
-  }, [location.pathname]);
+  }, [location.pathname, location.search]);
 
   return null;
 };
@@ -47,8 +50,9 @@ const StoreModule: React.FC<StoreModuleProps> = ({ config }) => {
   const getInitialPath = () => {
     if (typeof window === 'undefined') return '/';
     const fullPath = window.location.pathname;
+    const queryString = window.location.search;
     const storePath = fullPath.replace(/^\/store/, '') || '/';
-    return storePath;
+    return storePath + queryString;
   };
 
   const initialPath = getInitialPath();

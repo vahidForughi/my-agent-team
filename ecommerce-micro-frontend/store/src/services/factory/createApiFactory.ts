@@ -29,14 +29,14 @@ type CreateApiFactoryOptions = {
 };
 
 /**
- * Helper function to determine the base URL based on mock flag
+ * Determines the base URL based on mock mode
  *
  * @param useMock - Whether to use mock API
  * @param defaultBaseURL - Default base URL from axios client
- * @returns Appropriate base URL
+ * @returns Appropriate base URL for mock, or undefined to use axios default
  */
-function getBaseURL(useMock: boolean, defaultBaseURL: string): string {
-  return useMock ? '/api' : defaultBaseURL;
+function getBaseURL(useMock: boolean, defaultBaseURL: string): string | undefined {
+  return useMock ? '/api' : undefined; // Return undefined to use axios client's configured baseURL
 }
 
 /**
@@ -117,13 +117,20 @@ export function createApiFactory(
     const defaultBaseURL = axiosClient.defaults.baseURL ?? '';
     const baseURL = getBaseURL(options?.useMock ?? false, defaultBaseURL);
 
+    console.log('[createApiFactory] Request:', {
+      endpoint: finalUrlPath,
+      useMock: options?.useMock ?? false,
+      baseURL,
+      axiosDefaultBaseURL: defaultBaseURL,
+    });
+
     const cleanPath = finalUrlPath.startsWith('/')
       ? finalUrlPath.slice(1)
       : finalUrlPath;
 
     const url = options?.useMock
       ? `${version}/mock/${cleanPath}`
-      : `${version}/${cleanPath}`;
+      : cleanPath; // Real API doesn't need version prefix
 
     const headers = mergeHeaderLocale(request);
 
@@ -144,8 +151,8 @@ export function createApiFactory(
       allKeysUsedInPath
     );
 
-    const response = await axiosClient<ApiResult<TResponse>>({
-      baseURL,
+    // Build axios config, only include baseURL if it's defined (for mock mode)
+    const axiosConfig: Record<string, unknown> = {
       method,
       url,
       headers,
@@ -154,7 +161,14 @@ export function createApiFactory(
       },
       data: filteredPayload,
       ...request?.options,
-    }).then((res) => res.data);
+    };
+
+    // Only override baseURL for mock mode, otherwise use axios client's default
+    if (baseURL !== undefined) {
+      axiosConfig.baseURL = baseURL;
+    }
+
+    const response = await axiosClient<ApiResult<TResponse>>(axiosConfig).then((res) => res.data);
 
     let validResponse: Nullable<ApiResult<TResponse>>;
 

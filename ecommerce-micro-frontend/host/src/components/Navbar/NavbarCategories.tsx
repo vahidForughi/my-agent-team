@@ -1,18 +1,27 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Dropdown, Button } from 'antd';
+import { Dropdown, Button, Spin } from 'antd';
 import { MenuOutlined } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
-import { NAVBAR_CATEGORIES } from '../../constants/navbar';
+import { useCategories } from '../../hooks/useCategories';
 
 function NavbarCategories() {
   const navigate = useNavigate();
+  const { categories, isLoading } = useCategories();
 
-  const menuItems: MenuProps['items'] = NAVBAR_CATEGORIES.map((cat) => ({
-    key: cat.key,
-    label: cat.label,
+  const menuItems: MenuProps['items'] = categories.map((cat) => ({
+    key: cat.id,
+    label: `${cat.icon} ${cat.name}`,
     onClick: () => navigate(cat.path),
   }));
+
+  if (isLoading) {
+    return (
+      <Button type="primary" icon={<MenuOutlined />} disabled>
+        <Spin size="small" />
+      </Button>
+    );
+  }
 
   return (
     <Dropdown

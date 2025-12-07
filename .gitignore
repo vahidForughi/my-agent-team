@@ -377,7 +377,6 @@ obj/
 
 ### Docker build ###
 docker-build/
-.docker*
 
 ### Vagrant ###
 .box
