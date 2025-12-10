@@ -1,48 +1,85 @@
-import type { CartResponse } from './types';
+import type { ShoppingCartResponse, Cart } from './types';
 
-export const mockCartResponse: CartResponse = {
-  id: 'cart-123',
-  userId: 'user-456',
+/**
+ * Mock backend response (camelCase - matches actual API response)
+ */
+export const mockShoppingCartResponse: ShoppingCartResponse = {
+  userName: 'guest',
   items: [
     {
-      id: '1',
       productId: 'prod-101',
       productName: 'iPhone X',
       price: 999,
+      originalPrice: 999,
+      discountAmount: 0,
       quantity: 1,
-      imageUrl: '/images/iphone-x.jpg',
-      addedAt: new Date().toISOString(),
+      imageFile: '/images/iphone-x.jpg',
     },
     {
-      id: '2',
       productId: 'prod-102',
       productName: 'Samsung S21',
       price: 799,
+      originalPrice: 899,
+      discountAmount: 100,
       quantity: 1,
-      imageUrl: '/images/samsung-s21.jpg',
-      addedAt: new Date().toISOString(),
+      imageFile: '/images/samsung-s21.jpg',
     },
   ],
-  subtotal: 1798,
-  tax: 143.84,
-  shipping: 0,
-  discount: 0,
-  total: 1941.84,
-  currency: 'USD',
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
+  totalPrice: 1798,
 };
 
-export const mockEmptyCartResponse: CartResponse = {
-  id: 'cart-empty',
-  userId: 'user-456',
+export const mockEmptyShoppingCartResponse: ShoppingCartResponse = {
+  userName: 'guest',
   items: [],
-  subtotal: 0,
-  tax: 0,
-  shipping: 0,
-  discount: 0,
-  total: 0,
-  currency: 'USD',
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
+  totalPrice: 0,
 };
+
+/**
+ * Mock frontend DTO (camelCase - for React components)
+ */
+export const mockCart: Cart = {
+  userName: 'guest',
+  items: [
+    {
+      productId: 'prod-101',
+      productName: 'iPhone X',
+      price: 999,
+      originalPrice: 999,
+      discountAmount: 0,
+      quantity: 1,
+      imageFile: '/images/iphone-x.jpg',
+      itemTotal: 999,
+    },
+    {
+      productId: 'prod-102',
+      productName: 'Samsung S21',
+      price: 799,
+      originalPrice: 899,
+      discountAmount: 100,
+      quantity: 1,
+      imageFile: '/images/samsung-s21.jpg',
+      itemTotal: 799,
+    },
+  ],
+  totalPrice: 1798,
+  itemCount: 2,
+  isEmpty: false,
+};
+
+export const mockEmptyCart: Cart = {
+  userName: 'guest',
+  items: [],
+  totalPrice: 0,
+  itemCount: 0,
+  isEmpty: true,
+};
+
+// ====================================
+// DEPRECATED - Keep for backward compatibility
+// ====================================
+
+/** @deprecated Use mockShoppingCartResponse */
+export const mockCartResponse = mockShoppingCartResponse;
+
+/** @deprecated Use mockEmptyShoppingCartResponse */
+export const mockEmptyCartResponse = mockEmptyShoppingCartResponse;

@@ -1,8 +1,22 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Button, Empty, Spin, List, Typography, Flex, Space } from 'antd';
-import { DeleteOutlined } from '@ant-design/icons';
+import {
+  Card,
+  Button,
+  Empty,
+  Spin,
+  Typography,
+  Flex,
+  Space,
+  Divider,
+} from 'antd';
+import {
+  DeleteOutlined,
+  ShoppingCartOutlined,
+  RightOutlined,
+} from '@ant-design/icons';
 import { brandGradient } from '../../config/theme';
+import { env } from '@ecommerce/shared/config';
 
 const { Text } = Typography;
 
@@ -21,6 +35,147 @@ interface CartPreviewProps {
   onRemoveItem?: (id: string) => void;
 }
 
+/**
+ * Format currency for display
+ */
+function formatPrice(price: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(price);
+}
+
+/**
+ * Get full image URL from relative path
+ */
+function getImageUrl(imagePath: string | null | undefined): string {
+  if (!imagePath) {
+    return '/assets/placeholder-product.png';
+  }
+
+  // If already a full URL, return as is
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    return imagePath;
+  }
+
+  // If starts with /, it's already an absolute path
+  if (imagePath.startsWith('/')) {
+    return `${env.apiBaseUrl}${imagePath}`;
+  }
+
+  // Otherwise, prepend the base URL
+  return `${env.apiBaseUrl}/${imagePath}`;
+}
+
+/**
+ * Single cart item row component
+ */
+function CartItemRow({
+  item,
+  onRemove,
+}: {
+  item: CartItem;
+  onRemove: () => void;
+}) {
+  const itemTotal = item.price * item.quantity;
+
+  return (
+    <Flex
+      gap={12}
+      align="flex-start"
+      style={{
+        padding: '12px 0',
+        borderBottom: '1px solid #f1f5f9',
+      }}
+    >
+      {/* Product Image */}
+      <div
+        style={{
+          width: 56,
+          height: 56,
+          borderRadius: 8,
+          overflow: 'hidden',
+          flexShrink: 0,
+          background: '#f8fafc',
+          border: '1px solid #e2e8f0',
+        }}
+      >
+        <img
+          src={getImageUrl(item.image)}
+          alt={item.name}
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+          }}
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.src = '/assets/placeholder-product.png';
+          }}
+        />
+      </div>
+
+      {/* Product Info */}
+      <Flex vertical flex={1} style={{ minWidth: 0 }}>
+        <Text
+          style={{
+            fontSize: 13,
+            fontWeight: 500,
+            lineHeight: 1.3,
+            color: '#1e293b',
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            marginBottom: 4,
+          }}
+        >
+          {item.name}
+        </Text>
+
+        <Flex align="center" gap={8}>
+          <Text
+            style={{
+              fontSize: 12,
+              color: '#64748b',
+            }}
+          >
+            {formatPrice(item.price)} × {item.quantity}
+          </Text>
+        </Flex>
+      </Flex>
+
+      {/* Price & Remove */}
+      <Flex vertical align="flex-end" gap={4}>
+        <Text
+          strong
+          style={{
+            fontSize: 14,
+            color: brandGradient.start,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {formatPrice(itemTotal)}
+        </Text>
+        <Button
+          type="text"
+          size="small"
+          icon={<DeleteOutlined />}
+          onClick={onRemove}
+          style={{
+            color: '#94a3b8',
+            padding: '2px 6px',
+            height: 'auto',
+          }}
+          aria-label={`Remove ${item.name}`}
+        />
+      </Flex>
+    </Flex>
+  );
+}
+
 const CartPreview: React.FC<CartPreviewProps> = ({
   visible,
   items = [],
@@ -36,175 +191,165 @@ const CartPreview: React.FC<CartPreviewProps> = ({
     0
   );
 
-  const handleRemoveItem = (id: string) => {
-    onRemoveItem?.(id);
-  };
+  const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
     <Card
       style={{
         position: 'absolute',
-        top: 'calc(100% + 16px)',
+        top: 'calc(100% + 12px)',
         right: 0,
-        width: 400,
+        width: 360,
         borderRadius: 16,
-        boxShadow: '0 12px 48px rgba(15, 23, 42, 0.12)',
+        boxShadow: '0 12px 40px rgba(15, 23, 42, 0.15)',
         zIndex: 1002,
-        border: '1px solid #f1f5f9',
+        border: 'none',
+        overflow: 'hidden',
       }}
       styles={{
         header: {
-          padding: '20px 24px',
+          padding: '16px 20px',
           borderBottom: '1px solid #f1f5f9',
-          background: 'rgba(102, 126, 234, 0.03)',
-          borderRadius: '16px 16px 0 0',
+          background: '#fafbfc',
+          minHeight: 'auto',
         },
         body: {
           padding: 0,
-          maxHeight: 420,
-          overflowY: 'auto',
         },
       }}
       title={
-        <Text strong style={{ fontSize: 16, fontWeight: 600 }}>
-          Shopping Cart ({items.length} items)
-        </Text>
+        <Flex align="center" gap={8}>
+          <ShoppingCartOutlined
+            style={{
+              fontSize: 18,
+              color: brandGradient.start,
+            }}
+          />
+          <Text strong style={{ fontSize: 15 }}>
+            Cart
+          </Text>
+          <Text
+            style={{
+              fontSize: 13,
+              color: '#64748b',
+              fontWeight: 400,
+            }}
+          >
+            ({totalQuantity} {totalQuantity === 1 ? 'item' : 'items'})
+          </Text>
+        </Flex>
       }
     >
       {isLoading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '60px 20px', minHeight: 200 }}>
-          <Spin tip="Loading cart..." />
-        </div>
+        <Flex
+          justify="center"
+          align="center"
+          style={{ padding: '48px 20px' }}
+        >
+          <Spin tip="Loading..." />
+        </Flex>
       ) : items.length === 0 ? (
-        <div style={{ padding: '40px 20px' }}>
+        <Flex
+          vertical
+          align="center"
+          justify="center"
+          style={{ padding: '40px 20px' }}
+        >
           <Empty
-            description="Your cart is empty"
+            description={
+              <Text style={{ color: '#94a3b8' }}>Your cart is empty</Text>
+            }
             image={Empty.PRESENTED_IMAGE_SIMPLE}
           />
-        </div>
+          <Button
+            type="link"
+            onClick={() => navigate('/store')}
+            style={{ marginTop: 8 }}
+          >
+            Start Shopping <RightOutlined />
+          </Button>
+        </Flex>
       ) : (
         <>
-          <List
-            dataSource={items}
-            style={{ padding: 16 }}
-            renderItem={(item) => (
-              <List.Item
-                style={{
-                  padding: '14px',
-                  borderRadius: 12,
-                  marginBottom: 10,
-                  border: '1px solid transparent',
-                }}
-                actions={[
-                  <Button
-                    key="remove"
-                    type="text"
-                    icon={<DeleteOutlined />}
-                    onClick={() => handleRemoveItem(item.id)}
-                    aria-label={`Remove ${item.name} from cart`}
-                    style={{
-                      color: '#94a3b8',
-                    }}
-                  />,
-                ]}
-              >
-                <List.Item.Meta
-                  avatar={
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      style={{
-                        width: 70,
-                        height: 70,
-                        objectFit: 'cover',
-                        borderRadius: 10,
-                        border: '1px solid #f1f5f9',
-                        boxShadow: '0 2px 8px rgba(15, 23, 42, 0.06)',
-                      }}
-                    />
-                  }
-                  title={
-                    <Text
-                      style={{
-                        fontSize: 14,
-                        fontWeight: 500,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {item.name}
-                    </Text>
-                  }
-                  description={
-                    <Text
-                      style={{
-                      fontSize: 13,
-                      fontWeight: 600,
-                      color: brandGradient.start,
-                      }}
-                    >
-                      ${item.price.toFixed(2)} x {item.quantity}
-                    </Text>
-                  }
-                />
-              </List.Item>
-            )}
-          />
-
+          {/* Cart Items - scrollable */}
           <div
             style={{
-              padding: '20px 24px',
-              borderTop: '1px solid #f1f5f9',
-              background: '#fafbfc',
-              borderRadius: '0 0 16px 16px',
+              maxHeight: 280,
+              overflowY: 'auto',
+              padding: '8px 20px',
             }}
           >
-            <Flex justify="space-between" align="center" style={{ marginBottom: 18 }}>
-              <Text style={{ fontSize: 16, fontWeight: 600 }}>Subtotal:</Text>
+            {items.slice(0, 5).map((item) => (
+              <CartItemRow
+                key={item.id}
+                item={item}
+                onRemove={() => onRemoveItem?.(item.id)}
+              />
+            ))}
+
+            {/* Show "more items" if > 5 */}
+            {items.length > 5 && (
               <Text
                 style={{
-                  fontSize: 22,
-                  fontWeight: 700,
-                  color: brandGradient.start,
-                  letterSpacing: '-0.5px',
+                  display: 'block',
+                  textAlign: 'center',
+                  padding: '12px 0',
+                  color: '#64748b',
+                  fontSize: 13,
                 }}
               >
-                ${totalAmount.toFixed(2)}
+                +{items.length - 5} more items in cart
+              </Text>
+            )}
+          </div>
+
+          {/* Footer - Subtotal & Actions */}
+          <div
+            style={{
+              padding: '16px 20px',
+              background: '#f8fafc',
+              borderTop: '1px solid #f1f5f9',
+            }}
+          >
+            <Flex justify="space-between" align="center" style={{ marginBottom: 16 }}>
+              <Text style={{ fontSize: 14, color: '#64748b' }}>Subtotal:</Text>
+              <Text
+                strong
+                style={{
+                  fontSize: 18,
+                  color: brandGradient.start,
+                }}
+              >
+                {formatPrice(totalAmount)}
               </Text>
             </Flex>
-            <Space direction="vertical" style={{ width: '100%' }} size="small">
+
+            <Space direction="vertical" style={{ width: '100%' }} size={8}>
               <Button
                 type="primary"
-                size="large"
+                size="middle"
                 block
                 onClick={() => navigate('/checkout')}
                 style={{
-                  background: brandGradient.start,
-                  border: 'none',
-                  height: 48,
+                  height: 42,
                   fontWeight: 600,
-                  fontSize: 14,
-                  letterSpacing: '0.3px',
-                  borderRadius: 12,
-                  boxShadow: '0 4px 16px rgba(102, 126, 234, 0.25)',
+                  borderRadius: 10,
                 }}
               >
-                Proceed to Checkout
+                Checkout
               </Button>
               <Button
-                size="large"
+                size="middle"
                 block
-                onClick={() => navigate('/cart')}
+                onClick={() => navigate('/checkout')}
                 style={{
-                  height: 44,
-                  borderRadius: 12,
-                  border: '2px solid #e2e8f0',
-                  fontWeight: 600,
+                  height: 38,
+                  borderRadius: 10,
+                  border: '1px solid #e2e8f0',
                   color: '#64748b',
                 }}
               >
-                View Full Cart
+                View Cart
               </Button>
             </Space>
           </div>

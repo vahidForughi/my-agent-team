@@ -59,6 +59,7 @@ function ProductDetail(props: ProductDetailProps) {
     handleAddToWishlist,
     canAddToCart,
     maxQuantity,
+    isAddingToCart,
   } = useProductActions({
     product,
     config,
@@ -154,6 +155,7 @@ function ProductDetail(props: ProductDetailProps) {
               canAddToCart={canAddToCart}
               maxQuantity={maxQuantity}
               isInStock={isInStock}
+              isLoading={isAddingToCart}
             />
           </Space>
         </Col>

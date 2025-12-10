@@ -7,6 +7,7 @@ let mockAdapter: MockAdapter | null = null;
 
 /**
  * Setup mock adapter for Axios client
+ * Mock endpoints will only respond when useMock=true is in request params/payload
  */
 export function setupMocks() {
   if (mockAdapter) {
@@ -15,7 +16,8 @@ export function setupMocks() {
   }
 
   mockAdapter = new MockAdapter(axiosClient, {
-    delayResponse: 500,
+    delayResponse: 300,
+    onNoMatch: 'passthrough', // Allow real API calls to pass through
   });
 
   registerCouponMocks(mockAdapter);

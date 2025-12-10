@@ -16,12 +16,14 @@ import { brandGradient } from '../../config/theme';
 interface NavbarActionsProps {
   basketCount?: number;
   cartItems?: CartItem[];
+  isLoading?: boolean;
   onRemoveCartItem?: (id: string) => void;
 }
 
 function NavbarActions({
   basketCount = 0,
   cartItems = [],
+  isLoading = false,
   onRemoveCartItem,
 }: NavbarActionsProps) {
   const navigate = useNavigate();
@@ -173,6 +175,7 @@ function NavbarActions({
         <CartPreview
           visible={showCartPreview}
           items={cartItems}
+          isLoading={isLoading}
           onRemoveItem={onRemoveCartItem}
         />
       </div>

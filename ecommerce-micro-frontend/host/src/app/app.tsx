@@ -1,11 +1,22 @@
 import React from 'react';
 import { BrowserRouter, useRoutes } from 'react-router-dom';
 import { ConfigProvider, theme } from 'antd';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AppConfigProvider, useAppConfig } from '../context/AppConfigContext';
 import { routes } from '../routes';
 import { themeConfig } from '../config/theme';
 import '../i18n/config';
 import '../styles.less';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 /**
  * Router Component that uses useRoutes hook
@@ -54,11 +65,13 @@ function ThemedApp() {
  */
 export function App() {
   return (
-    <BrowserRouter>
-      <AppConfigProvider>
-        <ThemedApp />
-      </AppConfigProvider>
-    </BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <AppConfigProvider>
+          <ThemedApp />
+        </AppConfigProvider>
+      </BrowserRouter>
+    </QueryClientProvider>
   );
 }
 

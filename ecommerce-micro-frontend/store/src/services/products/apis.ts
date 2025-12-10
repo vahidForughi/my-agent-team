@@ -34,7 +34,7 @@ import {
   productTypeArrayResponseSchema,
 } from './schemas';
 
-export const apiFactory = createApiFactory('/Catalog');
+export const apiFactory = createApiFactory('/Catalog', { version: '' });
 
 /**
  * Get all products with pagination and filters

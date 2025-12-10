@@ -1,9 +1,10 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { message, Pagination } from 'antd';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AppInjectorProps } from '@ecommerce/app-injector';
 import { useGetProducts, useGetTypes } from '../services/products/hooks';
-import { StoreParamsInput } from '../services/products';
+import { StoreParamsInput, Product } from '../services/products';
+import { useAddToCart } from '../services/basket';
 import {
   ProductHeader,
   ProductGrid,
@@ -64,8 +65,8 @@ const ProductList: React.FC<ProductListProps> = ({ config }) => {
 
   const params = useMemo<StoreParamsInput>(() => {
     const baseParams: StoreParamsInput = {
-      PageIndex: currentPage,
-      PageSize: pageSize,
+      page: currentPage,
+      limit: pageSize,
     };
 
     if (selectedTypeId) {
@@ -81,6 +82,9 @@ const ProductList: React.FC<ProductListProps> = ({ config }) => {
   }, [selectedTypeId, sortOption, currentPage]);
 
   const { data: paginatedProducts, isLoading, error } = useGetProducts(params);
+
+  // Add to cart mutation
+  const addToCartMutation = useAddToCart();
 
   console.log('[ProductList] Products data:', {
     count: paginatedProducts?.data.length,
@@ -103,17 +107,37 @@ const ProductList: React.FC<ProductListProps> = ({ config }) => {
     return paginatedProducts?.count || 0;
   }, [paginatedProducts]);
 
-  function handleAddToCart(_productId: string, productName: string) {
-    try {
-      message.success(`${productName} added to cart!`);
-    } catch (err) {
-      if (onError) {
-        onError(err as Error);
-      } else {
-        message.error('Failed to add item to cart');
+  const handleAddToCart = useCallback(
+    async (productId: string, productName: string) => {
+      // Find the product from the list
+      const product = products.find((p: Product) => p.id === productId);
+
+      if (!product) {
+        message.error('Product not found');
+        return;
       }
-    }
-  }
+
+      try {
+        await addToCartMutation.mutateAsync({
+          productId: product.id,
+          productName: product.name,
+          price: product.price,
+          originalPrice: product.originalPrice ?? product.price,
+          quantity: 1,
+          imageFile: product.imageFile ?? null,
+        });
+
+        message.success(`${productName} added to cart!`);
+      } catch (err) {
+        if (onError) {
+          onError(err as Error);
+        } else {
+          message.error('Failed to add item to cart');
+        }
+      }
+    },
+    [products, addToCartMutation, onError]
+  );
 
   function handleViewDetails(productId: string) {
     navigate(`/product/${productId}`);

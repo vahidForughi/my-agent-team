@@ -3,6 +3,7 @@ import { message } from 'antd';
 import { AppInjectorProps } from '@ecommerce/app-injector';
 import { Product } from '../services/products/types';
 import { isProductInStock, getProductQuantity } from '../helpers/productUtils';
+import { useAddToCart } from '../services/basket';
 
 type UseProductActionsProps = {
   product: Product | null;
@@ -12,11 +13,12 @@ type UseProductActionsProps = {
 type UseProductActionsReturn = {
   quantity: number;
   setQuantity: (quantity: number) => void;
-  handleAddToCart: () => void;
+  handleAddToCart: () => Promise<boolean>;
   handleBuyNow: () => void;
   handleAddToWishlist: () => void;
   canAddToCart: boolean;
   maxQuantity: number;
+  isAddingToCart: boolean;
 };
 
 export function useProductActions({
@@ -26,12 +28,19 @@ export function useProductActions({
   const [quantity, setQuantity] = useState(1);
   const { onNavigate, onError } = config || {};
 
+  // Use the real add to cart mutation
+  const addToCartMutation = useAddToCart();
+  const isAddingToCart = addToCartMutation.isPending;
+
   const maxQuantity = product ? getProductQuantity(product) : 0;
   const canAddToCart = product
-    ? isProductInStock(product) && quantity > 0 && quantity <= maxQuantity
+    ? isProductInStock(product) &&
+      quantity > 0 &&
+      quantity <= maxQuantity &&
+      !isAddingToCart
     : false;
 
-  const handleAddToCart = useCallback(async () => {
+  const handleAddToCart = useCallback(async (): Promise<boolean> => {
     if (!product) {
       message.error('Product not available');
       return false;
@@ -43,8 +52,16 @@ export function useProductActions({
     }
 
     try {
-      // TODO: Implement actual add to cart API call
-      // Example: await addToCartAPI(product.id, quantity);
+      // Call the real Basket API
+      await addToCartMutation.mutateAsync({
+        productId: product.id,
+        productName: product.name,
+        price: product.price,
+        originalPrice: product.originalPrice ?? product.price,
+        quantity,
+        imageFile: product.imageFile ?? null,
+      });
+
       message.success(`${product.name} (x${quantity}) added to cart!`);
       return true;
     } catch (error) {
@@ -55,7 +72,7 @@ export function useProductActions({
       }
       return false;
     }
-  }, [product, quantity, canAddToCart, onError]);
+  }, [product, quantity, canAddToCart, addToCartMutation, onError]);
 
   const handleBuyNow = useCallback(async () => {
     if (!product) {
@@ -129,5 +146,6 @@ export function useProductActions({
     handleAddToWishlist,
     canAddToCart,
     maxQuantity,
+    isAddingToCart,
   };
 }

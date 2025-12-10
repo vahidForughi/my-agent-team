@@ -19,6 +19,7 @@ type ProductActionsProps = {
   canAddToCart: boolean;
   maxQuantity: number;
   isInStock: boolean;
+  isLoading?: boolean;
 };
 
 function ProductActions(props: ProductActionsProps) {
@@ -31,6 +32,7 @@ function ProductActions(props: ProductActionsProps) {
     canAddToCart,
     maxQuantity,
     isInStock,
+    isLoading = false,
   } = props;
 
   async function handleShare() {
@@ -95,15 +97,16 @@ function ProductActions(props: ProductActionsProps) {
             icon={<ShoppingCartOutlined />}
             onClick={onAddToCart}
             disabled={!canAddToCart}
+            loading={isLoading}
             block
           >
-            Add to Cart
+            {isLoading ? 'Adding...' : 'Add to Cart'}
           </Button>
           <Button
             size="large"
             icon={<ThunderboltOutlined />}
             onClick={onBuyNow}
-            disabled={!canAddToCart}
+            disabled={!canAddToCart || isLoading}
             block
           >
             Buy Now

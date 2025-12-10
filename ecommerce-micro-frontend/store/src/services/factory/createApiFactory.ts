@@ -1,6 +1,7 @@
 import { Method } from 'axios';
 import { ZodType } from 'zod';
 
+import { emitter, EVENT_NAMES } from '../../libs/TinyEmitter';
 import { buildPath } from '../helpers/buildPath';
 import { filterUsedKeys } from '../helpers/filterUsedKeys';
 import { mergeHeaderLocale } from '../helpers/mergeHeaderLocale';
@@ -28,61 +29,11 @@ type CreateApiFactoryOptions = {
   version?: string;
 };
 
-/**
- * Determines the base URL based on mock mode
- *
- * @param useMock - Whether to use mock API
- * @param defaultBaseURL - Default base URL from axios client
- * @returns Appropriate base URL for mock, or undefined to use axios default
- */
-function getBaseURL(useMock: boolean, defaultBaseURL: string): string | undefined {
-  return useMock ? '/api' : undefined; // Return undefined to use axios client's configured baseURL
-}
-
-/**
- * Creates an API factory function for making HTTP requests with validation and transformation
- *
- * This factory provides:
- * - Automatic request/response validation using Zod schemas
- * - Data transformation via mapper functions
- * - Mock API support for development/testing
- * - URL parameter interpolation
- * - Consistent error handling
- *
- * @param rootEndpoint - Base endpoint path (e.g., '/Catalog', '/Orders')
- * @param options - Configuration options
- * @param options.version - API version prefix (defaults to 'v1')
- *
- * @returns API factory function for making requests
- *
- * @example
- * ```typescript
- * // Create factory for product endpoints
- * const apiFactory = createApiFactory('/Catalog');
- *
- * // Make GET request with query params
- * const products = await apiFactory('GET', '/GetAllProducts', {
- *   params: { page: 1, limit: 10 }
- * }, {
- *   transformer: productMapper.toListDto,
- *   paramsSchema: listProductsInput
- * });
- *
- * // Make POST request with payload
- * const newProduct = await apiFactory('POST', '/CreateProduct', {
- *   payload: { name: 'New Product', price: 99.99 }
- * }, {
- *   transformer: productMapper.toDto,
- *   payloadSchema: createProductSchema
- * });
- * ```
- */
 export function createApiFactory(
   rootEndpoint: string,
-  options: CreateApiFactoryOptions = { version: 'v1' }
+  options: CreateApiFactoryOptions = { version: 'v1' },
 ) {
   const { version = 'v1' } = options;
-
   return async function <
     TResponse,
     TTransformed = TResponse,
@@ -91,46 +42,48 @@ export function createApiFactory(
       TTransformed
     > = ApiFactoryOptions<TResponse, TTransformed>,
     TParams extends RequestParams = RequestParams,
-    TPayload extends RequestPayload = RequestPayload
+    TPayload extends RequestPayload = RequestPayload,
   >(
     method: Method | string,
     path: `/${string}` | null,
     request?: Request<TParams, TPayload>,
-    options?: Options
+    options?: Options,
   ): Promise<Nullable<ApiResponse<TTransformed>>> {
     const { params = {}, payload = {} } = request ?? {};
 
+    // Process rootEndpoint for placeholders
     const { finalPath: processedRootEndpoint, usedKeys: rootPathUsedKeys } =
-      buildPath(rootEndpoint, params, payload);
+      buildPath(
+        rootEndpoint, // rootEndpoint from createApiFactory closure
+        params,
+        payload,
+      );
 
+    // Process pathSegment (original 'path' argument) for placeholders
     const pathSegment = path ?? '';
     const { finalPath: processedPathSegment, usedKeys: segmentPathUsedKeys } =
       buildPath(pathSegment, params, payload);
 
+    // Combine the processed parts to form the final path for the URL
     const finalUrlPath = processedRootEndpoint + processedPathSegment;
 
+    // Combine all keys used in path construction (root + segment)
     const allKeysUsedInPath = new Set<string>([
       ...rootPathUsedKeys,
       ...segmentPathUsedKeys,
     ]);
 
-    const defaultBaseURL = axiosClient.defaults.baseURL ?? '';
-    const baseURL = getBaseURL(options?.useMock ?? false, defaultBaseURL);
+    const { baseURL: defaultBaseURL } = axiosClient.defaults;
+    const baseURL = options?.useMock ? `/api` : `${defaultBaseURL}`;
 
-    console.log('[createApiFactory] Request:', {
-      endpoint: finalUrlPath,
-      useMock: options?.useMock ?? false,
-      baseURL,
-      axiosDefaultBaseURL: defaultBaseURL,
-    });
-
+    // Remove leading slash from finalUrlPath to prevent double slashes
     const cleanPath = finalUrlPath.startsWith('/')
       ? finalUrlPath.slice(1)
       : finalUrlPath;
 
     const url = options?.useMock
       ? `${version}/mock/${cleanPath}`
-      : cleanPath; // Real API doesn't need version prefix
+      : `${version}/${cleanPath}`;
 
     const headers = mergeHeaderLocale(request);
 
@@ -144,15 +97,15 @@ export function createApiFactory(
 
     const filteredParams = filterUsedKeys(
       validParams as Record<PropertyKey, unknown>,
-      allKeysUsedInPath
+      allKeysUsedInPath, // Use combined keys
     );
     const filteredPayload = filterUsedKeys(
       payload as Record<PropertyKey, unknown>,
-      allKeysUsedInPath
+      allKeysUsedInPath, // Use combined keys
     );
 
-    // Build axios config, only include baseURL if it's defined (for mock mode)
-    const axiosConfig: Record<string, unknown> = {
+    const response = await axiosClient<ApiResult<TResponse>>({
+      baseURL,
       method,
       url,
       headers,
@@ -161,33 +114,19 @@ export function createApiFactory(
       },
       data: filteredPayload,
       ...request?.options,
-    };
-
-    // Only override baseURL for mock mode, otherwise use axios client's default
-    if (baseURL !== undefined) {
-      axiosConfig.baseURL = baseURL;
-    }
-
-    const response = await axiosClient<ApiResult<TResponse>>(axiosConfig).then((res) => res.data);
-
-    let validResponse: Nullable<ApiResult<TResponse>>;
+    }).then((res) => res.data); // destructure the data from the axios
 
     if (isApiErrorResponse(response)) {
-      console.error('[API Error]', response.error.message);
-      const error = new Error(
-        `API Error: ${response.error.message} (${response.error.code})`
-      ) as Error & { cause?: typeof response };
+      emitter.emit(EVENT_NAMES.API_ERROR, response.error.message);
+      const error = new Error('Something went wrong') as Error & { cause?: unknown };
       error.cause = response;
       throw error;
     }
 
+    let validResponse: Nullable<TResponse> = response as TResponse;
+
     if (options?.responseSchema) {
-      validResponse = parseResponse(
-        response,
-        options.responseSchema
-      ) as Nullable<ApiResult<TResponse>>;
-    } else {
-      validResponse = response;
+      validResponse = parseResponse(response, options.responseSchema) as Nullable<TResponse>;
     }
 
     if (validResponse === null && method !== 'DELETE') {
@@ -195,16 +134,13 @@ export function createApiFactory(
       throw new Error('Parsed response is null or invalid format');
     }
 
-    let transformedData = validResponse as unknown as Nullable<
-      ApiResponse<TTransformed>
-    >;
+    let transformedData: Nullable<TTransformed> = validResponse as unknown as Nullable<TTransformed>;
 
     if (typeof options?.transformer === 'function' && validResponse) {
-      const transformed = options.transformer(validResponse as TResponse);
+      const transformed = options.transformer(validResponse);
       if (transformed === null || transformed === undefined) {
         throw new Error('Transformed data cannot be null or undefined');
       }
-
       transformedData = transformed;
     }
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Flex, Typography, Button } from 'antd';
 import NavbarSearch from './NavbarSearch';
@@ -8,20 +8,54 @@ import NavbarQuickLinks from './NavbarQuickLinks';
 import LanguageSwitcher from '../LanguageSwitcher/LanguageSwitcher';
 import { CartItem } from '../CartPreview/CartPreview';
 import { brandGradient } from '../../config/theme';
+import { useBasket, BasketItem } from '../../services/basket';
 
 const { Title } = Typography;
 
-const Navbar: React.FC = () => {
+/**
+ * Custom event name for cross-module cart updates
+ * Must match the event name in store/src/services/basket/hooks.ts
+ */
+const CART_UPDATED_EVENT = 'ecommerce:cart:updated';
+
+function Navbar() {
   const navigate = useNavigate();
 
-  // TODO: Connect to actual cart store
-  const basketCount = 0;
-  const cartItems: CartItem[] = [];
+  // Fetch basket data using React Query
+  const { items, itemCount, isLoading, refetch } = useBasket();
 
-  const handleRemoveCartItem = (id: string) => {
-    // TODO: Implement cart item removal
+  // Listen for cart updates from other modules (e.g., store)
+  useEffect(() => {
+    function handleCartUpdated() {
+      console.log('[Navbar] Cart updated event received, refetching basket...');
+      refetch();
+    }
+
+    window.addEventListener(CART_UPDATED_EVENT, handleCartUpdated);
+
+    return () => {
+      window.removeEventListener(CART_UPDATED_EVENT, handleCartUpdated);
+    };
+  }, [refetch]);
+
+  // Map BasketItem to CartItem format for CartPreview
+  const cartItems: CartItem[] = useMemo(() => {
+    return items.map((item: BasketItem) => ({
+      id: item.productId,
+      name: item.productName,
+      price: item.price,
+      quantity: item.quantity,
+      image: item.imageFile || '',
+    }));
+  }, [items]);
+
+  function handleRemoveCartItem(id: string) {
+    // Note: Remove functionality will be handled by checkout module
+    // Here we just log and could trigger a refetch
     console.info('Remove cart item:', id);
-  };
+    // Navigate to checkout for actual removal
+    navigate('/checkout');
+  }
 
   return (
     <div
@@ -104,8 +138,9 @@ const Navbar: React.FC = () => {
             <LanguageSwitcher />
 
             <NavbarActions
-              basketCount={basketCount}
+              basketCount={itemCount}
               cartItems={cartItems}
+              isLoading={isLoading}
               onRemoveCartItem={handleRemoveCartItem}
             />
           </Flex>
@@ -135,6 +170,6 @@ const Navbar: React.FC = () => {
       </Flex>
     </div>
   );
-};
+}
 
 export default Navbar;

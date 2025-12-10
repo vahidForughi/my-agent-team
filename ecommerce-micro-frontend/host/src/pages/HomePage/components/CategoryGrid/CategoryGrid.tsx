@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Card, Typography, Image, Row, Col, Spin } from 'antd';
-import { useCategories } from '../../../../hooks/useCategories';
+import { useCategories } from '../../../../services/categories';
 
 const { Title } = Typography;
 

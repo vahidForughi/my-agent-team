@@ -8,9 +8,9 @@ const createCartKeys = createCacheKeyWithScope('_cart');
 
 export const cartKeys = {
   get: createCacheSection((input?: GetCartRequest) =>
-    createCartKeys(['get', input?.userId])
+    createCartKeys(['get', input?.userName])
   ),
 
   all: createCartKeys(['all']),
-  detail: (userId?: string) => createCartKeys(['get', userId]),
+  detail: (userName?: string) => createCartKeys(['get', userName]),
 };

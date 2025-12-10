@@ -1,4 +1,4 @@
-import { ApiErrorResponse, ApiResult } from '../types';
+import { ApiErrorResponse, ApiResponse, ApiResult } from '../types';
 
 /**
  * Type guard to check if API response is an error response
@@ -29,4 +29,14 @@ export function isApiErrorResponse<T>(
   return (
     'error' in response && (response as ApiErrorResponse).error !== undefined
   );
+}
+
+/**
+ * Type guard to check if response is a success response (not an error)
+ */
+export function isApiResponse<T>(
+  response: ApiResult<T>
+): response is ApiResponse<T> {
+  if (!response || typeof response !== 'object') return false;
+  return !('error' in response);
 }

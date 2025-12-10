@@ -114,6 +114,11 @@ export function calculateDiscountAmount(
   coupon: Coupon,
   cartTotal: number
 ): number {
+  // No discount for zero or negative cart total
+  if (cartTotal <= 0) {
+    return 0;
+  }
+
   let discountAmount = 0;
 
   switch (coupon.discountType) {

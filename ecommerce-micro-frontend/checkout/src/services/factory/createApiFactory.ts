@@ -1,6 +1,7 @@
 import { Method } from 'axios';
 import { ZodType } from 'zod';
 
+import { emitter, EVENT_NAMES } from '../../libs/TinyEmitter';
 import { buildPath } from '../helpers/buildPath';
 import { filterUsedKeys } from '../helpers/filterUsedKeys';
 import { mergeHeaderLocale } from '../helpers/mergeHeaderLocale';
@@ -115,14 +116,14 @@ export function createApiFactory(
       },
       data: filteredPayload,
       ...request?.options,
-    }).then((res: { data: unknown }) => res.data); // destructure the data from the axios
+    }).then((res) => res.data); // destructure the data from the axios
 
     let validResponse: Nullable<ApiResult<TResponse>>;
 
     if (isApiErrorResponse(response)) {
-      console.error('[API Error]', response.error.message);
-      const error = new Error('Something went wrong');
-      (error as any).cause = response;
+      emitter.emit(EVENT_NAMES.API_ERROR, response.error.message);
+      const error = new Error('Something went wrong') as Error & { cause?: unknown };
+      error.cause = response;
       throw error;
     }
 
@@ -133,8 +134,8 @@ export function createApiFactory(
       validResponse = parseResponse(response, apiResponseSchema) as Nullable<
         ApiResult<TResponse>
       >;
-    } else if (response && 'data' in response) {
-      validResponse = response;
+    } else if (response && typeof response === 'object' && 'data' in response) {
+      validResponse = response as ApiResult<TResponse>;
     }
 
     if (validResponse === null && method !== 'DELETE') {
@@ -151,14 +152,14 @@ export function createApiFactory(
       validResponse &&
       isApiResponse(validResponse)
     ) {
-      const transformed = options.transformer(validResponse.data);
+      const transformed = options.transformer((validResponse as ApiResponse<TResponse>).data);
       if (transformed === null || transformed === undefined) {
         throw new Error('Transformed data cannot be null or undefined');
       }
 
       transformedData = {
         data: transformed,
-        meta: validResponse.meta,
+        meta: (validResponse as ApiResponse<TResponse>).meta,
       };
     }
 

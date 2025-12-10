@@ -13,11 +13,18 @@ import {
   Card,
   Row,
   Col,
+  Statistic,
+  Tag,
+  Flex,
 } from 'antd';
 import {
   ShoppingCartOutlined,
   DeleteOutlined,
   TagsFilled,
+  GiftOutlined,
+  TruckOutlined,
+  ClockCircleOutlined,
+  CheckCircleOutlined,
 } from '@ant-design/icons';
 import { AppInjectorProps } from '@ecommerce/app-injector';
 import {
@@ -27,7 +34,6 @@ import {
 } from '../services/cart/hooks';
 import { CartItem, Cart as CartType } from '../services/cart/types';
 import { Coupon } from '../services/coupon/types';
-import { ApiResponse } from '../services/types';
 import CouponInput from '../components/CouponInput';
 import AppliedCouponsList from '../components/AppliedCouponsList';
 import AvailableCouponsModal from '../components/AvailableCouponsModal';
@@ -60,31 +66,31 @@ function Cart(props: CartProps) {
   const removeCartItem = useRemoveCartItem();
 
   // Defined functions
-  async function handleRemoveItem(itemId: string) {
+  async function handleRemoveItem(productId: string) {
     try {
-      await removeCartItem.mutateAsync({ itemId });
+      await removeCartItem.mutateAsync({ productId });
       message.success('Item removed from cart');
-    } catch (error) {
+    } catch (err) {
       if (onError) {
-        onError(error as Error);
+        onError(err as Error);
       } else {
         message.error('Failed to remove item');
       }
     }
   }
 
-  async function handleUpdateQuantity(itemId: string, quantity: number) {
+  async function handleUpdateQuantity(productId: string, quantity: number) {
     try {
       if (quantity < 1) {
-        handleRemoveItem(itemId);
+        handleRemoveItem(productId);
         return;
       }
 
-      await updateCartItem.mutateAsync({ itemId, quantity });
+      await updateCartItem.mutateAsync({ productId, quantity });
       message.success('Quantity updated');
-    } catch (error) {
+    } catch (err) {
       if (onError) {
-        onError(error as Error);
+        onError(err as Error);
       } else {
         message.error('Failed to update quantity');
       }
@@ -105,9 +111,9 @@ function Cart(props: CartProps) {
       if (onNavigate) {
         onNavigate('/checkout/payment');
       }
-    } catch (error) {
+    } catch (err) {
       if (onError) {
-        onError(error as Error);
+        onError(err as Error);
       } else {
         message.error('Failed to proceed to checkout');
       }
@@ -155,9 +161,6 @@ function Cart(props: CartProps) {
     setShowCouponsModal(false);
   }
 
-  // useEffect hooks
-  // (none needed in simplified version)
-
   // Loading state
   if (isLoading) {
     return (
@@ -182,33 +185,150 @@ function Cart(props: CartProps) {
   }
 
   // Access cart data
-  const cartData = (cart as ApiResponse<CartType> | null)?.data;
+  const cartData = cart?.data as CartType | undefined;
   const cartItems: CartItem[] = cartData?.items || [];
-  const subtotal = cartData?.subtotal || 0;
-  
+  const subtotal = cartData?.totalPrice || 0;
+
   // Calculate coupon discount based on discount type
   const couponDiscount = appliedCoupons.reduce((sum, coupon) => {
     return sum + calculateDiscountAmount(coupon, subtotal);
   }, 0);
-  
+
   const tax = subtotal * 0.1; // 10% tax
   const shipping = subtotal > 0 ? 10 : 0;
   const total = subtotal - couponDiscount + tax + shipping;
 
+  // Cart stats calculations
+  const totalQuantity = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const totalSavings =
+    cartItems.reduce((sum, item) => {
+      const originalTotal = item.originalPrice * item.quantity;
+      const currentTotal = item.price * item.quantity;
+      return sum + (originalTotal - currentTotal);
+    }, 0) + couponDiscount;
+
+  // Estimated delivery calculation
+  const FREE_SHIPPING_THRESHOLD = 50;
+  const amountToFreeShipping = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
+  const qualifiesForFreeShipping = subtotal >= FREE_SHIPPING_THRESHOLD;
+
+  function getEstimatedDeliveryDate(daysToAdd: number): string {
+    const date = new Date();
+    let addedDays = 0;
+    while (addedDays < daysToAdd) {
+      date.setDate(date.getDate() + 1);
+      const dayOfWeek = date.getDay();
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        addedDays++;
+      }
+    }
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    });
+  }
+
+  const standardDeliveryDate = getEstimatedDeliveryDate(7);
+  const expressDeliveryDate = getEstimatedDeliveryDate(3);
+
   return (
     <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
-      <Title level={2}>
-        <ShoppingCartOutlined style={{ marginRight: '12px' }} />
-        Shopping Cart
-      </Title>
-
-      {user && (
-        <Text
-          type="secondary"
-          style={{ display: 'block', marginBottom: '24px' }}
+      {/* Cart Summary Stats & Delivery Info */}
+      {cartItems.length > 0 && (
+        <Card
+          style={{
+            marginBottom: 24,
+            background: 'linear-gradient(135deg, #f6f8fc 0%, #f0f5ff 100%)',
+            border: '1px solid #e6f0ff',
+          }}
+          styles={{ body: { padding: '16px 24px' } }}
         >
-          Hi {user.firstName || 'Guest'}, review your cart items before checkout
-        </Text>
+          <Row gutter={[24, 16]} align="middle">
+            {/* Cart Stats */}
+            <Col xs={24} sm={8} md={6}>
+              <Statistic
+                title={
+                  <Space>
+                    <ShoppingCartOutlined style={{ color: '#1890ff' }} />
+                    <span>Items</span>
+                  </Space>
+                }
+                value={cartItems.length}
+                suffix={
+                  <Text type="secondary" style={{ fontSize: 14 }}>
+                    ({totalQuantity} units)
+                  </Text>
+                }
+              />
+            </Col>
+
+            {totalSavings > 0 && (
+              <Col xs={24} sm={8} md={6}>
+                <Statistic
+                  title={
+                    <Space>
+                      <GiftOutlined style={{ color: '#52c41a' }} />
+                      <span>You Save</span>
+                    </Space>
+                  }
+                  value={totalSavings}
+                  precision={2}
+                  prefix="$"
+                  valueStyle={{ color: '#52c41a' }}
+                />
+              </Col>
+            )}
+
+            {/* Estimated Delivery */}
+            <Col xs={24} sm={8} md={6}>
+              <Space direction="vertical" size={4}>
+                <Text type="secondary">
+                  <TruckOutlined style={{ marginRight: 6, color: '#1890ff' }} />
+                  Estimated Delivery
+                </Text>
+                <Space size={4}>
+                  <Tag color="blue" icon={<ClockCircleOutlined />}>
+                    Standard: {standardDeliveryDate}
+                  </Tag>
+                </Space>
+                {subtotal >= 100 && (
+                  <Tag color="green" icon={<CheckCircleOutlined />}>
+                    Express: {expressDeliveryDate}
+                  </Tag>
+                )}
+              </Space>
+            </Col>
+
+            {/* Free Shipping Progress */}
+            <Col xs={24} sm={24} md={6}>
+              {qualifiesForFreeShipping ? (
+                <Flex align="center" gap={8}>
+                  <CheckCircleOutlined
+                    style={{ color: '#52c41a', fontSize: 20 }}
+                  />
+                  <Text strong style={{ color: '#52c41a' }}>
+                    You qualify for FREE shipping!
+                  </Text>
+                </Flex>
+              ) : (
+                <Space direction="vertical" size={4}>
+                  <Text type="secondary">
+                    <TruckOutlined style={{ marginRight: 6 }} />
+                    Free Shipping
+                  </Text>
+                  <Text>
+                    Add{' '}
+                    <Text strong style={{ color: '#fa8c16' }}>
+                      {formatCurrency(amountToFreeShipping)}
+                    </Text>{' '}
+                    more to qualify!
+                  </Text>
+                </Space>
+              )}
+            </Col>
+          </Row>
+        </Card>
       )}
 
       {cartItems.length === 0 ? (
@@ -232,7 +352,7 @@ function Cart(props: CartProps) {
                       min={0}
                       value={item.quantity}
                       onChange={(value) =>
-                        handleUpdateQuantity(item.id, value || 0)
+                        handleUpdateQuantity(item.productId, value || 0)
                       }
                     />,
                     <Button
@@ -240,7 +360,7 @@ function Cart(props: CartProps) {
                       type="text"
                       danger
                       icon={<DeleteOutlined />}
-                      onClick={() => handleRemoveItem(item.id)}
+                      onClick={() => handleRemoveItem(item.productId)}
                     />,
                   ]}
                 >
@@ -249,7 +369,9 @@ function Cart(props: CartProps) {
                     description={`${formatCurrency(item.price)} each`}
                   />
                   <div style={{ fontWeight: 'bold' }}>
-                    {formatCurrency(item.itemTotal || item.price * item.quantity)}
+                    {formatCurrency(
+                      item.itemTotal || item.price * item.quantity
+                    )}
                   </div>
                 </List.Item>
               )}

@@ -18,7 +18,7 @@ export type Mapper<Entity, Dto, ExtraParams> = {
   ) => Dto[];
 };
 
-export const createMapper = <Entity, Dto, ExtraParams = {}>(
+export const createMapper = <Entity, Dto, ExtraParams = Record<string, never>>(
   mapFunction: (entity: Entity, extraParams?: ExtraParams) => Dto,
   schema: ZodSchema<Entity>
 ): Mapper<Entity, Dto, ExtraParams> => {

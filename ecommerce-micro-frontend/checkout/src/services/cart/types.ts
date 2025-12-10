@@ -5,28 +5,59 @@ import {
   updateCartItemRequestSchema,
   removeCartItemRequestSchema,
   clearCartRequestSchema,
-  applyShippingRequestSchema,
-  cartItemResponseSchema,
-  cartResponseSchema,
+  checkoutRequestSchema,
+  shoppingCartItemResponseSchema,
+  shoppingCartResponseSchema,
   cartItemSchema,
   cartSchema,
 } from './schemas';
+
+// ====================================
+// REQUEST TYPES
+// ====================================
 
 export type GetCartRequest = z.infer<typeof getCartRequestSchema>;
 export type AddToCartRequest = z.infer<typeof addToCartRequestSchema>;
 export type UpdateCartItemRequest = z.infer<typeof updateCartItemRequestSchema>;
 export type RemoveCartItemRequest = z.infer<typeof removeCartItemRequestSchema>;
 export type ClearCartRequest = z.infer<typeof clearCartRequestSchema>;
-export type ApplyShippingRequest = z.infer<typeof applyShippingRequestSchema>;
+export type CheckoutRequest = z.infer<typeof checkoutRequestSchema>;
 
-export type CartItemResponse = z.infer<typeof cartItemResponseSchema>;
-export type CartResponse = z.infer<typeof cartResponseSchema>;
+// ====================================
+// BACKEND RESPONSE TYPES (PascalCase)
+// ====================================
+
+export type ShoppingCartItemResponse = z.infer<
+  typeof shoppingCartItemResponseSchema
+>;
+export type ShoppingCartResponse = z.infer<typeof shoppingCartResponseSchema>;
+
+// ====================================
+// FRONTEND DTO TYPES (camelCase)
+// ====================================
 
 export type CartItem = z.infer<typeof cartItemSchema>;
-
 export type Cart = z.infer<typeof cartSchema>;
 
-export enum ShippingMethod {
-  Standard = 'standard',
-  Express = 'express',
-}
+// ====================================
+// DEPRECATED - Keep for backward compatibility
+// ====================================
+
+/** @deprecated Use ShoppingCartItemResponse */
+export type CartItemResponse = ShoppingCartItemResponse;
+
+/** @deprecated Use ShoppingCartResponse */
+export type CartResponse = ShoppingCartResponse;
+
+/** @deprecated Use CheckoutRequest */
+export type ApplyShippingRequest = {
+  shippingMethod: 'standard' | 'express';
+  address: {
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+  };
+  useMock?: boolean;
+};

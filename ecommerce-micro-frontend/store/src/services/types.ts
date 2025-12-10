@@ -112,10 +112,15 @@ export type ApiErrorResponse = {
 };
 
 /**
- * API response type - currently unwrapped data
- *
- * In the future, this may include metadata envelope:
- * { data: T, meta: { timestamp: string, ... } }
+ * API response with data and optional pagination meta
+ */
+export type ApiResponseWithMeta<T> = {
+  data: T;
+  meta?: PaginationMeta;
+};
+
+/**
+ * API response type - can be either wrapped or unwrapped
  */
 export type ApiResponse<T> = T;
 

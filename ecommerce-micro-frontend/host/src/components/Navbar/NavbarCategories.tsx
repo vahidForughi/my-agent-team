@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Dropdown, Button, Spin } from 'antd';
 import { MenuOutlined } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
-import { useCategories } from '../../hooks/useCategories';
+import { useCategories } from '../../services/categories';
 
 function NavbarCategories() {
   const navigate = useNavigate();
