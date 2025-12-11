@@ -1,4 +1,4 @@
-import { User } from '@ecommerce/app-injector';
+import { User } from '@ecommerce-platform/app-injector';
 
 /**
  * Get display name for user

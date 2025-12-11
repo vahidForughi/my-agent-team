@@ -3,7 +3,7 @@
  * Used when NX_USE_MOCK_DATA=true in environment
  */
 
-import type { ShoppingCartFrontend } from '@ecommerce/shared/types';
+import type { ShoppingCartFrontend } from '../../types';
 
 export function getMockBasket(): ShoppingCartFrontend {
   return {

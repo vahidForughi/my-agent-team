@@ -4,7 +4,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import Module from './app/Module';
 import { queryClient } from './services/queryClient';
 import { setupMocks } from './services/mocks';
-import { env } from '@ecommerce/shared/config';
+import { env } from './config';
 
 // Debug environment configuration
 console.log('[Bootstrap] Environment config:', {

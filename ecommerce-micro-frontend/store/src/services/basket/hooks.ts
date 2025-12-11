@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { AuthService } from '@ecommerce/shared/auth';
+import { AuthService } from '../../auth';
 import * as apis from './apis';
 import { basketKeys } from './keys';
 import type { AddToCartRequest, Basket } from './types';

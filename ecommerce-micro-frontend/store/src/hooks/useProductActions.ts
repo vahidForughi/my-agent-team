@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { message } from 'antd';
-import { AppInjectorProps } from '@ecommerce/app-injector';
+import { AppInjectorProps } from '@ecommerce-platform/app-injector';
 import { Product } from '../services/products/types';
 import { isProductInStock, getProductQuantity } from '../helpers/productUtils';
 import { useAddToCart } from '../services/basket';

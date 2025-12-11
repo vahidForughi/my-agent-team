@@ -1,7 +1,7 @@
-import { createAppInjector, AppInjectorProps } from '@ecommerce/app-injector';
+import { createAppInjector, AppInjectorProps } from '@ecommerce-platform/app-injector';
 import StoreModule from './app/Module';
 import { setupMocks } from './services/mocks';
-import { env } from '@ecommerce/shared/config';
+import { env } from './config';
 
 // Setup mock adapter only if enabled in environment
 // This runs when the module is first loaded as a micro-frontend

@@ -16,7 +16,7 @@ import {
   RightOutlined,
 } from '@ant-design/icons';
 import { brandGradient } from '../../config/theme';
-import { env } from '@ecommerce/shared/config';
+import { env } from '../../config';
 
 const { Text } = Typography;
 

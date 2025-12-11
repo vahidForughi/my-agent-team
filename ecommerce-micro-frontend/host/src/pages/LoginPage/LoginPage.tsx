@@ -4,7 +4,7 @@ import { Form, Input, Button, Card, Typography, message, Flex } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { setAuthToken } from '../../helpers/auth';
 import { useAppConfig } from '../../context/AppConfigContext';
-import { User } from '@ecommerce/app-injector';
+import { User } from '@ecommerce-platform/app-injector';
 import { brandGradient } from '../../config/theme';
 
 const { Title, Text } = Typography;

@@ -4,8 +4,8 @@
  */
 
 import { httpClient } from '../httpClient';
-import { env, API_CONFIG } from '@ecommerce/shared/config';
-import { AuthService } from '@ecommerce/shared/auth';
+import { env, API_CONFIG } from '../../config';
+import { AuthService } from '../../auth';
 import {
   ShoppingCartResponseSchema,
   CreateShoppingCartCommandSchema,
@@ -14,7 +14,7 @@ import {
   type ShoppingCartResponse,
   type ShoppingCartItem,
   type ShoppingCartFrontend,
-} from '@ecommerce/shared/types';
+} from '../../types';
 import { getMockBasket, getMockCheckoutResponse } from './mocks';
 
 /**

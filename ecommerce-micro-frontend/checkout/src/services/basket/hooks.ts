@@ -8,9 +8,9 @@ import {
   mapShoppingCartItemToBackend,
   type ShoppingCartItem,
   type ShoppingCartItemFrontend,
-} from '@ecommerce/shared/types';
+} from '../../types';
 import { getBasket, createBasket, deleteBasket, checkoutBasket, type CheckoutRequest } from './apis';
-import { AuthService } from '@ecommerce/shared/auth';
+import { AuthService } from '../../auth';
 
 // Query keys for React Query caching
 export const basketKeys = {

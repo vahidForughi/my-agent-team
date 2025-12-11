@@ -1,4 +1,4 @@
-import { createAppInjector, AppInjectorProps } from '@ecommerce/app-injector';
+import { createAppInjector, AppInjectorProps } from '@ecommerce-platform/app-injector';
 import AccountModule from './app/Module';
 
 /**

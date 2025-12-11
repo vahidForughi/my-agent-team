@@ -26,7 +26,7 @@ import {
   ClockCircleOutlined,
   CheckCircleOutlined,
 } from '@ant-design/icons';
-import { AppInjectorProps } from '@ecommerce/app-injector';
+import { AppInjectorProps } from '@ecommerce-platform/app-injector';
 import {
   useGetCart,
   useUpdateCartItem,

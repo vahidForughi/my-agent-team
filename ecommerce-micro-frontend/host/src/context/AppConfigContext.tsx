@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { message } from 'antd';
-import { MicroFrontendConfig, AppContext, User } from '@ecommerce/app-injector';
+import { MicroFrontendConfig, AppContext, User } from '@ecommerce-platform/app-injector';
 import { getAuthToken, isAuthenticated, logout } from '../helpers/auth';
 
 interface AppConfigContextType {

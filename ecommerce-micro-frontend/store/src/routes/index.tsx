@@ -1,7 +1,7 @@
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
 import { Flex, Spin } from 'antd';
-import { AppInjectorProps } from '@ecommerce/app-injector';
+import { AppInjectorProps } from '@ecommerce-platform/app-injector';
 
 // Lazy load pages for better performance
 const ProductList = React.lazy(() => import('../pages/ProductList'));

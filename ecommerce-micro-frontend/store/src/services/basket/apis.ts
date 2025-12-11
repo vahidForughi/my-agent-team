@@ -1,6 +1,6 @@
 import { axiosClient } from '../httpClient';
-import { API_CONFIG } from '@ecommerce/shared/config';
-import { AuthService } from '@ecommerce/shared/auth';
+import { API_CONFIG } from '../../config';
+import { AuthService } from '../../auth';
 import { mapShoppingCartToBasket, createEmptyBasket } from './mappers';
 import { shoppingCartResponseSchema } from './schemas';
 import type {

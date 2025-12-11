@@ -1,10 +1,10 @@
 /**
  * HTTP Client for Checkout Micro-Frontend
- * Configured with shared authentication, error handling, and logging
+ * Configured with authentication, error handling, and logging
  */
 
-import { HttpClientFactory } from '@ecommerce/shared/http-client';
-import { env } from '@ecommerce/shared/config';
+import { HttpClientFactory } from '../http';
+import { env } from '../config';
 
 /**
  * Default HTTP client for Checkout app

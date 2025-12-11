@@ -4,7 +4,7 @@ import { ReactQueryUnwrapPromise } from '../../typings/common';
 import { storeClient } from '../index';
 import { productKeys } from './keys';
 import { StoreParamsInput } from './input';
-import { env } from '@ecommerce/shared/config';
+import { env } from '../../config';
 
 /**
  * Hook to fetch all products with pagination and filters

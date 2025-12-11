@@ -1,7 +1,7 @@
 import React, { useMemo, useEffect } from 'react';
 import { MemoryRouter, useRoutes, useLocation } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { AppInjectorProps } from '@ecommerce/app-injector';
+import { AppInjectorProps } from '@ecommerce-platform/app-injector';
 import { createStoreRoutes } from '../routes';
 import { queryClient } from '../services/queryClient';
 

@@ -17,7 +17,7 @@ import {
   ShoppingOutlined,
   SettingOutlined,
 } from '@ant-design/icons';
-import { AppInjectorProps } from '@ecommerce/app-injector';
+import { AppInjectorProps } from '@ecommerce-platform/app-injector';
 
 const { Title, Text } = Typography;
 

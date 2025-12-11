@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { message, Pagination } from 'antd';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { AppInjectorProps } from '@ecommerce/app-injector';
+import { AppInjectorProps } from '@ecommerce-platform/app-injector';
 import { useGetProducts, useGetTypes } from '../services/products/hooks';
 import { StoreParamsInput, Product } from '../services/products';
 import { useAddToCart } from '../services/basket';

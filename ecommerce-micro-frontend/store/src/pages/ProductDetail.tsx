@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Row, Col, Space, Divider, Button, Empty } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
-import { AppInjectorProps } from '@ecommerce/app-injector';
+import { AppInjectorProps } from '@ecommerce-platform/app-injector';
 import { useGetProductById } from '../services/products/hooks';
 import { isProductInStock } from '../helpers/productUtils';
 import { useProductActions } from '../hooks/useProductActions';
