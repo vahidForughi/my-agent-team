@@ -1,16 +1,16 @@
 /**
  * Generic Micro Frontend Loader
- * 
+ *
  * Dynamically loads and renders micro frontends based on route parameters.
  * Uses Module Federation runtime to load remote modules at runtime.
- * 
+ *
  * Architecture:
  * - Host doesn't know about specific micro frontends
  * - Reads app name from route params (/:appName/*)
  * - Looks up config from registry
  * - Dynamically loads remote module
  * - Injects into DOM container
- * 
+ *
  * Pattern adapted from console-ui WebKitMicroApp implementation.
  */
 
@@ -45,7 +45,9 @@ const MicroFrontendContent: React.FC<{ appName: string }> = ({ appName }) => {
   useEffect(() => {
     if (!microFrontendConfig) {
       setError(
-        new Error(`Micro frontend "${appName}" is not registered in the registry.`)
+        new Error(
+          `Micro frontend "${appName}" is not registered in the registry.`
+        )
       );
       setIsLoading(false);
       return;
@@ -61,9 +63,7 @@ const MicroFrontendContent: React.FC<{ appName: string }> = ({ appName }) => {
         // Get remote URL for current environment
         const remoteUrl = getRemoteUrl(microFrontendConfig.urls);
 
-        console.log(
-          `[MicroFrontendApp] Loading ${appName} from ${remoteUrl}`
-        );
+        console.log(`[MicroFrontendApp] Loading ${appName} from ${remoteUrl}`);
 
         // Initialize Module Federation runtime
         init({
@@ -93,9 +93,7 @@ const MicroFrontendContent: React.FC<{ appName: string }> = ({ appName }) => {
         const { inject, unmount } = remoteModule.default;
 
         if (!inject || typeof inject !== 'function') {
-          throw new Error(
-            `Remote module does not export an "inject" function`
-          );
+          throw new Error(`Remote module does not export an "inject" function`);
         }
 
         // Store unmount function for cleanup
@@ -106,7 +104,9 @@ const MicroFrontendContent: React.FC<{ appName: string }> = ({ appName }) => {
         await new Promise((resolve) => setTimeout(resolve, 100));
 
         // Verify container exists
-        const containerElement = document.getElementById(containerIdRef.current);
+        const containerElement = document.getElementById(
+          containerIdRef.current
+        );
         if (!containerElement) {
           throw new Error(
             `Container element with id "${containerIdRef.current}" not found`
@@ -114,8 +114,15 @@ const MicroFrontendContent: React.FC<{ appName: string }> = ({ appName }) => {
         }
 
         // Inject the micro frontend into the container
+        // Pass basePath so micro-frontend can use BrowserRouter with correct basename
         inject(containerIdRef.current, {
-          config: appConfig,
+          config: {
+            ...appConfig,
+            appContext: {
+              ...appConfig?.appContext,
+              basePath: `/${appName}`,
+            },
+          },
         });
 
         console.log(`[MicroFrontendApp] Successfully loaded ${appName}`);
@@ -208,7 +215,7 @@ const MicroFrontendContent: React.FC<{ appName: string }> = ({ appName }) => {
 
 /**
  * Main Micro Frontend App Component
- * 
+ *
  * Entry point for all micro frontend routes.
  * Reads app name from URL and delegates to MicroFrontendContent.
  */
@@ -230,7 +237,7 @@ const MicroFrontendApp: React.FC = () => {
     console.error(
       `[MicroFrontendApp] Micro frontend "${appName}" not found in registry`
     );
-    
+
     return (
       <ErrorBoundaryFallback
         error={
@@ -251,4 +258,3 @@ const MicroFrontendApp: React.FC = () => {
 };
 
 export default MicroFrontendApp;
-

@@ -17,7 +17,7 @@ export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder];
 
 export type Enumerable<T> = T | Array<T>;
 
-export type FilterOptions<TAdditionalParams = {}> = {
+export type FilterOptions<TAdditionalParams = Record<string, unknown>> = {
   page?: number;
   limit?: number;
   orderBy?: Record<string, SortOrder>;

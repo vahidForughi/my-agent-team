@@ -18,7 +18,7 @@ export interface ProfileViewProps extends AccountViewProps {
 /**
  * Props for OrdersView component
  */
-export interface OrdersViewProps extends AccountViewProps {}
+export type OrdersViewProps = AccountViewProps;
 
 /**
  * Props for SettingsView component
