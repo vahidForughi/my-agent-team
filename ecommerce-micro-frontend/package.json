@@ -3,6 +3,11 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
+    "postinstall": "npm run build:packages",
+    "build:packages": "npm run build:app-injector && npm run build:auth-provider",
+    "build:app-injector": "cd packages/app-injector && npm install && npm run build",
+    "build:auth-provider": "cd packages/auth-provider && npm install && npm run build",
+    "setup": "npm install && npm run build:packages",
     "start": "nx run-many --target=serve --projects=host,store,checkout,account --parallel=4",
     "start:host": "nx serve host",
     "start:store": "nx serve store",
@@ -26,7 +31,7 @@
     "affected:build": "nx affected --target=build",
     "affected:lint": "nx affected --target=lint",
     "graph": "nx graph",
-    "clean": "nx reset"
+    "clean": "nx reset && rm -rf packages/*/dist packages/*/node_modules"
   },
   "private": true,
   "devDependencies": {
