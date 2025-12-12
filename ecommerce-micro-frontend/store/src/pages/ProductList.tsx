@@ -3,7 +3,7 @@ import { message, Pagination } from 'antd';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AppInjectorProps } from '@ecommerce-platform/app-injector';
 import { useGetProducts, useGetTypes } from '../services/products/hooks';
-import { StoreParamsInput, Product } from '../services/products';
+import { StoreParamsInput, Product, ProductType } from '../services/products';
 import { useAddToCart } from '../services/basket';
 import {
   ProductHeader,
@@ -44,7 +44,7 @@ const ProductList: React.FC<ProductListProps> = ({ config }) => {
     } else if (catFromUrl && productTypes) {
       // Category name from URL (e.g., ?cat=laptops) - need to find matching type by name
       const matchingType = productTypes.find(
-        (type) => type.name.toLowerCase() === catFromUrl.toLowerCase()
+        (type: ProductType) => type.name.toLowerCase() === catFromUrl.toLowerCase()
       );
       if (matchingType) {
         setSelectedTypeId(matchingType.id);

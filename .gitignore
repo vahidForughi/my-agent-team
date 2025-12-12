@@ -320,7 +320,10 @@ FakesAssemblies/
 node_modules/
 
 # Typescript v1 declaration files
-typings/
+# Note: Using **/typings/ to allow negation for ecommerce-micro-frontend
+**/typings/
+!ecommerce-micro-frontend/**/typings/
+!ecommerce-micro-frontend/**/typings/**
 
 # Visual Studio 6 build log
 *.plg
