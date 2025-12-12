@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, useRoutes } from 'react-router-dom';
 import { ConfigProvider, theme } from 'antd';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MsalAuthProvider } from '../auth/msal';
 import { AppConfigProvider, useAppConfig } from '../context/AppConfigContext';
 import { routes } from '../routes';
 import { themeConfig } from '../config/theme';
@@ -62,14 +63,18 @@ function ThemedApp() {
  *
  * Theme is now managed through AppConfigContext for proper state management
  * and synchronization across the application.
+ *
+ * Authentication is managed by MsalAuthProvider using Azure AD B2C.
  */
 export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
+        <MsalAuthProvider>
         <AppConfigProvider>
           <ThemedApp />
         </AppConfigProvider>
+        </MsalAuthProvider>
       </BrowserRouter>
     </QueryClientProvider>
   );

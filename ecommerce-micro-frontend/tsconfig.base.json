@@ -19,6 +19,12 @@
     "resolveJsonModule": true,
     "baseUrl": ".",
     "paths": {
+      "@ecommerce-platform/auth": [
+        "packages/auth/src/index.ts"
+      ],
+      "@ecommerce-platform/app-injector": [
+        "packages/app-injector/src/index.ts"
+      ],
       "store/Module": [
         "store/src/remote-entry.ts"
       ],

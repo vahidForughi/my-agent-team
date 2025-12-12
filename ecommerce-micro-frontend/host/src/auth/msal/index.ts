@@ -1,21 +1,33 @@
-// Legacy mock auth (kept for backward compatibility)
-export { AuthService } from './auth.service';
-export { AuthStorage } from './auth.storage';
-export type { User, AuthState as LegacyAuthState, LoginRequest, LoginResponse } from './auth.types';
+/**
+ * Host MSAL Auth Module
+ */
 
-// MSAL Auth (new implementation)
+// Types
+export type {
+  MsalUser,
+  MsalUserClaims,
+  AuthState,
+  AuthContextValue,
+  HostAuthContextValue,
+  AuthEventType,
+  AuthEvent,
+  AuthEventListener,
+} from './types';
+
 export {
-  // Provider
-  MsalAuthProvider,
-  useMsalAuth,
-  // Types
   initialAuthState,
   accountInfoToMsalUser,
   isExpiryTimestampExpired,
   getTokenExpiry,
   authEventEmitter,
   createAuthEvent,
-  // Config
+} from './types';
+
+// Provider and context
+export { MsalAuthProvider, useMsalAuth } from './MsalAuthProvider';
+
+// Configuration
+export {
   B2C_CONFIG,
   buildB2CAuthority,
   buildApiScope,
@@ -28,7 +40,10 @@ export {
   getMsalInstance,
   initializeMsal,
   hostMsalConfig,
-  // Hooks
+} from './config';
+
+// Hooks
+export {
   useIsUserAuthenticated,
   useCurrentUser,
   useAuthLoading,
@@ -38,24 +53,19 @@ export {
   useAuthContextForRemote,
   useAuthStateSubscription,
   useRequireAuth,
-  // Token broadcasting
+} from './hooks';
+
+// Token broadcasting
+export {
   broadcastToken,
   broadcastAuthState,
   subscribeToTokenBroadcast,
   subscribeToAuthStateBroadcast,
   TOKEN_BROADCAST_EVENT,
   AUTH_STATE_BROADCAST_EVENT,
-} from './msal';
+} from './token-broadcast';
 
 export type {
-  MsalUser,
-  MsalUserClaims,
-  AuthState,
-  AuthContextValue,
-  HostAuthContextValue,
-  AuthEventType,
-  AuthEvent,
-  AuthEventListener,
   TokenBroadcastEventDetail,
   AuthStateBroadcastEventDetail,
-} from './msal';
+} from './token-broadcast';

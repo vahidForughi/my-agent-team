@@ -14,6 +14,10 @@ export interface ApiError {
 export interface ApiRequestConfig extends AxiosRequestConfig {
   useMock?: boolean;
   skipAuth?: boolean;
+  /** Mark request as requiring authentication (will wait for async token) */
+  requiresAuth?: boolean;
+  /** Internal flag to prevent infinite retry loops */
+  _retried?: boolean;
 }
 
 export interface HttpClient {

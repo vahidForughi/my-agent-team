@@ -1,5 +1,8 @@
 /**
  * Account Module - HTTP Client Factory
+ *
+ * Creates Axios instances with authentication interceptors.
+ * Uses the auth token provider to get tokens from the current auth context.
  */
 
 import axios from 'axios';
@@ -7,12 +10,15 @@ import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'a
 import { env } from '../config';
 import { AuthStorage } from '../auth';
 import { ApiErrorHandler } from './api-error.handler';
+import { authTokenProvider } from './auth-token-provider';
 import type { ApiRequestConfig } from './http-client.types';
 
 export interface HttpClientOptions {
   baseURL?: string;
   timeout?: number;
   useMock?: boolean;
+  /** Use legacy auth storage instead of token provider */
+  useLegacyAuth?: boolean;
 }
 
 export class HttpClientFactory {
@@ -26,18 +32,40 @@ export class HttpClientFactory {
     });
 
     instance.interceptors.request.use(
-      (config: InternalAxiosRequestConfig) => {
+      async (config: InternalAxiosRequestConfig) => {
         const customConfig = config as ApiRequestConfig;
         if (customConfig.skipAuth) {
           return config;
         }
 
-        const token = AuthStorage.getToken();
+        // Try to get token from auth token provider first
+        let token: string | null = null;
+        let username: string | null = null;
+
+        if (!options.useLegacyAuth && authTokenProvider.hasProvider()) {
+          // Use token provider (from auth context)
+          token = authTokenProvider.getTokenSync();
+          const userInfo = authTokenProvider.getUserInfo();
+          username = userInfo?.username || userInfo?.email || null;
+
+          // If no sync token available, try async (for important requests)
+          if (!token && customConfig.requiresAuth) {
+            token = await authTokenProvider.getTokenAsync();
+          }
+        }
+
+        // Fallback to legacy auth storage if no provider or token
+        if (!token) {
+          token = AuthStorage.getToken();
+        }
+        if (!username) {
+          username = AuthStorage.getCurrentUsername();
+        }
+
         if (token && config.headers) {
           config.headers.Authorization = `Bearer ${token}`;
         }
 
-        const username = AuthStorage.getCurrentUsername();
         if (username && config.headers) {
           config.headers['X-User-Name'] = username;
         }
@@ -47,6 +75,8 @@ export class HttpClientFactory {
             method: config.method?.toUpperCase(),
             url: config.url,
             baseURL: config.baseURL,
+            hasToken: !!token,
+            authSource: authTokenProvider.hasProvider() ? 'provider' : 'storage',
           });
         }
 
@@ -68,7 +98,28 @@ export class HttpClientFactory {
         }
         return response;
       },
-      (error) => {
+      async (error) => {
+        // Handle 401 Unauthorized - try to refresh token
+        if (error.response?.status === 401 && authTokenProvider.hasProvider()) {
+          const config = error.config as ApiRequestConfig;
+          
+          // Only retry once
+          if (!config._retried) {
+            config._retried = true;
+            
+            try {
+              // Try to get fresh token
+              const newToken = await authTokenProvider.getTokenAsync();
+              if (newToken && config.headers) {
+                config.headers.Authorization = `Bearer ${newToken}`;
+                return axios(config);
+              }
+            } catch (refreshError) {
+              console.error('[account] Token refresh failed:', refreshError);
+            }
+          }
+        }
+
         if (env.enableApiLogging) {
           console.error('[account] ❌ API Error:', {
             url: error.config?.url,
@@ -83,6 +134,9 @@ export class HttpClientFactory {
     return instance;
   }
 
+  /**
+   * Create HTTP client with mock support
+   */
   static createWithMock(
     options: HttpClientOptions = {},
     mockHandler?: (config: InternalAxiosRequestConfig) => Promise<AxiosResponse>
@@ -116,6 +170,13 @@ export class HttpClientFactory {
 
     return instance;
   }
+
+  /**
+   * Create HTTP client with legacy auth (direct storage access)
+   */
+  static createLegacy(options: HttpClientOptions = {}): AxiosInstance {
+    return this.create({ ...options, useLegacyAuth: true });
+  }
 }
 
 export const httpClient = HttpClientFactory.create();
@@ -126,4 +187,3 @@ export function createApiClient(
 ): AxiosInstance {
   return HttpClientFactory.create({ ...options, baseURL });
 }
-
