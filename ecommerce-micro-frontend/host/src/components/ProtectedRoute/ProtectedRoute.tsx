@@ -9,7 +9,7 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { Spin, Result, Button } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
-import { useMsalAuth } from '../../auth/msal';
+import { useAuth } from '@ecommerce-platform/auth-provider';
 
 interface ProtectedRouteProps {
   /** Child components to render if authenticated */
@@ -69,7 +69,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requiredRoles,
 }) => {
   const location = useLocation();
-  const { isAuthenticated, isLoading, user, error, login } = useMsalAuth();
+  const { isAuthenticated, isLoading, user, error, login } = useAuth();
 
   // Show loading state while checking authentication
   if (isLoading) {

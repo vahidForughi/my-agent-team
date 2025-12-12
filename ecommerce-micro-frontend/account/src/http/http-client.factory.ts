@@ -7,8 +7,8 @@
 
 import axios from 'axios';
 import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
+import { getStoredToken, getStoredUser } from '@ecommerce-platform/auth-provider';
 import { env } from '../config';
-import { AuthStorage } from '../auth';
 import { ApiErrorHandler } from './api-error.handler';
 import { authTokenProvider } from './auth-token-provider';
 import type { ApiRequestConfig } from './http-client.types';
@@ -54,12 +54,13 @@ export class HttpClientFactory {
           }
         }
 
-        // Fallback to legacy auth storage if no provider or token
+        // Fallback to stored token if no provider or token
         if (!token) {
-          token = AuthStorage.getToken();
+          token = getStoredToken();
         }
         if (!username) {
-          username = AuthStorage.getCurrentUsername();
+          const storedUser = getStoredUser();
+          username = storedUser?.username || storedUser?.email || null;
         }
 
         if (token && config.headers) {

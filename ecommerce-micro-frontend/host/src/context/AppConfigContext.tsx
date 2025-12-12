@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useCallback, useMemo } from
 import { useNavigate } from 'react-router-dom';
 import { message } from 'antd';
 import { MicroFrontendConfig, AppContext, User } from '@ecommerce-platform/app-injector';
-import { useMsalAuth, useAuthContextForRemote } from '../auth/msal';
+import { useAuth } from '@ecommerce-platform/auth-provider';
 
 interface AppConfigContextType {
   appContext: AppContext;
@@ -20,8 +20,7 @@ export const AppConfigProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const navigate = useNavigate();
-  const msalAuth = useMsalAuth();
-  const authContextForRemote = useAuthContextForRemote();
+  const auth = useAuth();
 
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const storedTheme = localStorage.getItem('theme');
@@ -47,13 +46,13 @@ export const AppConfigProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const handleLogout = useCallback(async () => {
     try {
-      await msalAuth.logout();
+      await auth.logout();
       message.success('Logged out successfully');
     } catch (error) {
       console.error('[AppConfig] Logout error:', error);
       message.error('Logout failed');
     }
-  }, [msalAuth]);
+  }, [auth]);
 
   const handleError = useCallback((error: Error) => {
     console.error('[AppConfig] Micro-frontend error:', error);
@@ -64,47 +63,47 @@ export const AppConfigProvider: React.FC<{ children: React.ReactNode }> = ({
    * Refresh token function for remote modules
    */
   const refreshToken = useCallback(async (): Promise<string | null> => {
-    return msalAuth.getAccessToken();
-  }, [msalAuth]);
+    return auth.getAccessToken();
+  }, [auth]);
 
   /**
-   * Convert MSAL user to app-injector User type
+   * Convert auth user to app-injector User type
    */
   const convertToAppUser = useCallback((): User | null => {
-    if (!msalAuth.user) {
+    if (!auth.user) {
       return null;
     }
 
     return {
-      id: msalAuth.user.id,
-      email: msalAuth.user.email,
-      username: msalAuth.user.username,
-      firstName: msalAuth.user.firstName,
-      lastName: msalAuth.user.lastName,
-      displayName: msalAuth.user.displayName,
+      id: auth.user.id,
+      email: auth.user.email,
+      username: auth.user.username,
+      firstName: auth.user.firstName,
+      lastName: auth.user.lastName,
+      displayName: auth.user.displayName,
     };
-  }, [msalAuth.user]);
+  }, [auth.user]);
 
   /**
-   * App context with MSAL auth data
+   * App context with auth data for remote modules
    */
   const appContext = useMemo<AppContext>(() => ({
     user: convertToAppUser(),
-    token: msalAuth.accessToken,
+    token: auth.accessToken,
     theme,
     locale: 'en-US',
     basePath: '',
     apiBaseUrl: process.env.NX_API_BASE_URL || 'http://localhost:3000/api',
     // Additional auth context for remotes
-    isAuthenticated: msalAuth.isAuthenticated,
-    tokenExpiry: msalAuth.tokenExpiry,
-    requestTokenRefresh: authContextForRemote.requestTokenRefresh,
+    isAuthenticated: auth.isAuthenticated,
+    tokenExpiry: auth.tokenExpiry,
+    requestTokenRefresh: auth.getAccessToken,
   }), [
     convertToAppUser,
-    msalAuth.accessToken,
-    msalAuth.isAuthenticated,
-    msalAuth.tokenExpiry,
-    authContextForRemote.requestTokenRefresh,
+    auth.accessToken,
+    auth.isAuthenticated,
+    auth.tokenExpiry,
+    auth.getAccessToken,
     theme,
   ]);
 

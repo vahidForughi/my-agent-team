@@ -3,19 +3,8 @@ export { AuthService } from './auth.service';
 export { AuthStorage } from './auth.storage';
 export type { User, AuthState as LegacyAuthState, LoginRequest, LoginResponse } from './auth.types';
 
-// MSAL Auth (new implementation)
+// B2C Configuration (from local config)
 export {
-  // Provider
-  MsalAuthProvider,
-  useMsalAuth,
-  // Types
-  initialAuthState,
-  accountInfoToMsalUser,
-  isExpiryTimestampExpired,
-  getTokenExpiry,
-  authEventEmitter,
-  createAuthEvent,
-  // Config
   B2C_CONFIG,
   buildB2CAuthority,
   buildApiScope,
@@ -28,34 +17,48 @@ export {
   getMsalInstance,
   initializeMsal,
   hostMsalConfig,
-  // Hooks
-  useIsUserAuthenticated,
-  useCurrentUser,
-  useAuthLoading,
+} from './msal';
+
+// Re-export auth components and hooks from the shared package
+export {
+  // Provider
+  EcommerceAuthProvider,
+  AuthConsumerProvider,
+  MsalAuthProvider,
+  InternalAuthProvider,
+  AuthErrorBoundary,
+  // Main hook
+  useAuth,
+  // Additional hooks
   useLogin,
   useLogout,
   useAccessToken,
-  useAuthContextForRemote,
-  useAuthStateSubscription,
-  useRequireAuth,
-  // Token broadcasting
+  useIsAuthenticated,
+  useCurrentUser,
+  useAuthLoading,
+  useUserDisplayName,
+  useUserEmail,
+  useMsalAuth,
+  useTokenBroadcastSubscription,
   broadcastToken,
-  broadcastAuthState,
-  subscribeToTokenBroadcast,
-  subscribeToAuthStateBroadcast,
+  // Utilities
+  isExpiryTimestampExpired,
+  getTokenExpiry,
+  isTokenExpired,
+  // Constants
   TOKEN_BROADCAST_EVENT,
   AUTH_STATE_BROADCAST_EVENT,
-} from './msal';
+} from '@ecommerce-platform/auth-provider';
 
 export type {
-  MsalUser,
-  MsalUserClaims,
+  AuthUser,
   AuthState,
-  AuthContextValue,
-  HostAuthContextValue,
-  AuthEventType,
-  AuthEvent,
-  AuthEventListener,
+  AuthContextType,
+  DebugOptions,
+  MsalConfigOptions,
   TokenBroadcastEventDetail,
-  AuthStateBroadcastEventDetail,
-} from './msal';
+  TokenBroadcastState,
+  HostAuthContext,
+  AuthConsumerProviderProps,
+  EcommerceAuthProviderProps,
+} from '@ecommerce-platform/auth-provider';

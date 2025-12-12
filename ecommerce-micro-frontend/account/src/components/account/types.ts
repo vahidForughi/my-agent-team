@@ -1,4 +1,4 @@
-import type { MsalUser } from '@ecommerce-platform/auth';
+import type { AuthUser } from '@ecommerce-platform/auth-provider';
 
 /**
  * Common props for account view components
@@ -12,7 +12,7 @@ export interface AccountViewProps {
  * Props for ProfileView component
  */
 export interface ProfileViewProps extends AccountViewProps {
-  user: MsalUser;
+  user: AuthUser;
 }
 
 /**

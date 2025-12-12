@@ -8,11 +8,11 @@ import {
 } from '@ant-design/icons';
 import { AppInjectorProps } from '@ecommerce-platform/app-injector';
 import {
-  AccountAuthProvider,
-  useAccountAuth,
-  HostAuthProps,
+  AuthConsumerProvider,
+  useAuth,
+  HostAuthContext,
   DebugOptions,
-} from '../auth';
+} from '@ecommerce-platform/auth-provider';
 import { ProfileView, OrdersView, SettingsView } from '../components/account';
 
 const { Title, Text } = Typography;
@@ -33,7 +33,7 @@ const AccountModuleContent: React.FC<AccountModuleContentProps> = ({
   onNavigate,
   onError,
 }) => {
-  const { user, isAuthenticated, isLoading, logout } = useAccountAuth();
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
 
   // Loading state
   if (isLoading) {
@@ -141,7 +141,7 @@ function getDebugOptions(): DebugOptions {
 const AccountModule: React.FC<AccountModuleProps> = ({ config }) => {
   const { appContext, onNavigate, onLogout, onError } = config || {};
 
-  const hostAuth = useMemo<HostAuthProps | undefined>(() => {
+  const hostAuth = useMemo<HostAuthContext | undefined>(() => {
     if (!appContext) {
       return undefined;
     }
@@ -163,9 +163,9 @@ const AccountModule: React.FC<AccountModuleProps> = ({ config }) => {
   const debug = useMemo(() => getDebugOptions(), []);
 
   return (
-    <AccountAuthProvider hostAuth={hostAuth} debug={debug}>
+    <AuthConsumerProvider hostAuth={hostAuth} debug={debug}>
       <AccountModuleContent onNavigate={onNavigate} onError={onError} />
-    </AccountAuthProvider>
+    </AuthConsumerProvider>
   );
 };
 

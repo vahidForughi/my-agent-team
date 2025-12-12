@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, Typography, Button, Spin, Space, Flex, Result } from 'antd';
 import { LoginOutlined, LoadingOutlined } from '@ant-design/icons';
-import { useMsalAuth } from '../../auth/msal';
+import { useAuth } from '@ecommerce-platform/auth-provider';
 import { brandGradient } from '../../config/theme';
 
 const { Title, Text } = Typography;
@@ -16,7 +16,7 @@ const { Title, Text } = Typography;
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, isAuthenticated, isLoading, error } = useMsalAuth();
+  const { login, isAuthenticated, isLoading, error } = useAuth();
 
   // Get the return URL from state or default to home
   const from = (location.state as { from?: string })?.from || '/';

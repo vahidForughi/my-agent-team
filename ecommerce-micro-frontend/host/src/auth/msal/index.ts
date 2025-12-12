@@ -1,30 +1,9 @@
 /**
  * Host MSAL Auth Module
+ *
+ * Only exports B2C configuration. Auth components and hooks are now
+ * provided by @ecommerce-platform/auth-provider package.
  */
-
-// Types
-export type {
-  MsalUser,
-  MsalUserClaims,
-  AuthState,
-  AuthContextValue,
-  HostAuthContextValue,
-  AuthEventType,
-  AuthEvent,
-  AuthEventListener,
-} from './types';
-
-export {
-  initialAuthState,
-  accountInfoToMsalUser,
-  isExpiryTimestampExpired,
-  getTokenExpiry,
-  authEventEmitter,
-  createAuthEvent,
-} from './types';
-
-// Provider and context
-export { MsalAuthProvider, useMsalAuth } from './MsalAuthProvider';
 
 // Configuration
 export {
@@ -41,31 +20,3 @@ export {
   initializeMsal,
   hostMsalConfig,
 } from './config';
-
-// Hooks
-export {
-  useIsUserAuthenticated,
-  useCurrentUser,
-  useAuthLoading,
-  useLogin,
-  useLogout,
-  useAccessToken,
-  useAuthContextForRemote,
-  useAuthStateSubscription,
-  useRequireAuth,
-} from './hooks';
-
-// Token broadcasting
-export {
-  broadcastToken,
-  broadcastAuthState,
-  subscribeToTokenBroadcast,
-  subscribeToAuthStateBroadcast,
-  TOKEN_BROADCAST_EVENT,
-  AUTH_STATE_BROADCAST_EVENT,
-} from './token-broadcast';
-
-export type {
-  TokenBroadcastEventDetail,
-  AuthStateBroadcastEventDetail,
-} from './token-broadcast';

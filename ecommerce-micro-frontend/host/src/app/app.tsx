@@ -1,23 +1,27 @@
 import React from 'react';
 import { BrowserRouter, useRoutes } from 'react-router-dom';
 import { ConfigProvider, theme } from 'antd';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MsalAuthProvider } from '../auth/msal';
+import { EcommerceAuthProvider } from '@ecommerce-platform/auth-provider';
+import {
+  B2C_CONFIG,
+  buildB2CAuthority,
+  defaultScopes,
+} from '../auth/msal/config';
 import { AppConfigProvider, useAppConfig } from '../context/AppConfigContext';
 import { routes } from '../routes';
 import { themeConfig } from '../config/theme';
 import '../i18n/config';
 import '../styles.less';
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+/**
+ * MSAL configuration for the auth provider package
+ */
+const msalConfig = {
+  clientId: process.env.NX_AZURE_CLIENT_ID || B2C_CONFIG.CLIENT_ID,
+  authority: buildB2CAuthority(),
+  knownAuthorities: [B2C_CONFIG.B2C_DOMAIN],
+  scopes: defaultScopes,
+};
 
 /**
  * Router Component that uses useRoutes hook
@@ -64,19 +68,17 @@ function ThemedApp() {
  * Theme is now managed through AppConfigContext for proper state management
  * and synchronization across the application.
  *
- * Authentication is managed by MsalAuthProvider using Azure AD B2C.
+ * Authentication is managed by @ecommerce-platform/auth-provider using Azure AD B2C.
  */
 export function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <MsalAuthProvider>
+    <BrowserRouter>
+      <EcommerceAuthProvider msalConfig={msalConfig}>
         <AppConfigProvider>
           <ThemedApp />
         </AppConfigProvider>
-        </MsalAuthProvider>
-      </BrowserRouter>
-    </QueryClientProvider>
+      </EcommerceAuthProvider>
+    </BrowserRouter>
   );
 }
 
