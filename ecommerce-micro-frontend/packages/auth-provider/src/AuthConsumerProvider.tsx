@@ -1,49 +1,38 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import type { AuthUser, AuthState, AuthContextType, DebugOptions } from './types';
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from 'react';
+import type {
+  AuthUser,
+  AuthState,
+  AuthContextType,
+  DebugOptions,
+  HostUser,
+  HostAuthContext,
+  AuthConsumerProviderProps,
+} from './types';
 import { AuthContext } from './AuthContext';
-import { useTokenBroadcastSubscription, broadcastToken } from './hooks/useTokenBroadcast';
+import {
+  useTokenBroadcastSubscription,
+  broadcastToken,
+} from './hooks/useTokenBroadcast';
 import {
   createDebugAuthState,
   createUnauthenticatedState,
   debugLog,
 } from './utils/auth';
 import { isExpiryTimestampExpired } from './utils/token';
-
-/**
- * Host auth context passed from host app via appContext
- */
-export interface HostAuthContext {
-  user?: {
-    id?: string;
-    username?: string;
-    displayName?: string;
-    email?: string;
-    firstName?: string;
-    lastName?: string;
-    [key: string]: unknown;
-  } | null;
-  token?: string | null;
-  tokenExpiry?: number | null;
-  isAuthenticated?: boolean;
-  requestTokenRefresh?: () => Promise<string | null>;
-  onLogout?: () => void | Promise<void>;
-}
-
-/**
- * Props for AuthConsumerProvider
- */
-export interface AuthConsumerProviderProps {
-  children: React.ReactNode;
-  /** Host auth context from appContext */
-  hostAuth?: HostAuthContext | null;
-  /** Debug options for development */
-  debug?: DebugOptions;
-}
+import { TOKEN_EXPIRY_BUFFER_SECONDS } from './constants';
 
 /**
  * Convert host user to AuthUser format
  */
-function convertToAuthUser(hostUser: HostAuthContext['user']): AuthUser | null {
+function convertToAuthUser(
+  hostUser: HostUser | null | undefined
+): AuthUser | null {
   if (!hostUser) return null;
 
   return {
@@ -80,7 +69,8 @@ function createInitialState(
   // Use host auth state
   return {
     user: convertToAuthUser(hostAuth.user),
-    isAuthenticated: hostAuth.isAuthenticated ?? Boolean(hostAuth.token && hostAuth.user),
+    isAuthenticated:
+      hostAuth.isAuthenticated ?? Boolean(hostAuth.token && hostAuth.user),
     isLoading: false,
     accessToken: hostAuth.token ?? null,
     tokenExpiry: hostAuth.tokenExpiry ?? null,
@@ -115,11 +105,15 @@ function createInitialState(
 export const AuthConsumerProvider: React.FC<AuthConsumerProviderProps> = ({
   children,
   hostAuth,
-  debug = {},
+  debug,
 }) => {
-  const isDebugMode = Boolean(debug.presetToken);
+  // Use ref to avoid dependency array issues with debug object
+  const debugRef = useRef<DebugOptions | undefined>(debug);
+  debugRef.current = debug;
+
+  const isDebugMode = Boolean(debug?.presetToken);
   const [authState, setAuthState] = useState<AuthState>(() =>
-    createInitialState(hostAuth, debug)
+    createInitialState(hostAuth, debugRef.current)
   );
 
   // Subscribe to token broadcast events from host
@@ -127,14 +121,14 @@ export const AuthConsumerProvider: React.FC<AuthConsumerProviderProps> = ({
 
   // Update state when hostAuth changes
   useEffect(() => {
-    debugLog(debug, 'Host auth changed', { hostAuth });
-    setAuthState(createInitialState(hostAuth, debug));
-  }, [hostAuth, debug]);
+    debugLog(debugRef.current, 'Host auth changed', { hostAuth });
+    setAuthState(createInitialState(hostAuth, debugRef.current));
+  }, [hostAuth]);
 
   // Update token from broadcast
   useEffect(() => {
     if (broadcastState.token && broadcastState.lastUpdated > 0) {
-      debugLog(debug, 'Token broadcast received', {
+      debugLog(debugRef.current, 'Token broadcast received', {
         hasToken: !!broadcastState.token,
         expiry: broadcastState.tokenExpiry,
       });
@@ -144,35 +138,49 @@ export const AuthConsumerProvider: React.FC<AuthConsumerProviderProps> = ({
         tokenExpiry: broadcastState.tokenExpiry,
       }));
     }
-  }, [broadcastState.token, broadcastState.tokenExpiry, broadcastState.lastUpdated, debug]);
+  }, [
+    broadcastState.token,
+    broadcastState.tokenExpiry,
+    broadcastState.lastUpdated,
+  ]);
 
   // Login - delegate to host or warn
   const login = useCallback(async (): Promise<void> => {
     console.warn(
-      '[AuthConsumerProvider] login() called - remotes should not initiate login. ' +
-        'Navigate to host login page instead.'
+      '[AuthConsumerProvider] login() called from remote module. ' +
+        'Remote modules should not initiate login directly. ' +
+        'Please redirect users to the host application login page or use window.location to navigate.'
     );
   }, []);
 
   // Logout - delegate to host
   const logout = useCallback(async (): Promise<void> => {
-    debugLog(debug, 'Logout requested');
+    debugLog(debugRef.current, 'Logout requested');
     if (hostAuth?.onLogout) {
       await hostAuth.onLogout();
     } else {
-      console.warn('[AuthConsumerProvider] No logout handler provided by host');
+      console.warn(
+        '[AuthConsumerProvider] No logout handler provided by host. ' +
+          'Ensure hostAuth.onLogout is passed from the host application.'
+      );
     }
-  }, [hostAuth, debug]);
+  }, [hostAuth]);
 
   // Get access token - use current or request refresh from host
   const getAccessToken = useCallback(async (): Promise<string | null> => {
     // Debug mode - return preset token
-    if (isDebugMode && debug.presetToken) {
-      return debug.presetToken;
+    if (isDebugMode && debugRef.current?.presetToken) {
+      return debugRef.current.presetToken;
     }
 
     // Check if current token is still valid
-    if (authState.accessToken && !isExpiryTimestampExpired(authState.tokenExpiry, 60)) {
+    if (
+      authState.accessToken &&
+      !isExpiryTimestampExpired(
+        authState.tokenExpiry,
+        TOKEN_EXPIRY_BUFFER_SECONDS
+      )
+    ) {
       return authState.accessToken;
     }
 
@@ -187,16 +195,19 @@ export const AuthConsumerProvider: React.FC<AuthConsumerProviderProps> = ({
           return newToken;
         }
       } catch (error) {
-        debugLog(debug, 'Token refresh failed', { error });
+        debugLog(debugRef.current, 'Token refresh failed', { error });
       }
     }
 
     return authState.accessToken;
-  }, [authState.accessToken, authState.tokenExpiry, hostAuth, isDebugMode, debug]);
+  }, [authState.accessToken, authState.tokenExpiry, hostAuth, isDebugMode]);
 
   // Check if token is expired
   const isTokenExpired = useCallback((): boolean => {
-    return isExpiryTimestampExpired(authState.tokenExpiry, 60);
+    return isExpiryTimestampExpired(
+      authState.tokenExpiry,
+      TOKEN_EXPIRY_BUFFER_SECONDS
+    );
   }, [authState.tokenExpiry]);
 
   // Build context value

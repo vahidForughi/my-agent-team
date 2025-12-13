@@ -9,11 +9,7 @@
 
 // Main provider exports
 export { EcommerceAuthProvider } from './EcommerceAuthProvider';
-export {
-  AuthConsumerProvider,
-  type HostAuthContext,
-  type AuthConsumerProviderProps,
-} from './AuthConsumerProvider';
+export { AuthConsumerProvider } from './AuthConsumerProvider';
 
 // Internal components (for apps with existing MSAL/QueryClient setup)
 export {
@@ -94,4 +90,7 @@ export type {
   InternalAuthProviderProps,
   TokenBroadcastEventDetail,
   TokenBroadcastState,
+  HostUser,
+  HostAuthContext,
+  AuthConsumerProviderProps,
 } from './types';

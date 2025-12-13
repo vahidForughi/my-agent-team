@@ -113,6 +113,49 @@ export interface TokenBroadcastState {
   lastUpdated: number;
 }
 
+/**
+ * Host user information passed from host app via appContext
+ */
+export interface HostUser {
+  id?: string;
+  username?: string;
+  displayName?: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  [key: string]: unknown;
+}
+
+/**
+ * Host auth context passed from host app via appContext.
+ * Used by AuthConsumerProvider to receive auth state from the host application.
+ */
+export interface HostAuthContext {
+  /** User information from host */
+  user?: HostUser | null;
+  /** Access token from host */
+  token?: string | null;
+  /** Token expiry timestamp (milliseconds) */
+  tokenExpiry?: number | null;
+  /** Whether user is authenticated */
+  isAuthenticated?: boolean;
+  /** Request token refresh from host */
+  requestTokenRefresh?: () => Promise<string | null>;
+  /** Logout handler from host */
+  onLogout?: () => void | Promise<void>;
+}
+
+/**
+ * Props for AuthConsumerProvider
+ */
+export interface AuthConsumerProviderProps {
+  children: ReactNode;
+  /** Host auth context from appContext */
+  hostAuth?: HostAuthContext | null;
+  /** Debug options for development */
+  debug?: DebugOptions;
+}
+
 // Default context value
 export const defaultAuthContextValue: AuthContextType = {
   user: null,
