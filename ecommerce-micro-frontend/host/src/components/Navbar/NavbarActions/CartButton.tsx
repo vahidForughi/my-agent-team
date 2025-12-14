@@ -1,10 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Badge, Button } from 'antd';
 import { ShoppingCartOutlined } from '@ant-design/icons';
 import CartPreview, { CartItem } from '../../CartPreview/CartPreview';
-import { navbarActionButtonStyle } from './NavbarActionButton';
-import { brandGradient } from '../../../config/theme';
+import { NavbarActionButton } from './NavbarActionButton';
 
 interface CartButtonProps {
   /** Number of items in cart */
@@ -31,58 +29,40 @@ export const CartButton: React.FC<CartButtonProps> = ({
   const [showCartPreview, setShowCartPreview] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleMouseEnter = () => {
+  const handleMouseEnter = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
     setShowCartPreview(true);
-  };
+  }, []);
 
-  const handleMouseLeave = () => {
+  const handleMouseLeave = useCallback(() => {
     timerRef.current = setTimeout(() => {
       setShowCartPreview(false);
     }, 300);
-  };
+  }, []);
 
-  const handleClick = () => {
+  const handleClick = useCallback(() => {
     navigate('/checkout');
-  };
+  }, [navigate]);
 
   return (
-    <div
+    <NavbarActionButton
+      icon={<ShoppingCartOutlined />}
+      label="Cart"
+      onClick={handleClick}
+      ariaLabel={`Shopping cart with ${count} items`}
+      badgeCount={count}
+      showZeroBadge={false}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      style={{ position: 'relative' }}
     >
-      <Badge
-        count={count}
-        showZero={false}
-        style={{
-          ['& .ant-badge-count' as string]: {
-            background: brandGradient.start,
-            boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
-          },
-        }}
-        aria-live="polite"
-        aria-atomic="true"
-      >
-        <Button
-          type="text"
-          icon={<ShoppingCartOutlined />}
-          onClick={handleClick}
-          style={navbarActionButtonStyle}
-          aria-label={`Shopping cart with ${count} items`}
-        >
-          <span style={{ fontSize: 11, fontWeight: 500 }}>Cart</span>
-        </Button>
-      </Badge>
       <CartPreview
         visible={showCartPreview}
         items={items}
         isLoading={isLoading}
         onRemoveItem={onRemoveItem}
       />
-    </div>
+    </NavbarActionButton>
   );
 };
 
 export default CartButton;
-

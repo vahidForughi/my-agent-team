@@ -1,4 +1,8 @@
-export { NavbarActionButton, navbarActionButtonStyle } from './NavbarActionButton';
+export {
+  NavbarActionButton,
+  navbarActionButtonStyle,
+  navbarActionLabelStyle,
+} from './NavbarActionButton';
 export { NotificationButton } from './NotificationButton';
 export { WishlistButton } from './WishlistButton';
 export { CartButton } from './CartButton';
