@@ -6,16 +6,26 @@ import LoginPage from './pages/LoginPage';
 import MicroFrontendApp from './microFe/MicroFrontendApp';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
+interface MicroFrontendRouteProps {
+  appName: string;
+  isProtected?: boolean;
+}
+
 /**
- * Protected Micro-Frontend Wrapper
+ * Micro-Frontend Route Wrapper
  *
- * Wraps micro-frontends that require authentication (checkout, account).
+ * Wraps micro-frontends with optional authentication protection.
  */
-const ProtectedMicroFrontendApp: React.FC = () => (
-  <ProtectedRoute>
-    <MicroFrontendApp />
-  </ProtectedRoute>
-);
+const MicroFrontendRoute: React.FC<MicroFrontendRouteProps> = ({ appName, isProtected }) => {
+  if (isProtected) {
+    return (
+      <ProtectedRoute>
+        <MicroFrontendApp appName={appName} />
+      </ProtectedRoute>
+    );
+  }
+  return <MicroFrontendApp appName={appName} />;
+};
 
 /**
  * Routes that require authentication
@@ -24,17 +34,16 @@ const PROTECTED_ROUTES = ['checkout', 'account'];
 
 /**
  * Dynamic route element based on whether the route requires authentication
+ * Used for the fallback `:appName/*` route
  */
 const DynamicMicroFrontendRoute: React.FC = () => {
   // Get the current app name from the URL
   const appName = window.location.pathname.split('/')[1];
 
   // Check if this route requires authentication
-  if (PROTECTED_ROUTES.includes(appName)) {
-    return <ProtectedMicroFrontendApp />;
-  }
+  const isProtected = PROTECTED_ROUTES.includes(appName);
 
-  return <MicroFrontendApp />;
+  return <MicroFrontendRoute appName={appName} isProtected={isProtected} />;
 };
 
 export const routes: RouteObject[] = [
@@ -53,17 +62,17 @@ export const routes: RouteObject[] = [
       // Store - public route (no auth required)
       {
         path: 'store/*',
-        element: <MicroFrontendApp />,
+        element: <MicroFrontendRoute appName="store" />,
       },
       // Checkout - protected route (auth required)
       {
         path: 'checkout/*',
-        element: <ProtectedMicroFrontendApp />,
+        element: <MicroFrontendRoute appName="checkout" isProtected />,
       },
       // Account - protected route (auth required)
       {
         path: 'account/*',
-        element: <ProtectedMicroFrontendApp />,
+        element: <MicroFrontendRoute appName="account" isProtected />,
       },
       // Fallback for other micro-frontends (dynamic check)
       {

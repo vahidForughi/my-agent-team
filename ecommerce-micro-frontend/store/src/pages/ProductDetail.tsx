@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from '@tanstack/react-router';
 import { Row, Col, Space, Divider, Button, Empty } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import { AppInjectorProps } from '@ecommerce-platform/app-injector';
@@ -25,12 +25,12 @@ import {
 import ProductDetailSkeleton from '../components/ProductDetail/ProductDetailSkeleton';
 
 type ProductDetailProps = {
+  productId: string;
   config?: AppInjectorProps['config'];
 };
 
 function ProductDetail(props: ProductDetailProps) {
-  const { config } = props;
-  const { id } = useParams<{ id: string }>();
+  const { productId, config } = props;
   const navigate = useNavigate();
 
   const {
@@ -38,8 +38,8 @@ function ProductDetail(props: ProductDetailProps) {
     isLoading,
     isError,
     error,
-  } = useGetProductById(id ?? '', {
-    enabled: Boolean(id),
+  } = useGetProductById(productId, {
+    enabled: Boolean(productId),
   });
 
   const product = productData ?? null;
@@ -66,7 +66,7 @@ function ProductDetail(props: ProductDetailProps) {
   });
 
   function handleBack() {
-    navigate('/');
+    navigate({ to: '/', search: {} });
   }
 
   if (isLoading) {

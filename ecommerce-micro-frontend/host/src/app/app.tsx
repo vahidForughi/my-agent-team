@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
 import { BrowserRouter, useRoutes } from 'react-router-dom';
 import { ConfigProvider, theme } from 'antd';
-import { EcommerceAuthProvider } from '@ecommerce-platform/auth-provider';
+import { EcommerceAuthProvider as EcommerceAuthProviderOriginal, MsalConfigOptions } from '@ecommerce-platform/auth-provider';
 import {
   B2C_CONFIG,
   buildB2CAuthority,
@@ -12,6 +12,12 @@ import { routes } from '../routes';
 import { themeConfig } from '../config/theme';
 import '../i18n/config';
 import '../styles.less';
+
+// Type assertion to fix React types version mismatch in monorepo
+const EcommerceAuthProvider = EcommerceAuthProviderOriginal as React.ComponentType<{
+  msalConfig: MsalConfigOptions;
+  children: ReactNode;
+}>;
 
 /**
  * MSAL configuration for the auth provider package

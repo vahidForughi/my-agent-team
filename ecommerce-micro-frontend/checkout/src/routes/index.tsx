@@ -1,20 +1,12 @@
-import React from 'react';
-import { RouteObject } from 'react-router-dom';
-import { AppInjectorProps } from '@ecommerce-platform/app-injector';
+import { createFileRoute } from '@tanstack/react-router';
+import Cart from '../pages/Cart';
 
-// Lazy load pages for better performance
-const Cart = React.lazy(() => import('../pages/Cart'));
+export const Route = createFileRoute('/')({
+  component: CartRoute,
+});
 
-export const createCheckoutRoutes = (
-  config?: AppInjectorProps['config']
-): RouteObject[] => [
-  {
-    path: '/',
-    element: (
-      <React.Suspense fallback={<div>Loading...</div>}>
-        <Cart config={config} />
-      </React.Suspense>
-    ),
-  },
-];
+function CartRoute() {
+  const { config } = Route.useRouteContext();
 
+  return <Cart config={config} />;
+}

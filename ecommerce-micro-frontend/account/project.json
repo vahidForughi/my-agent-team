@@ -96,6 +96,20 @@
       "options": {
         "jestConfig": "account/jest.config.ts"
       }
+    },
+    "routes:generate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx @tanstack/router-cli generate",
+        "cwd": "account"
+      }
+    },
+    "routes:watch": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx @tanstack/router-cli watch",
+        "cwd": "account"
+      }
     }
   }
 }

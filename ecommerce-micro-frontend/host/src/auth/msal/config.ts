@@ -4,17 +4,25 @@
  * Creates MSAL configuration for the host application.
  */
 
-import { PublicClientApplication, BrowserCacheLocation, Configuration, LogLevel } from '@azure/msal-browser';
+import {
+  PublicClientApplication,
+  BrowserCacheLocation,
+  Configuration,
+  LogLevel,
+} from '@azure/msal-browser';
 
 /**
  * Azure AD B2C Configuration Constants
+ *
+ * Application: NextTech
+ * Tenant: nexttechuit.onmicrosoft.com
  */
 export const B2C_CONFIG = {
-  TENANT_NAME: 'sportscenter19',
-  CLIENT_ID: '85ec0233-0ecb-4830-96f5-12d00bf87176',
+  TENANT_NAME: 'nexttechuit',
+  CLIENT_ID: 'd0dafab9-cae6-426d-a516-eab88853767c',
   POLICY_NAME: 'B2C_1_SignInSignUp',
-  B2C_DOMAIN: 'sportscenter19.b2clogin.com',
-  TENANT_DOMAIN: 'sportscenter19.onmicrosoft.com',
+  B2C_DOMAIN: 'nexttechuit.b2clogin.com',
+  TENANT_DOMAIN: 'nexttechuit.onmicrosoft.com',
 } as const;
 
 /**
@@ -34,11 +42,7 @@ export function buildApiScope(): string {
 /**
  * Default scopes
  */
-export const defaultScopes: string[] = [
-  'openid',
-  'profile',
-  buildApiScope(),
-];
+export const defaultScopes: string[] = ['openid', 'profile', buildApiScope()];
 
 /**
  * Get redirect URI
@@ -69,7 +73,11 @@ export function createMsalConfig(): Configuration {
     },
     system: {
       loggerOptions: {
-        loggerCallback: (level: LogLevel, message: string, containsPii: boolean) => {
+        loggerCallback: (
+          level: LogLevel,
+          message: string,
+          containsPii: boolean
+        ) => {
           if (containsPii) {
             return;
           }
@@ -88,7 +96,10 @@ export function createMsalConfig(): Configuration {
               break;
           }
         },
-        logLevel: process.env.NODE_ENV === 'development' ? LogLevel.Info : LogLevel.Error,
+        logLevel:
+          process.env.NODE_ENV === 'development'
+            ? LogLevel.Info
+            : LogLevel.Error,
         piiLoggingEnabled: false,
       },
       allowNativeBroker: false,
