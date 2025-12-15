@@ -1,111 +1,86 @@
-import React, { useMemo } from 'react';
-import { Typography, Tabs, Spin, Result, Button, Flex } from 'antd';
+import React, { useMemo, ReactNode } from 'react';
 import {
-  UserOutlined,
-  ShoppingOutlined,
-  SettingOutlined,
-  LoadingOutlined,
-} from '@ant-design/icons';
+  createRouter,
+  RouterProvider,
+  createMemoryHistory,
+} from '@tanstack/react-router';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { AppInjectorProps } from '@ecommerce-platform/app-injector';
 import {
-  AuthConsumerProvider,
-  useAuth,
+  AuthConsumerProvider as AuthConsumerProviderOriginal,
   HostAuthContext,
   DebugOptions,
 } from '@ecommerce-platform/auth-provider';
-import { ProfileView, OrdersView, SettingsView } from '../components/account';
+import { routeTree } from '../routeTree.gen';
+import { queryClient } from '../services/queryClient';
 
-const { Title, Text } = Typography;
+// Type assertion to fix React types version mismatch in monorepo
+const AuthConsumerProvider =
+  AuthConsumerProviderOriginal as React.ComponentType<{
+    hostAuth?: HostAuthContext;
+    debug?: DebugOptions;
+    children: ReactNode;
+  }>;
 
 type AccountModuleProps = AppInjectorProps;
 
-interface AccountModuleContentProps {
-  onNavigate?: (path: string) => void;
-  onError?: (error: Error) => void;
+interface RouterContext {
+  queryClient: typeof queryClient;
+  auth?: {
+    user: unknown;
+    isAuthenticated: boolean;
+    logout: () => void;
+  };
+  config?: AppInjectorProps['config'];
+}
+
+declare module '@tanstack/react-router' {
+  interface Register {
+    router: ReturnType<typeof createAccountRouter>;
+  }
+}
+
+function createAccountRouter(basePath: string, initialPath = '/') {
+  const memoryHistory = createMemoryHistory({
+    initialEntries: [initialPath],
+  });
+
+  return createRouter({
+    routeTree,
+    history: memoryHistory,
+    basepath: basePath,
+    defaultPreload: 'intent',
+    scrollRestoration: true,
+    context: {
+      queryClient,
+      auth: undefined,
+      config: undefined,
+    } as RouterContext,
+  });
 }
 
 /**
- * AccountModuleContent
- *
- * Main content component that displays account tabs.
+ * Build host auth context from app context
  */
-const AccountModuleContent: React.FC<AccountModuleContentProps> = ({
-  onNavigate,
-  onError,
-}) => {
-  const { user, isAuthenticated, isLoading, logout } = useAuth();
-
-  // Loading state
-  if (isLoading) {
-    return (
-      <Flex vertical align="center" justify="center" style={{ padding: 48 }}>
-        <Spin indicator={<LoadingOutlined style={{ fontSize: 48 }} spin />} />
-        <Text style={{ marginTop: 16 }}>Loading account...</Text>
-      </Flex>
-    );
+function buildHostAuth(
+  appContext?: Record<string, unknown>,
+  onLogout?: () => void
+): HostAuthContext | undefined {
+  if (!appContext) {
+    return undefined;
   }
 
-  // Not authenticated state
-  if (!isAuthenticated || !user) {
-    return (
-      <Flex style={{ padding: 24 }}>
-        <Result
-          status="403"
-          title="Not Authenticated"
-          subTitle="Please sign in to access your account."
-          extra={
-            <Button type="primary" onClick={() => onNavigate?.('/login')}>
-              Go to Login
-            </Button>
-          }
-        />
-      </Flex>
-    );
-  }
-
-  const tabItems = [
-    {
-      key: 'profile',
-      label: 'Profile',
-      icon: <UserOutlined />,
-      children: (
-        <ProfileView user={user} onNavigate={onNavigate} onError={onError} />
-      ),
-    },
-    {
-      key: 'orders',
-      label: 'Orders',
-      icon: <ShoppingOutlined />,
-      children: <OrdersView onNavigate={onNavigate} onError={onError} />,
-    },
-    {
-      key: 'settings',
-      label: 'Settings',
-      icon: <SettingOutlined />,
-      children: (
-        <SettingsView
-          onLogout={logout}
-          onNavigate={onNavigate}
-          onError={onError}
-        />
-      ),
-    },
-  ];
-
-  return (
-    <Flex vertical gap={16} style={{ padding: 24 }}>
-      <header>
-        <Title level={2} style={{ marginBottom: 8 }}>
-          My Account
-        </Title>
-        <Text type="secondary">
-          Manage your account settings and view your order history
-        </Text>
-      </header>
-      <Tabs items={tabItems} />
-    </Flex>
-  );
-};
+  return {
+    user: appContext.user as HostAuthContext['user'],
+    token: appContext.token as string | null | undefined,
+    tokenExpiry: appContext.tokenExpiry as number | undefined,
+    isAuthenticated: appContext.isAuthenticated as boolean | undefined,
+    requestTokenRefresh: appContext.requestTokenRefresh as
+      | (() => Promise<string | null>)
+      | undefined,
+    onLogout,
+  };
+}
 
 /**
  * Get debug options for development mode
@@ -120,15 +95,6 @@ function getDebugOptions(): DebugOptions {
 
   return {
     logging: true,
-    // Uncomment and set a preset token for local development without host
-    // presetToken: 'dev-token-123',
-    // presetUser: {
-    //   id: 'dev-user-1',
-    //   email: 'dev@example.com',
-    //   displayName: 'Dev User',
-    //   firstName: 'Dev',
-    //   lastName: 'User',
-    // },
   };
 }
 
@@ -136,35 +102,49 @@ function getDebugOptions(): DebugOptions {
  * AccountModule
  *
  * Main entry point for the account micro-frontend.
- * Wraps content with AccountAuthProvider for unified auth handling.
+ * Uses TanStack Router for file-based routing.
  */
 const AccountModule: React.FC<AccountModuleProps> = ({ config }) => {
-  const { appContext, onNavigate, onLogout, onError } = config || {};
+  const { appContext, onLogout } = config || {};
+  const typedAppContext = appContext as Record<string, unknown> | undefined;
 
-  const hostAuth = useMemo<HostAuthContext | undefined>(() => {
-    if (!appContext) {
-      return undefined;
-    }
-
-    return {
-      user: appContext.user,
-      token: appContext.token,
-      tokenExpiry: (appContext as Record<string, unknown>).tokenExpiry as
-        | number
-        | undefined,
-      isAuthenticated: (appContext as Record<string, unknown>)
-        .isAuthenticated as boolean | undefined,
-      requestTokenRefresh: (appContext as Record<string, unknown>)
-        .requestTokenRefresh as (() => Promise<string | null>) | undefined,
-      onLogout,
-    };
-  }, [appContext, onLogout]);
+  const hostAuth = useMemo(
+    () => buildHostAuth(typedAppContext, onLogout),
+    [typedAppContext, onLogout]
+  );
 
   const debug = useMemo(() => getDebugOptions(), []);
 
+  // Get basePath from host config, defaults to '/' for standalone mode
+  const basePath = (typedAppContext?.basePath as string) || '/';
+
+  // Get initial path for memory history
+  const initialPath = (typedAppContext?.initialPath as string) || '/';
+
+  const router = useMemo(() => {
+    const r = createAccountRouter(basePath, initialPath);
+    // Update router context with config
+    r.update({
+      context: {
+        queryClient,
+        auth: hostAuth
+          ? {
+              user: hostAuth.user,
+              isAuthenticated: hostAuth.isAuthenticated ?? false,
+              logout: onLogout ? onLogout : () => undefined,
+            }
+          : undefined,
+        config,
+      },
+    });
+    return r;
+  }, [basePath, initialPath, hostAuth, config, onLogout]);
+
   return (
     <AuthConsumerProvider hostAuth={hostAuth} debug={debug}>
-      <AccountModuleContent onNavigate={onNavigate} onError={onError} />
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>
     </AuthConsumerProvider>
   );
 };

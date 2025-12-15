@@ -1,6 +1,5 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Badge } from 'antd';
 import { BellOutlined } from '@ant-design/icons';
 import { NavbarActionButton } from './NavbarActionButton';
 
@@ -23,16 +22,15 @@ export const NotificationButton: React.FC<NotificationButtonProps> = ({
   };
 
   return (
-    <Badge count={count} size="small">
       <NavbarActionButton
         icon={<BellOutlined />}
         label="Notifications"
         onClick={handleClick}
         ariaLabel="Notifications"
+      badgeCount={count}
+      badgeSize="small"
       />
-    </Badge>
   );
 };
 
 export default NotificationButton;
-

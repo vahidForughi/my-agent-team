@@ -1,15 +1,61 @@
-import React, { useMemo } from 'react';
-import { BrowserRouter, useRoutes } from 'react-router-dom';
+import React, { useMemo, ReactNode } from 'react';
+import {
+  createRouter,
+  RouterProvider,
+  createMemoryHistory,
+} from '@tanstack/react-router';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { AppInjectorProps } from '@ecommerce-platform/app-injector';
 import {
-  AuthConsumerProvider,
+  AuthConsumerProvider as AuthConsumerProviderOriginal,
   HostAuthContext,
 } from '@ecommerce-platform/auth-provider';
-import { createCheckoutRoutes } from '../routes';
+import { routeTree } from '../routeTree.gen';
 import { queryClient } from '../services/queryClient';
 
+// Type assertion to fix React types version mismatch in monorepo
+const AuthConsumerProvider =
+  AuthConsumerProviderOriginal as React.ComponentType<{
+    hostAuth?: HostAuthContext;
+    children: ReactNode;
+  }>;
+
 type CheckoutModuleProps = AppInjectorProps;
+
+interface RouterContext {
+  queryClient: typeof queryClient;
+  auth?: {
+    user: unknown;
+    isAuthenticated: boolean;
+    logout: () => void;
+  };
+  config?: AppInjectorProps['config'];
+}
+
+declare module '@tanstack/react-router' {
+  interface Register {
+    router: ReturnType<typeof createCheckoutRouter>;
+  }
+}
+
+function createCheckoutRouter(basePath: string, initialPath = '/') {
+  const memoryHistory = createMemoryHistory({
+    initialEntries: [initialPath],
+  });
+
+  return createRouter({
+    routeTree,
+    history: memoryHistory,
+    basepath: basePath,
+    defaultPreload: 'intent',
+    scrollRestoration: true,
+    context: {
+      queryClient,
+      auth: undefined,
+      config: undefined,
+    } as RouterContext,
+  });
+}
 
 /**
  * Build host auth context from app context
@@ -32,15 +78,6 @@ function buildHostAuth(
   };
 }
 
-const CheckoutRouter: React.FC<{ config?: AppInjectorProps['config'] }> = ({
-  config,
-}) => {
-  const routes = useMemo(() => createCheckoutRoutes(config), [config]);
-  const element = useRoutes(routes);
-
-  return element;
-};
-
 const CheckoutModule: React.FC<CheckoutModuleProps> = ({ config }) => {
   const appContext = config?.appContext as Record<string, unknown> | undefined;
   const hostAuth = useMemo(() => buildHostAuth(appContext), [appContext]);
@@ -48,12 +85,32 @@ const CheckoutModule: React.FC<CheckoutModuleProps> = ({ config }) => {
   // Get basePath from host config, defaults to '/' for standalone mode
   const basePath = (appContext?.basePath as string) || '/';
 
+  // Get initial path for memory history
+  const initialPath = (appContext?.initialPath as string) || '/';
+
+  const router = useMemo(() => {
+    const r = createCheckoutRouter(basePath, initialPath);
+    // Update router context with config
+    r.update({
+      context: {
+        queryClient,
+        auth: hostAuth
+          ? {
+              user: hostAuth.user,
+              isAuthenticated: hostAuth.isAuthenticated ?? false,
+              logout: () => undefined,
+            }
+          : undefined,
+        config,
+      },
+    });
+    return r;
+  }, [basePath, initialPath, hostAuth, config]);
+
   return (
     <AuthConsumerProvider hostAuth={hostAuth}>
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter basename={basePath}>
-          <CheckoutRouter config={config} />
-        </BrowserRouter>
+        <RouterProvider router={router} />
       </QueryClientProvider>
     </AuthConsumerProvider>
   );

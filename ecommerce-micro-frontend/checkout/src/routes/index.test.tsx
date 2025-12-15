@@ -1,24 +1,13 @@
-import { createCheckoutRoutes } from './index';
+import { Route } from './index';
+import '@testing-library/jest-dom';
 
-describe('createCheckoutRoutes', () => {
-  it('should create checkout routes', () => {
-    const routes = createCheckoutRoutes();
-    
-    expect(routes).toHaveLength(1);
-    expect(routes[0].path).toBe('/');
+describe('Checkout Index Route', () => {
+  it('should export Route from file-based route', () => {
+    expect(Route).toBeDefined();
   });
 
-  it('should create routes with config', () => {
-    const config = {
-      appContext: {
-        user: { id: '1', firstName: 'John', lastName: 'Doe' },
-      },
-    };
-    
-    const routes = createCheckoutRoutes(config);
-    
-    expect(routes).toHaveLength(1);
-    expect(routes[0].path).toBe('/');
+  it('should have correct route options', () => {
+    expect(Route.options).toBeDefined();
+    expect(Route.options.component).toBeDefined();
   });
 });
-

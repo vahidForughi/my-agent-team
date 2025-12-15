@@ -4,15 +4,15 @@ import { HeartOutlined } from '@ant-design/icons';
 import { NavbarActionButton } from './NavbarActionButton';
 
 interface WishlistButtonProps {
-  /** Number of items in wishlist (optional) */
+  /** Number of items in wishlist (optional, shows badge if > 0) */
   count?: number;
 }
 
 /**
  * Wishlist button component for the navbar
- * Displays heart icon for accessing user's wishlist
+ * Displays heart icon for accessing user's wishlist with optional item count badge
  */
-export const WishlistButton: React.FC<WishlistButtonProps> = () => {
+export const WishlistButton: React.FC<WishlistButtonProps> = ({ count }) => {
   const navigate = useNavigate();
 
   const handleClick = () => {
@@ -25,9 +25,10 @@ export const WishlistButton: React.FC<WishlistButtonProps> = () => {
       label="Wishlist"
       onClick={handleClick}
       ariaLabel="Wishlist"
+      badgeCount={count}
+      showZeroBadge={false}
     />
   );
 };
 
 export default WishlistButton;
-

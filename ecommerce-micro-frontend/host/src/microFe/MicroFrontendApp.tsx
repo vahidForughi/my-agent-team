@@ -16,8 +16,8 @@
 
 import { init, loadRemote } from '@module-federation/enhanced/runtime';
 import { Spin } from 'antd';
-import React, { useEffect, useState, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { getMicroFrontendConfig } from '../config/microFrontendRegistry';
 import { getRemoteUrl } from '../helpers/environment';
 import { ErrorBoundary, ErrorBoundaryFallback } from './ErrorBoundary';
@@ -34,6 +34,7 @@ interface RemoteModule {
  */
 const MicroFrontendContent: React.FC<{ appName: string }> = ({ appName }) => {
   const { config: appConfig } = useAppConfig();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const containerIdRef = useRef(`mfe-${appName}-${Date.now()}`);
@@ -41,6 +42,29 @@ const MicroFrontendContent: React.FC<{ appName: string }> = ({ appName }) => {
   const containerElementRef = useRef<HTMLDivElement | null>(null);
 
   const microFrontendConfig = getMicroFrontendConfig(appName);
+
+  // Get initial search params from browser URL
+  const getInitialSearchParams = useCallback(() => {
+    const params: Record<string, string> = {};
+    searchParams.forEach((value, key) => {
+      params[key] = value;
+    });
+    return params;
+  }, [searchParams]);
+
+  // Callback for micro-frontend to update browser URL
+  const handleSearchChange = useCallback(
+    (newSearch: Record<string, unknown>) => {
+      const newParams = new URLSearchParams();
+      Object.entries(newSearch).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          newParams.set(key, String(value));
+        }
+      });
+      setSearchParams(newParams, { replace: true });
+    },
+    [setSearchParams]
+  );
 
   useEffect(() => {
     if (!microFrontendConfig) {
@@ -114,13 +138,15 @@ const MicroFrontendContent: React.FC<{ appName: string }> = ({ appName }) => {
         }
 
         // Inject the micro frontend into the container
-        // Pass basePath so micro-frontend can use BrowserRouter with correct basename
+        // Pass basePath and URL sync callbacks
         inject(containerIdRef.current, {
           config: {
             ...appConfig,
             appContext: {
               ...appConfig?.appContext,
               basePath: `/${appName}`,
+              initialSearchParams: getInitialSearchParams(),
+              onSearchChange: handleSearchChange,
             },
           },
         });
@@ -154,7 +180,7 @@ const MicroFrontendContent: React.FC<{ appName: string }> = ({ appName }) => {
         }
       }
     };
-  }, [appName, microFrontendConfig, appConfig]);
+  }, [appName, microFrontendConfig, appConfig, getInitialSearchParams, handleSearchChange]);
 
   // Show error state
   if (error) {
@@ -213,15 +239,23 @@ const MicroFrontendContent: React.FC<{ appName: string }> = ({ appName }) => {
   );
 };
 
+interface MicroFrontendAppProps {
+  /** Optional app name override - if not provided, reads from URL params */
+  appName?: string;
+}
+
 /**
  * Main Micro Frontend App Component
  *
  * Entry point for all micro frontend routes.
- * Reads app name from URL and delegates to MicroFrontendContent.
+ * Reads app name from URL or props and delegates to MicroFrontendContent.
  */
-const MicroFrontendApp: React.FC = () => {
-  const { appName } = useParams<{ appName: string }>();
+const MicroFrontendApp: React.FC<MicroFrontendAppProps> = (props) => {
+  const { appName: urlAppName } = useParams<{ appName: string }>();
   const navigate = useNavigate();
+
+  // Use prop if provided, otherwise fall back to URL param
+  const appName = props.appName || urlAppName;
 
   // Validate app name
   if (!appName) {
