@@ -43,6 +43,28 @@ export interface MicroFrontendConfig {
  * 3. Add an entry to this registry
  * 4. Deploy and access via /{name}/*
  */
+/**
+ * Get the base URL for remote micro-frontends
+ * In production (Amplify), all remotes are under /remotes/
+ * In development, they run on separate ports
+ */
+const getRemoteBaseUrl = (remoteName: string, env: 'dev' | 'stg' | 'prd'): string => {
+  if (env === 'dev') {
+    // Local development - each remote runs on its own port
+    const ports: Record<string, number> = {
+      store: 4201,
+      checkout: 4202,
+      account: 4203,
+    };
+    return `http://localhost:${ports[remoteName]}`;
+  }
+
+  // Production/Staging - all remotes are deployed together under /remotes/
+  // Use window.location.origin to get the current domain dynamically
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  return `${origin}/remotes/${remoteName}`;
+};
+
 const registry: MicroFrontendConfig[] = [
   {
     name: 'store',
@@ -51,9 +73,9 @@ const registry: MicroFrontendConfig[] = [
     exposedModule: 'ConsoleMicroApp',
     basePath: '/store',
     urls: {
-      dev: 'http://localhost:4201',
-      stg: 'https://store-stg.ecommerce.com',
-      prd: 'https://store.ecommerce.com',
+      dev: getRemoteBaseUrl('store', 'dev'),
+      stg: getRemoteBaseUrl('store', 'stg'),
+      prd: getRemoteBaseUrl('store', 'prd'),
     },
   },
   {
@@ -63,9 +85,9 @@ const registry: MicroFrontendConfig[] = [
     exposedModule: 'ConsoleMicroApp',
     basePath: '/checkout',
     urls: {
-      dev: 'http://localhost:4202',
-      stg: 'https://checkout-stg.ecommerce.com',
-      prd: 'https://checkout.ecommerce.com',
+      dev: getRemoteBaseUrl('checkout', 'dev'),
+      stg: getRemoteBaseUrl('checkout', 'stg'),
+      prd: getRemoteBaseUrl('checkout', 'prd'),
     },
   },
   {
@@ -75,9 +97,9 @@ const registry: MicroFrontendConfig[] = [
     exposedModule: 'ConsoleMicroApp',
     basePath: '/account',
     urls: {
-      dev: 'http://localhost:4203',
-      stg: 'https://account-stg.ecommerce.com',
-      prd: 'https://account.ecommerce.com',
+      dev: getRemoteBaseUrl('account', 'dev'),
+      stg: getRemoteBaseUrl('account', 'stg'),
+      prd: getRemoteBaseUrl('account', 'prd'),
     },
   },
 ];

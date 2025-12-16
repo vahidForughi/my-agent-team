@@ -20,7 +20,8 @@
         "tsConfig": "host/tsconfig.app.json",
         "assets": [
           "host/src/favicon.ico",
-          "host/src/assets"
+          "host/src/assets",
+          "host/src/_redirects"
         ],
         "styles": [
           "host/src/styles.less"
