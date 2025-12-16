@@ -433,3 +433,6 @@ backups/
 /istio-1.27.2
 /.claude
 /istio-1.28.1
+
+# Stakpak session files
+.stakpak/session*
