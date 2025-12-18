@@ -1,3 +1,19 @@
+# AWS Amplify Build Configuration for Micro-Frontend E-Commerce Platform
+#
+# REQUIRED ENVIRONMENT VARIABLES (set in Amplify Console):
+# =========================================================
+# NX_API_BASE_URL      - API Gateway URL (e.g., https://your-api.elb.amazonaws.com)
+#
+# OPTIONAL ENVIRONMENT VARIABLES:
+# =========================================================
+# NX_API_TIMEOUT              - API timeout in ms (default: 30000)
+# NX_USE_MOCK_DATA            - Enable mock data: 'true' or 'false' (default: false)
+# NX_ENABLE_AUTHENTICATION    - Enable auth: 'true' or 'false' (default: true)
+# NX_ENABLE_DISCOUNT_SERVICE  - Enable discount service (default: true)
+# NX_ENABLE_ORDER_TRACKING    - Enable order tracking (default: true)
+# NX_LOG_LEVEL                - Log level: 'debug', 'info', 'warn', 'error' (default: info)
+# NX_ENABLE_API_LOGGING       - Enable API logging: 'true' or 'false' (default: false)
+
 version: 1
 applications:
   - appRoot: ecommerce-micro-frontend
@@ -5,6 +21,11 @@ applications:
       phases:
         preBuild:
           commands:
+            # Verify required environment variables
+            - echo "=== Environment Configuration ==="
+            - echo "NX_API_BASE_URL=${NX_API_BASE_URL:-NOT SET}"
+            - echo "NX_USE_MOCK_DATA=${NX_USE_MOCK_DATA:-false}"
+            - echo "================================="
             # Install dependencies
             - npm ci
             # Build shared packages (app-injector and auth-provider)
