@@ -7,10 +7,19 @@ import * as path from 'path';
 
 import baseConfig from './module-federation.config';
 
-// Load environment variables from .env.development file
-const env = dotenv.config({
-  path: path.resolve(__dirname, '../.env.development')
+// Load environment variables from .env.development file as defaults
+const envPath = path.resolve(__dirname, '../.env.development');
+console.log('[webpack.config] Loading .env from:', envPath);
+
+const fileEnv = dotenv.config({
+  path: envPath
 }).parsed || {};
+
+// Merge: Runtime env vars (process.env) take precedence over .env file
+const env = { ...fileEnv, ...process.env };
+
+console.log('[webpack.config] Loaded env vars from file:', fileEnv);
+console.log('[webpack.config] Runtime env vars:', process.env);
 
 // Filter only NX_ prefixed variables and prepare for DefinePlugin
 const envVars = Object.keys(env)
@@ -19,6 +28,8 @@ const envVars = Object.keys(env)
     acc[`process.env.${key}`] = JSON.stringify(env[key]);
     return acc;
   }, {} as Record<string, string>);
+
+console.log('[webpack.config] Final env vars for DefinePlugin:', envVars);
 
 export default composePlugins(
   withNx(),
