@@ -38,7 +38,28 @@ securityContext: {}
 
 service:
   type: LoadBalancer
-  port: 80  
+  port: 80
+  targetPort: 80
+  enableHttps: true
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "http"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-protocol: "HTTP"
+    # Use an existing endpoint that returns 200 OK (/health doesn't exist on Ocelot)
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-path: "/Catalog/GetAllProducts"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval-seconds: "30"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-timeout-seconds: "5"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-healthy-threshold: "2"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-unhealthy-threshold: "2"
+    # NOTE: Certificate ARN is automatically managed by deploy-aws.sh
+    # The script will:
+    #   1. Check for existing "ecommerce" certificates in the account
+    #   2. Create a self-signed certificate if none exists
+    #   3. Update this value with the correct ARN during deployment
+    # No manual updates needed - this is just a placeholder!
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: "arn:aws:acm:REGION:ACCOUNT_ID:certificate/AUTO_MANAGED"
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"  
 
 ingress:
   enabled: false

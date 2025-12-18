@@ -238,6 +238,54 @@ deploy_eks() {
     log_success "EKS cluster deployed and configured"
 }
 
+# ==================== Setup HTTPS Certificate ====================
+setup_https_certificate() {
+    log_info "[5a/10] Setting up HTTPS certificate..."
+
+    # Check if certificate already exists
+    EXISTING_CERT=$(aws_cmd acm list-certificates \
+        --region "$REGION" \
+        --query "CertificateSummaryList[?contains(DomainName, 'ecommerce')].CertificateArn" \
+        --output text 2>/dev/null | head -1)
+
+    if [ -n "$EXISTING_CERT" ]; then
+        log_success "Found existing certificate: $EXISTING_CERT"
+        echo "$EXISTING_CERT"
+        return 0
+    fi
+
+    log_info "No certificate found, creating self-signed certificate for development..."
+
+    # Create temporary files
+    TEMP_DIR=$(mktemp -d)
+    KEY_FILE="$TEMP_DIR/api-key.key"
+    CERT_FILE="$TEMP_DIR/api-cert.crt"
+
+    # Generate self-signed certificate
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+        -keyout "$KEY_FILE" \
+        -out "$CERT_FILE" \
+        -subj "/CN=api.ecommerce.local/O=eCommerce/C=SG" 2>/dev/null
+
+    # Import to ACM
+    log_info "Importing certificate into AWS ACM..."
+    NEW_CERT=$(aws_cmd acm import-certificate \
+        --certificate "fileb://$CERT_FILE" \
+        --certificate-chain "fileb://$CERT_FILE" \
+        --private-key "fileb://$KEY_FILE" \
+        --region "$REGION" \
+        --tags Key=Name,Value=ecommerce-api Key=Environment,Value=$ENV_NAME Key=AutoCreated,Value=true \
+        --query 'CertificateArn' \
+        --output text)
+
+    log_success "Certificate created: $NEW_CERT"
+
+    # Cleanup
+    rm -rf "$TEMP_DIR"
+
+    echo "$NEW_CERT"
+}
+
 # ==================== EBS CSI Driver ====================
 install_ebs_csi_driver() {
     log_info "[5/10] Installing EBS CSI driver..."
@@ -622,6 +670,14 @@ main() {
     fi
 
     # Step 5-10: Kubernetes workloads
+    # Setup HTTPS certificate first
+    CERT_ARN=$(setup_https_certificate)
+
+    # Update Helm values with the certificate ARN
+    log_info "Updating Helm values with certificate ARN..."
+    sed -i.bak "s|service.beta.kubernetes.io/aws-load-balancer-ssl-cert:.*|service.beta.kubernetes.io/aws-load-balancer-ssl-cert: \"$CERT_ARN\"|g" \
+        Deployments/helm/ocelotapigw/values.yaml
+
     install_ebs_csi_driver
     deploy_databases
     deploy_api_services
