@@ -398,9 +398,14 @@ k8s/charts/config
 
 # Code Coverage Files
 coverage-html/
-coverage.info 
+coverage.info
 coverage.json
 .env
+
+# Environment files
+client/.env
+client/.env.local
+client/.env.production
 
 /.cursor
 /istio-1.26.2

@@ -9,6 +9,8 @@ applications:
             - npm install --legacy-peer-deps
         build:
           commands:
+            # Generate environment configuration from environment variables
+            - node generate-env.js
             # Build Angular app for production
             - npm run build -- --configuration=production
       artifacts:

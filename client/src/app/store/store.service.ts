@@ -8,6 +8,7 @@ import { IProduct, IProductWithDiscount } from '../shared/models/product';
 import { StoreParams } from '../shared/models/storeParams';
 import { IType } from '../shared/models/type';
 import { DiscountService } from '../shared/services/discount.service';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
@@ -21,7 +22,7 @@ export class StoreService {
 
   constructor() {}
 
-  baseUrl = 'http://localhost:8010/';
+  baseUrl = environment.apiUrl + '/';
 
   getProductById(id: string): Observable<IProductWithDiscount> {
     return this.http
