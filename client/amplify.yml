@@ -9,10 +9,9 @@ applications:
             - npm install --legacy-peer-deps
         build:
           commands:
-            # Generate environment configuration from environment variables
-            - node generate-env.js
-            # Build Angular app for production
-            - npm run build -- --configuration=production
+            # Build Angular app for production with environment variable injection
+            # This runs both generate-env.js and ng build with --configuration=production
+            - npm run build:prod
       artifacts:
         # Angular outputs to dist/client
         baseDirectory: dist/client
