@@ -1,0 +1,24 @@
+version: 1
+applications:
+  - appRoot: client
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            # Install dependencies
+            - npm install --legacy-peer-deps
+        build:
+          commands:
+            # Build Angular app for production
+            - npm run build -- --configuration=production
+      artifacts:
+        # Angular outputs to dist/client
+        baseDirectory: dist/client
+        files:
+          - '**/*'
+      cache:
+        paths:
+          # Cache node_modules for faster builds
+          - node_modules/**/*
+          # Cache Angular build cache
+          - .angular/cache/**/*
