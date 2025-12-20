@@ -16,3 +16,6 @@ data:
   DatabaseSettings__BrandsCollection: Brands
   DatabaseSettings__TypesCollection: Types
   ElasticConfiguration__Uri: http://elasticsearch:9200
+  AWS__S3__BucketName: ecommerce-product-images-471112812838
+  AWS__S3__Region: ap-southeast-1
+  AWS__S3__ImagePrefix: products/

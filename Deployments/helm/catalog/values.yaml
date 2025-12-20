@@ -99,3 +99,9 @@ env:
       key: DatabaseSettings__TypesCollection
     - name: ElasticConfiguration__Uri
       key: ElasticConfiguration__Uri
+    - name: AWS__S3__BucketName
+      key: AWS__S3__BucketName
+    - name: AWS__S3__Region
+      key: AWS__S3__Region
+    - name: AWS__S3__ImagePrefix
+      key: AWS__S3__ImagePrefix

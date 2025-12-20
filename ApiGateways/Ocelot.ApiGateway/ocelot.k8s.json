@@ -110,6 +110,30 @@
 			"UpstreamHttpMethod": ["GET"]
 		},
 		{
+			"DownstreamPathTemplate": "/api/v1/Catalog/UploadProductImage",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "catalog",
+					"Port": "80"
+				}
+			],
+			"UpstreamPathTemplate": "/Catalog/UploadProductImage",
+			"UpstreamHttpMethod": ["POST"]
+		},
+		{
+			"DownstreamPathTemplate": "/api/v1/Admin/MigrateImagesToS3",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "catalog",
+					"Port": "80"
+				}
+			],
+			"UpstreamPathTemplate": "/Admin/MigrateImagesToS3",
+			"UpstreamHttpMethod": ["POST"]
+		},
+		{
 			"DownstreamPathTemplate": "/api/v1/Basket/GetBasket/{userName}",
 			"DownstreamScheme": "http",
 			"DownstreamHostAndPorts": [

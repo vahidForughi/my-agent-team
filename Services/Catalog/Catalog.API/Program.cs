@@ -53,6 +53,22 @@ builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IBrandRepository, ProductRepository>();
 builder.Services.AddScoped<ITypesRepository, ProductRepository>();
 
+//Register AWS S3 Configuration
+builder.Services.Configure<Catalog.Infrastructure.Services.AwsS3Settings>(
+    builder.Configuration.GetSection("AWS:S3"));
+builder.Services.Configure<Catalog.Infrastructure.Services.ImageSettings>(
+    builder.Configuration.GetSection("ImageSettings"));
+
+//Register AWS S3 Client
+var awsOptions = builder.Configuration.GetAWSOptions();
+awsOptions.Region = Amazon.RegionEndpoint.GetBySystemName(builder.Configuration["AWS:S3:Region"] ?? "ap-southeast-1");
+builder.Services.AddDefaultAWSOptions(awsOptions);
+builder.Services.AddAWSService<Amazon.S3.IAmazonS3>();
+
+//Register Image Storage Service
+builder.Services.AddScoped<Catalog.Core.Services.IImageStorageService,
+    Catalog.Infrastructure.Services.S3ImageStorageService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
