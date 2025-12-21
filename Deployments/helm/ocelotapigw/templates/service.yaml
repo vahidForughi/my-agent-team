@@ -4,6 +4,10 @@ metadata:
   name: {{ include "ocelotapigw.fullname" . }}
   labels:
     {{- include "ocelotapigw.labels" . | nindent 4 }}
+  {{- if .Values.service.annotations }}
+  annotations:
+    {{- toYaml .Values.service.annotations | nindent 4 }}
+  {{- end }}
 spec:
   type: {{ .Values.service.type }}
   ports:
@@ -11,5 +15,11 @@ spec:
       targetPort: http
       protocol: TCP
       name: http
+    {{- if .Values.service.enableHttps }}
+    - port: 443
+      targetPort: http
+      protocol: TCP
+      name: https
+    {{- end }}
   selector:
     {{- include "ocelotapigw.selectorLabels" . | nindent 4 }}

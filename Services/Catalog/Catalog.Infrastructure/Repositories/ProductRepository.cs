@@ -67,6 +67,14 @@ public class ProductRepository : IProductRepository, IBrandRepository, ITypesRep
             .ToListAsync();
     }
 
+    async Task<IEnumerable<Product>> IProductRepository.GetAllProducts()
+    {
+        return await _context
+            .Products
+            .Find(p => true)
+            .ToListAsync();
+    }
+
     async Task<Product> IProductRepository.CreateProduct(Product product)
     {
         await _context.Products.InsertOneAsync(product);

@@ -56,9 +56,9 @@ require_bin() {
 
 aws_cmd() {
     if [[ -n "${AWS_PROFILE:-}" ]]; then
-        aws --profile "$AWS_PROFILE" "$@"
+        aws --profile "$AWS_PROFILE" --no-paginate "$@"
     else
-        aws "$@"
+        aws --no-paginate "$@"
     fi
 }
 
@@ -238,6 +238,54 @@ deploy_eks() {
     log_success "EKS cluster deployed and configured"
 }
 
+# ==================== Setup HTTPS Certificate ====================
+setup_https_certificate() {
+    log_info "[5a/10] Setting up HTTPS certificate..."
+
+    # Check if certificate already exists
+    EXISTING_CERT=$(aws_cmd acm list-certificates \
+        --region "$REGION" \
+        --query "CertificateSummaryList[?contains(DomainName, 'ecommerce')].CertificateArn" \
+        --output text 2>/dev/null | head -1)
+
+    if [ -n "$EXISTING_CERT" ]; then
+        log_success "Found existing certificate: $EXISTING_CERT"
+        echo "$EXISTING_CERT"
+        return 0
+    fi
+
+    log_info "No certificate found, creating self-signed certificate for development..."
+
+    # Create temporary files
+    TEMP_DIR=$(mktemp -d)
+    KEY_FILE="$TEMP_DIR/api-key.key"
+    CERT_FILE="$TEMP_DIR/api-cert.crt"
+
+    # Generate self-signed certificate
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+        -keyout "$KEY_FILE" \
+        -out "$CERT_FILE" \
+        -subj "/CN=api.ecommerce.local/O=eCommerce/C=SG" 2>/dev/null
+
+    # Import to ACM
+    log_info "Importing certificate into AWS ACM..."
+    NEW_CERT=$(aws_cmd acm import-certificate \
+        --certificate "fileb://$CERT_FILE" \
+        --certificate-chain "fileb://$CERT_FILE" \
+        --private-key "fileb://$KEY_FILE" \
+        --region "$REGION" \
+        --tags Key=Name,Value=ecommerce-api Key=Environment,Value=$ENV_NAME Key=AutoCreated,Value=true \
+        --query 'CertificateArn' \
+        --output text)
+
+    log_success "Certificate created: $NEW_CERT"
+
+    # Cleanup
+    rm -rf "$TEMP_DIR"
+
+    echo "$NEW_CERT"
+}
+
 # ==================== EBS CSI Driver ====================
 install_ebs_csi_driver() {
     log_info "[5/10] Installing EBS CSI driver..."
@@ -311,6 +359,89 @@ deploy_databases() {
     log_success "Databases deployed"
 }
 
+# ==================== Setup IRSA for Catalog Service ====================
+setup_irsa_for_catalog() {
+    log_info "[6.5/10] Setting up IRSA (IAM Role for Service Account) for Catalog Service..."
+
+    # Get OIDC provider URL
+    OIDC_ID=$(aws_cmd eks describe-cluster --region "$REGION" --name "$CLUSTER_NAME" \
+        --query "cluster.identity.oidc.issuer" --output text | cut -d'/' -f5)
+    OIDC_PROVIDER="${OIDC_ID}.oidc.eks.${REGION}.amazonaws.com"
+
+    log_info "OIDC Provider: $OIDC_PROVIDER"
+
+    # Create IAM policy for S3 access
+    log_info "Creating IAM policy for S3 access..."
+    POLICY_NAME="${ENV_NAME}-catalog-s3-policy"
+    POLICY_DOC='{
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "s3:GetObject",
+                    "s3:PutObject",
+                    "s3:DeleteObject",
+                    "s3:ListBucket"
+                ],
+                "Resource": [
+                    "arn:aws:s3:::ecommerce-product-images-471112812838",
+                    "arn:aws:s3:::ecommerce-product-images-471112812838/*"
+                ]
+            }
+        ]
+    }'
+
+    # Create or update policy
+    aws_cmd iam create-policy --policy-name "$POLICY_NAME" \
+        --policy-document "$POLICY_DOC" --region "$REGION" 2>/dev/null || \
+        log_info "Policy already exists: $POLICY_NAME"
+
+    POLICY_ARN="arn:aws:iam::${AWS_ACCOUNT_ID}:policy/${POLICY_NAME}"
+
+    # Create IAM role with OIDC trust relationship
+    log_info "Creating IAM role with OIDC trust relationship..."
+    ROLE_NAME="${ENV_NAME}-catalog-s3-role"
+    TRUST_POLICY="{
+        \"Version\": \"2012-10-17\",
+        \"Statement\": [
+            {
+                \"Effect\": \"Allow\",
+                \"Principal\": {
+                    \"Federated\": \"arn:aws:iam::${AWS_ACCOUNT_ID}:oidc-provider/${OIDC_PROVIDER}\"
+                },
+                \"Action\": \"sts:AssumeRoleWithWebIdentity\",
+                \"Condition\": {
+                    \"StringEquals\": {
+                        \"${OIDC_PROVIDER}:sub\": \"system:serviceaccount:${NAMESPACE}:catalog\",
+                        \"${OIDC_PROVIDER}:aud\": \"sts.amazonaws.com\"
+                    }
+                }
+            }
+        ]
+    }"
+
+    # Create or update role
+    aws_cmd iam create-role --role-name "$ROLE_NAME" \
+        --assume-role-policy-document "$TRUST_POLICY" --region "$REGION" 2>/dev/null || \
+        log_info "Role already exists: $ROLE_NAME"
+
+    # Attach policy to role
+    log_info "Attaching S3 policy to role..."
+    aws_cmd iam attach-role-policy --role-name "$ROLE_NAME" \
+        --policy-arn "$POLICY_ARN" --region "$REGION" 2>/dev/null || \
+        log_info "Policy already attached to role"
+
+    # Update service account annotation
+    log_info "Creating/updating service account with IRSA annotation..."
+    kubectl create serviceaccount catalog -n "$NAMESPACE" --dry-run=client -o yaml | \
+        kubectl annotate -f - --overwrite \
+        eks.amazonaws.com/role-arn="arn:aws:iam::${AWS_ACCOUNT_ID}:role/${ROLE_NAME}" | \
+        kubectl apply -f -
+
+    log_success "IRSA configured for Catalog Service"
+}
+
 # ==================== Deploy API Services ====================
 deploy_api_services() {
     log_info "[7/10] Deploying API microservices..."
@@ -336,15 +467,30 @@ deploy_api_services() {
                     ;;
             esac
 
-            # Deploy with ECR image override and ClusterIP service type
-            helm upgrade --install "eshopping-${chart}" "./${chart}" \
-                --namespace "$NAMESPACE" \
-                --set image.registry="$ECR_REGISTRY" \
-                --set image.repository="$IMAGE_NAME" \
-                --set image.tag="latest" \
-                --set imagePullSecrets=null \
-                --set service.type=ClusterIP \
-                --wait --timeout 600s
+            # Special handling for catalog service to set service account
+            if [[ "$chart" == "catalog" ]]; then
+                log_info "Deploying catalog service with IRSA-enabled service account..."
+                helm upgrade --install "eshopping-${chart}" "./${chart}" \
+                    --namespace "$NAMESPACE" \
+                    --set image.registry="$ECR_REGISTRY" \
+                    --set image.repository="$IMAGE_NAME" \
+                    --set image.tag="latest" \
+                    --set imagePullSecrets=null \
+                    --set service.type=ClusterIP \
+                    --set serviceAccount.create=false \
+                    --set serviceAccount.name=catalog \
+                    --wait --timeout 600s
+            else
+                # Deploy other services normally
+                helm upgrade --install "eshopping-${chart}" "./${chart}" \
+                    --namespace "$NAMESPACE" \
+                    --set image.registry="$ECR_REGISTRY" \
+                    --set image.repository="$IMAGE_NAME" \
+                    --set image.tag="latest" \
+                    --set imagePullSecrets=null \
+                    --set service.type=ClusterIP \
+                    --wait --timeout 600s
+            fi
         else
             log_warning "Chart not found: ${chart}"
         fi
@@ -353,6 +499,42 @@ deploy_api_services() {
     cd ../..
 
     log_success "API services deployed"
+}
+
+# ==================== Trigger Data Migration ====================
+trigger_migration() {
+    log_info "[7.5/10] Triggering product image migration to S3..."
+
+    # Get the catalog service endpoint
+    log_info "Waiting for catalog service to be ready..."
+    kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-catalog \
+        -n "$NAMESPACE" --timeout=300s || log_warning "Catalog pod not ready, migration may fail"
+
+    # Get service IP (use port-forward as alternative)
+    log_info "Attempting to connect to catalog service for migration..."
+
+    # Port-forward to catalog service in background
+    kubectl port-forward -n "$NAMESPACE" svc/eshopping-catalog 8000:80 &
+    PF_PID=$!
+    sleep 3
+
+    # Trigger migration via API Gateway
+    log_info "Calling migration endpoint: POST /Admin/MigrateImagesToS3"
+    MIGRATION_RESPONSE=$(curl -s -X POST http://localhost:8000/Admin/MigrateImagesToS3)
+
+    # Clean up port-forward
+    kill $PF_PID 2>/dev/null || true
+
+    if echo "$MIGRATION_RESPONSE" | grep -q "TotalProducts"; then
+        log_success "Migration triggered successfully"
+        log_info "Migration response: $MIGRATION_RESPONSE"
+    else
+        log_warning "Migration endpoint may not have responded properly"
+        log_info "Response: $MIGRATION_RESPONSE"
+        log_info "Products may still have local image paths. Migration can be triggered manually with:"
+        log_info "  kubectl port-forward -n $NAMESPACE svc/eshopping-catalog 8000:80"
+        log_info "  curl -X POST http://localhost:8000/Admin/MigrateImagesToS3"
+    fi
 }
 
 # ==================== Deploy Monitoring Stack ====================
@@ -622,9 +804,35 @@ main() {
     fi
 
     # Step 5-10: Kubernetes workloads
+    # Setup HTTPS certificate first
+    CERT_ARN=$(setup_https_certificate | tr -d '\n')
+
+    # Update Helm values with the certificate ARN
+    log_info "Updating Helm values with certificate ARN..."
+    if [ -n "$CERT_ARN" ]; then
+        # Use Python for safer string replacement with special characters
+        python3 << EOF
+import sys
+cert_arn = "$CERT_ARN"
+with open("Deployments/helm/ocelotapigw/values.yaml", "r") as f:
+    content = f.read()
+content = content.replace(
+    "service.beta.kubernetes.io/aws-load-balancer-ssl-cert: \"\"",
+    f"service.beta.kubernetes.io/aws-load-balancer-ssl-cert: \"{cert_arn}\""
+)
+with open("Deployments/helm/ocelotapigw/values.yaml", "w") as f:
+    f.write(content)
+print("Certificate updated successfully")
+EOF
+    else
+        log_warning "No certificate ARN returned, skipping Helm values update"
+    fi
+
     install_ebs_csi_driver
     deploy_databases
+    setup_irsa_for_catalog
     deploy_api_services
+    trigger_migration
     deploy_monitoring
     deploy_alb
     verify_deployment

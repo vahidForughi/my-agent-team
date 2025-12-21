@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, forkJoin, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { IProduct, IProductWithDiscount } from '../models/product';
+import { environment } from '../../../environments/environment';
 
 export interface IDiscount {
   id: number;
@@ -17,7 +18,7 @@ export interface IDiscount {
 export class DiscountService {
   private http = inject(HttpClient);
 
-  private baseUrl = 'http://localhost:8010/';
+  private baseUrl = environment.apiUrl + '/';
 
   /** Inserted by Angular inject() migration for backwards compatibility */
   constructor(...args: unknown[]);

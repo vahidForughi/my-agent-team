@@ -10,14 +10,15 @@ import { ErrorInterceptor } from './core/interceptors/error.interceptor';
 import { LoadingInterceptor } from './core/interceptors/loading.interceptor';
 import { BrowserCacheLocation, InteractionType, PublicClientApplication } from '@azure/msal-browser';
 import { MsalGuardConfiguration, MsalInterceptorConfiguration, MsalModule, MsalRedirectComponent } from '@azure/msal-angular';
+import { environment } from '../environments/environment';
 
 export function MSALInstanceFactory(): PublicClientApplication {
   return new PublicClientApplication({
     auth: {
-      clientId: '85ec0233-0ecb-4830-96f5-12d00bf87176',
-      authority: 'https://sportscenter19.b2clogin.com/sportscenter19.onmicrosoft.com/B2C_1_SignInSignUp/v2.0/',
-      redirectUri: 'http://localhost:4200',
-      knownAuthorities: ['sportscenter19.b2clogin.com'],
+      clientId: environment.azureB2C.clientId,
+      authority: environment.azureB2C.authority,
+      redirectUri: environment.azureB2C.redirectUri,
+      knownAuthorities: environment.azureB2C.knownAuthorities,
     },
     cache: {
       cacheLocation: BrowserCacheLocation.LocalStorage,
@@ -31,7 +32,7 @@ export function MSALGuardConfigFactory(): MsalGuardConfiguration {
   return {
     interactionType: InteractionType.Redirect,
     authRequest: {
-      scopes: ["openid", "profile", "https://sportscenter19.onmicrosoft.com/85ec0233-0ecb-4830-96f5-12d00bf87176/access_as_user"]
+      scopes: environment.azureB2C.scopes
     }
   };
 }
@@ -40,9 +41,7 @@ export function MSALGuardConfigFactory(): MsalGuardConfiguration {
 export function MSALInterceptorConfigFactory(): MsalInterceptorConfiguration {
   return {
     interactionType: InteractionType.Redirect,
-    protectedResourceMap: new Map([
-      ['https://sportscenter19.onmicrosoft.com/85ec0233-0ecb-4830-96f5-12d00bf87176', ['https://sportscenter19.onmicrosoft.com/85ec0233-0ecb-4830-96f5-12d00bf87176/access_as_user']]
-    ])
+    protectedResourceMap: new Map(environment.azureB2C.protectedResourceMap as any)
   };
 }
 
