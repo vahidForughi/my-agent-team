@@ -60,12 +60,16 @@ builder.Services.Configure<Catalog.Infrastructure.Services.ImageSettings>(
     builder.Configuration.GetSection("ImageSettings"));
 
 //Register AWS S3 Client with LocalStack support
-var useLocalStack = builder.Configuration.GetValue<bool>("USE_LOCALSTACK");
+var useLocalStackStr = builder.Configuration["USE_LOCALSTACK"];
 var awsEndpointUrl = builder.Configuration["AWS_ENDPOINT_URL"];
+var useLocalStack = !string.IsNullOrEmpty(useLocalStackStr) &&
+                    (useLocalStackStr.Equals("true", StringComparison.OrdinalIgnoreCase) ||
+                     useLocalStackStr == "1");
 
 if (useLocalStack && !string.IsNullOrEmpty(awsEndpointUrl))
 {
     // Configure for LocalStack
+    Console.WriteLine($"[S3 Config] Using LocalStack S3 at {awsEndpointUrl} with ForcePathStyle=true");
     var s3Config = new Amazon.S3.AmazonS3Config
     {
         ServiceURL = awsEndpointUrl,
@@ -79,6 +83,7 @@ if (useLocalStack && !string.IsNullOrEmpty(awsEndpointUrl))
 else
 {
     // Configure for real AWS
+    Console.WriteLine("[S3 Config] Using AWS S3");
     var awsOptions = builder.Configuration.GetAWSOptions();
     awsOptions.Region = Amazon.RegionEndpoint.GetBySystemName(
         builder.Configuration["AWS:S3:Region"] ?? "ap-southeast-1");
