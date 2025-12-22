@@ -5,15 +5,15 @@
 replicaCount: 1
 
 image:
-  registry: mcr.microsoft.com
-  repository: eshop/ordering.api
+  registry: ""
+  repository: orderingapi
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"
 
 imagePullSecrets: []
 nameOverride: ""
-fullnameOverride: "ordering"
+fullnameOverride: ""
 
 serviceAccount:
   # Specifies whether a service account should be created

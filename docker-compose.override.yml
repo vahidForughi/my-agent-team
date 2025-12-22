@@ -101,10 +101,14 @@ services:
       - DatabaseSettings__BrandsCollection=Brands
       - DatabaseSettings__TypesCollection=Types
       - ElasticConfiguration__Uri=${ELASTICSEARCH_URL}
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
-      - AWS_DEFAULT_REGION=ap-southeast-1
+      # LocalStack S3 Configuration
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_ENDPOINT_URL=http://localstack:4566
+      - USE_LOCALSTACK=true
+      - AWS__S3__BucketName=ecommerce-product-images
+      - AWS__S3__Region=us-east-1
+      - AWS__S3__ImagePrefix=products/
     volumes:
       - ~/.aws:/root/.aws:ro
       - ./client/src/images/products:/app/images/products:ro
@@ -112,6 +116,8 @@ services:
       catalogdb:
         condition: service_healthy
       elasticsearch:
+        condition: service_healthy
+      localstack:
         condition: service_healthy
     ports:
       - "8000:80"

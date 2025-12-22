@@ -51,6 +51,25 @@ services:
   kibana:
     image: docker.elastic.co/kibana/kibana:7.9.2
 
+  localstack:
+    image: localstack/localstack:latest
+    container_name: localstack
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=s3
+      - DEBUG=1
+      - DATA_DIR=/var/lib/localstack/data
+    volumes:
+      - localstack-data:/var/lib/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
   ocelot.apigateway:
     image: ${DOCKER_REGISTRY-}ocelotapigateway
     build:
@@ -64,6 +83,7 @@ volumes:
  pgadmin_data:
  elasticsearch-data:
  orderdb-data:
+ localstack-data:
 
 
 

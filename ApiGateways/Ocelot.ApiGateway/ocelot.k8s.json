@@ -5,8 +5,8 @@
 			"DownstreamScheme": "http",
 			"DownstreamHostAndPorts": [
 				{
-					"Host": "catalog",
-					"Port": "80"
+					"Host": "eshopping-catalog",
+					"Port": 80
 				}
 			],
 			"UpstreamPathTemplate": "/Catalog",
@@ -18,8 +18,8 @@
 			"DownstreamScheme": "http",
 			"DownstreamHostAndPorts": [
 				{
-					"Host": "catalog",
-					"Port": "80"
+					"Host": "eshopping-catalog",
+					"Port": 80
 				}
 			],
 			"UpstreamPathTemplate": "/Catalog/GetProductById/{id}",
@@ -30,8 +30,8 @@
 			"DownstreamScheme": "http",
 			"DownstreamHostAndPorts": [
 				{
-					"Host": "catalog",
-					"Port": "80"
+					"Host": "eshopping-catalog",
+					"Port": 80
 				}
 			],
 			"UpstreamPathTemplate": "/Catalog/CreateProduct",
@@ -42,8 +42,8 @@
 			"DownstreamScheme": "http",
 			"DownstreamHostAndPorts": [
 				{
-					"Host": "catalog",
-					"Port": "80"
+					"Host": "eshopping-catalog",
+					"Port": 80
 				}
 			],
 			"UpstreamPathTemplate": "/Catalog/GetAllProducts",
@@ -54,8 +54,8 @@
 			"DownstreamScheme": "http",
 			"DownstreamHostAndPorts": [
 				{
-					"Host": "catalog",
-					"Port": "80"
+					"Host": "eshopping-catalog",
+					"Port": 80
 				}
 			],
 			"UpstreamPathTemplate": "/Catalog/GetAllBrands",
@@ -66,8 +66,8 @@
 			"DownstreamScheme": "http",
 			"DownstreamHostAndPorts": [
 				{
-					"Host": "catalog",
-					"Port": "80"
+					"Host": "eshopping-catalog",
+					"Port": 80
 				}
 			],
 			"UpstreamPathTemplate": "/Catalog/CreateBrand",
@@ -78,8 +78,8 @@
 			"DownstreamScheme": "http",
 			"DownstreamHostAndPorts": [
 				{
-					"Host": "catalog",
-					"Port": "80"
+					"Host": "eshopping-catalog",
+					"Port": 80
 				}
 			],
 			"UpstreamPathTemplate": "/Catalog/GetAllTypes",
@@ -90,8 +90,8 @@
 			"DownstreamScheme": "http",
 			"DownstreamHostAndPorts": [
 				{
-					"Host": "catalog",
-					"Port": "80"
+					"Host": "eshopping-catalog",
+					"Port": 80
 				}
 			],
 			"UpstreamPathTemplate": "/Catalog/CreateType",
@@ -102,8 +102,8 @@
 			"DownstreamScheme": "http",
 			"DownstreamHostAndPorts": [
 				{
-					"Host": "catalog",
-					"Port": "80"
+					"Host": "eshopping-catalog",
+					"Port": 80
 				}
 			],
 			"UpstreamPathTemplate": "/Catalog/GetProductsByBrandName/{brand}",
@@ -114,8 +114,8 @@
 			"DownstreamScheme": "http",
 			"DownstreamHostAndPorts": [
 				{
-					"Host": "catalog",
-					"Port": "80"
+					"Host": "eshopping-catalog",
+					"Port": 80
 				}
 			],
 			"UpstreamPathTemplate": "/Catalog/UploadProductImage",
@@ -126,8 +126,8 @@
 			"DownstreamScheme": "http",
 			"DownstreamHostAndPorts": [
 				{
-					"Host": "catalog",
-					"Port": "80"
+					"Host": "eshopping-catalog",
+					"Port": 80
 				}
 			],
 			"UpstreamPathTemplate": "/Admin/MigrateImagesToS3",
@@ -138,8 +138,8 @@
 			"DownstreamScheme": "http",
 			"DownstreamHostAndPorts": [
 				{
-					"Host": "basket",
-					"Port": "80"
+					"Host": "eshopping-basket",
+					"Port": 80
 				}
 			],
 			"UpstreamPathTemplate": "/Basket/GetBasket/{userName}",
@@ -150,8 +150,8 @@
 			"DownstreamScheme": "http",
 			"DownstreamHostAndPorts": [
 				{
-					"Host": "basket",
-					"Port": "80"
+					"Host": "eshopping-basket",
+					"Port": 80
 				}
 			],
 			"UpstreamPathTemplate": "/Basket/DeleteBasket/{userName}",
@@ -162,8 +162,8 @@
 			"DownstreamScheme": "http",
 			"DownstreamHostAndPorts": [
 				{
-					"Host": "basket",
-					"Port": "80"
+					"Host": "eshopping-basket",
+					"Port": 80
 				}
 			],
 			"UpstreamPathTemplate": "/Basket/CreateBasket",
@@ -174,8 +174,8 @@
 			"DownstreamScheme": "http",
 			"DownstreamHostAndPorts": [
 				{
-					"Host": "basket",
-					"Port": "80"
+					"Host": "eshopping-basket",
+					"Port": 80
 				}
 			],
 			"UpstreamPathTemplate": "/Basket/Checkout",
@@ -193,8 +193,8 @@
 			"DownstreamScheme": "http",
 			"DownstreamHostAndPorts": [
 				{
-					"Host": "basket",
-					"Port": "80"
+					"Host": "eshopping-basket",
+					"Port": 80
 				}
 			],
 			"UpstreamPathTemplate": "/Basket/CheckoutV2",
@@ -212,8 +212,8 @@
 			"DownstreamScheme": "http",
 			"DownstreamHostAndPorts": [
 				{
-					"Host": "discountapi",
-					"Port": "8080"
+					"Host": "eshopping-discount-discount-grpc",
+					"Port": 8080
 				}
 			],
 			"UpstreamPathTemplate": "/Discount/{productName}",
@@ -224,8 +224,8 @@
 			"DownstreamScheme": "http",
 			"DownstreamHostAndPorts": [
 				{
-					"Host": "discountapi",
-					"Port": "8080"
+					"Host": "eshopping-discount-discount-grpc",
+					"Port": 8080
 				}
 			],
 			"UpstreamPathTemplate": "/Discount",
@@ -236,8 +236,8 @@
 			"DownstreamScheme": "http",
 			"DownstreamHostAndPorts": [
 				{
-					"Host": "ordering",
-					"Port": "8080"
+					"Host": "eshopping-ordering",
+					"Port": 8080
 				}
 			],
 			"UpstreamPathTemplate": "/Order/{userName}",

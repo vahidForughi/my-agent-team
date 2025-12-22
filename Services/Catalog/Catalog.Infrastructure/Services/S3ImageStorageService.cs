@@ -72,7 +72,17 @@ public class S3ImageStorageService : IImageStorageService
             }
 
             // Generate the public URL
-            var imageUrl = $"https://{_s3Settings.BucketName}.s3.{_s3Settings.Region}.amazonaws.com/{key}";
+            string imageUrl;
+            if (!string.IsNullOrEmpty(_s3Settings.ServiceUrl))
+            {
+                // LocalStack path-style URL
+                imageUrl = $"{_s3Settings.ServiceUrl}/{_s3Settings.BucketName}/{key}";
+            }
+            else
+            {
+                // AWS virtual-hosted style URL
+                imageUrl = $"https://{_s3Settings.BucketName}.s3.{_s3Settings.Region}.amazonaws.com/{key}";
+            }
 
             _logger.LogInformation("Successfully uploaded image to S3: URL={Url}", imageUrl);
 
@@ -98,7 +108,11 @@ public class S3ImageStorageService : IImageStorageService
         try
         {
             // Check if URL is an S3 URL
-            if (string.IsNullOrWhiteSpace(imageUrl) || !imageUrl.Contains("s3.amazonaws.com") && !imageUrl.Contains(_s3Settings.BucketName))
+            if (string.IsNullOrWhiteSpace(imageUrl) ||
+                (!imageUrl.Contains("s3.amazonaws.com") &&
+                 !imageUrl.Contains(_s3Settings.BucketName) &&
+                 (string.IsNullOrEmpty(_s3Settings.ServiceUrl) ||
+                  !imageUrl.StartsWith(_s3Settings.ServiceUrl))))
             {
                 _logger.LogWarning("Attempted to delete non-S3 URL or empty URL: {Url}", imageUrl);
                 return false;
@@ -168,20 +182,32 @@ public class S3ImageStorageService : IImageStorageService
         try
         {
             // Handle different S3 URL formats:
-            // 1. https://bucket-name.s3.region.amazonaws.com/key
-            // 2. https://s3.region.amazonaws.com/bucket-name/key
-            // 3. https://bucket-name.s3.amazonaws.com/key (older format)
+            // 1. https://bucket-name.s3.region.amazonaws.com/key (AWS virtual-hosted)
+            // 2. https://s3.region.amazonaws.com/bucket-name/key (AWS path-style)
+            // 3. http://localstack:4566/bucket-name/key (LocalStack path-style)
 
             var uri = new Uri(imageUrl);
             var path = uri.AbsolutePath.TrimStart('/');
 
-            // If URL is in format: https://bucket-name.s3.region.amazonaws.com/key
+            // Check if this is a LocalStack URL
+            if (!string.IsNullOrEmpty(_s3Settings.ServiceUrl) &&
+                imageUrl.StartsWith(_s3Settings.ServiceUrl))
+            {
+                // LocalStack format: http://localstack:4566/bucket/key
+                if (path.StartsWith(_s3Settings.BucketName + "/"))
+                {
+                    return path.Substring(_s3Settings.BucketName.Length + 1);
+                }
+                return path;
+            }
+
+            // AWS virtual-hosted style
             if (uri.Host.StartsWith(_s3Settings.BucketName))
             {
                 return path;
             }
 
-            // If URL is in format: https://s3.region.amazonaws.com/bucket-name/key
+            // AWS path-style
             if (path.StartsWith(_s3Settings.BucketName + "/"))
             {
                 return path.Substring(_s3Settings.BucketName.Length + 1);
@@ -228,6 +254,8 @@ public class AwsS3Settings
     public string BucketName { get; set; } = string.Empty;
     public string Region { get; set; } = string.Empty;
     public string ImagePrefix { get; set; } = "products/";
+    public string? ServiceUrl { get; set; }  // For LocalStack endpoint
+    public bool UsePathStyle { get; set; } = false;  // For path-style URLs
 }
 
 /// <summary>

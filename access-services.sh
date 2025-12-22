@@ -17,13 +17,14 @@ WHITE='\033[1;37m'
 NC='\033[0m' # No Color
 
 # Service configuration arrays (compatible with older Bash)
-SERVICES_KEYS="frontend api-gateway prometheus grafana jaeger kiali rabbitmq kibana elasticsearch minikube-dashboard portainer portainer-edge pgadmin"
+SERVICES_KEYS="frontend api-gateway localstack prometheus grafana jaeger kiali rabbitmq kibana elasticsearch minikube-dashboard portainer portainer-edge pgadmin"
 
 # Function to get service URL
 get_service_url() {
     case $1 in
         "frontend") echo "http://localhost:4200" ;;
         "api-gateway") echo "http://localhost:8010" ;;
+        "localstack") echo "http://localhost:4566" ;;
         "prometheus") echo "http://localhost:9090" ;;
         "grafana") echo "http://localhost:3000" ;;
         "jaeger") echo "http://localhost:16686" ;;
@@ -44,6 +45,7 @@ get_service_description() {
     case $1 in
         "frontend") echo "Angular E-Commerce Frontend Application" ;;
         "api-gateway") echo "Ocelot API Gateway - Main entry point for all APIs" ;;
+        "localstack") echo "LocalStack S3 - Local AWS S3 emulator for product images" ;;
         "prometheus") echo "Prometheus Monitoring - Metrics collection and alerting" ;;
         "grafana") echo "Grafana Dashboards - Data visualization and monitoring" ;;
         "jaeger") echo "Jaeger Tracing - Distributed tracing and performance monitoring" ;;
@@ -62,7 +64,8 @@ get_service_description() {
 # Function to get port forward command
 get_port_forward_cmd() {
     case $1 in
-        "api-gateway") echo "kubectl port-forward svc/ocelotapigw 8010:80 -n default" ;;
+        "api-gateway") echo "kubectl port-forward svc/eshopping-gateway-ocelotapigw 8010:80 -n default" ;;
+        "localstack") echo "kubectl port-forward svc/localstack 4566:4566 -n default" ;;
         "prometheus") echo "kubectl port-forward svc/prometheus-server 9090:80 -n monitoring" ;;
         "grafana") echo "kubectl port-forward svc/grafana 3000:3000 -n istio-system" ;;
         "jaeger") echo "kubectl port-forward svc/tracing 16686:80 -n istio-system" ;;
@@ -163,7 +166,7 @@ start_port_forwards() {
     sleep 2
 
     # Start port forwards for services that need them
-    local services_with_forwards="api-gateway prometheus grafana jaeger kiali rabbitmq kibana elasticsearch portainer portainer-edge pgadmin"
+    local services_with_forwards="api-gateway localstack prometheus grafana jaeger kiali rabbitmq kibana elasticsearch portainer portainer-edge pgadmin"
 
     for service in $services_with_forwards; do
         local cmd=$(get_port_forward_cmd "$service")
@@ -243,34 +246,35 @@ display_menu() {
     echo -e "${CYAN}📱 APPLICATION SERVICES:${NC}"
     echo "  1) Frontend Application    - Angular E-Commerce UI"
     echo "  2) API Gateway             - Main API entry point"
+    echo "  3) LocalStack S3           - Local AWS S3 storage"
     echo ""
-    
+
     echo -e "${CYAN}📊 MONITORING STACK:${NC}"
-    echo "  3) Prometheus              - Metrics and monitoring"
-    echo "  4) Grafana                 - Dashboards and visualization"
-    echo "  5) Jaeger                  - Distributed tracing"
-    echo "  6) Kiali                   - Service mesh observability"
+    echo "  4) Prometheus              - Metrics and monitoring"
+    echo "  5) Grafana                 - Dashboards and visualization"
+    echo "  6) Jaeger                  - Distributed tracing"
+    echo "  7) Kiali                   - Service mesh observability"
     echo ""
-    
+
     echo -e "${CYAN}🔧 DEVOPS & INFRASTRUCTURE:${NC}"
-    echo "  7) RabbitMQ Management     - Message broker admin"
-    echo "  8) Kibana                  - Log analysis and search"
-    echo "  9) Elasticsearch           - Search engine"
-    echo " 10) Minikube Dashboard      - Kubernetes cluster UI"
+    echo "  8) RabbitMQ Management     - Message broker admin"
+    echo "  9) Kibana                  - Log analysis and search"
+    echo " 10) Elasticsearch           - Search engine"
+    echo " 11) Minikube Dashboard      - Kubernetes cluster UI"
     echo ""
 
     echo -e "${CYAN}🛠️  MANAGEMENT TOOLS:${NC}"
-    echo " 11) Portainer              - Container management platform (Main UI)"
-    echo " 12) Portainer Edge         - Edge agent tunnel server (Advanced)"
-    echo " 13) pgAdmin                - PostgreSQL administration tool"
+    echo " 12) Portainer              - Container management platform (Main UI)"
+    echo " 13) Portainer Edge         - Edge agent tunnel server (Advanced)"
+    echo " 14) pgAdmin                - PostgreSQL administration tool"
     echo ""
 
     echo -e "${CYAN}⚙️  MANAGEMENT OPTIONS:${NC}"
-    echo " 14) Start All Port Forwards - Enable access to all services"
-    echo " 15) Stop All Port Forwards  - Disable service access"
-    echo " 16) Service Status Check    - Check which services are online"
-    echo " 17) Open All Monitoring     - Open all monitoring tools"
-    echo " 18) Quick Health Check      - Test all API endpoints"
+    echo " 15) Start All Port Forwards - Enable access to all services"
+    echo " 16) Stop All Port Forwards  - Disable service access"
+    echo " 17) Service Status Check    - Check which services are online"
+    echo " 18) Open All Monitoring     - Open all monitoring tools"
+    echo " 19) Quick Health Check      - Test all API endpoints"
     echo ""
     
     echo -e "${CYAN}🚪 EXIT:${NC}"
@@ -349,22 +353,23 @@ handle_menu_choice() {
     case $choice in
         1) open_service "frontend" ;;
         2) open_service "api-gateway" ;;
-        3) open_service "prometheus" ;;
-        4) open_service "grafana" ;;
-        5) open_service "jaeger" ;;
-        6) open_service "kiali" ;;
-        7) open_service "rabbitmq" ;;
-        8) open_service "kibana" ;;
-        9) open_service "elasticsearch" ;;
-        10) open_service "minikube-dashboard" ;;
-        11) open_service "portainer" ;;
-        12) open_service "portainer-edge" ;;
-        13) open_service "pgadmin" ;;
-        14) start_port_forwards ;;
-        15) stop_port_forwards ;;
-        16) display_service_status ;;
-        17) open_all_monitoring ;;
-        18) quick_health_check ;;
+        3) open_service "localstack" ;;
+        4) open_service "prometheus" ;;
+        5) open_service "grafana" ;;
+        6) open_service "jaeger" ;;
+        7) open_service "kiali" ;;
+        8) open_service "rabbitmq" ;;
+        9) open_service "kibana" ;;
+        10) open_service "elasticsearch" ;;
+        11) open_service "minikube-dashboard" ;;
+        12) open_service "portainer" ;;
+        13) open_service "portainer-edge" ;;
+        14) open_service "pgadmin" ;;
+        15) start_port_forwards ;;
+        16) stop_port_forwards ;;
+        17) display_service_status ;;
+        18) open_all_monitoring ;;
+        19) quick_health_check ;;
         0)
             log_info "Goodbye! 👋"
             exit 0
@@ -381,7 +386,7 @@ main() {
         display_header
         display_menu
 
-        echo -n -e "${WHITE}Enter your choice (0-18): ${NC}"
+        echo -n -e "${WHITE}Enter your choice (0-19): ${NC}"
         read -r choice
         echo ""
 

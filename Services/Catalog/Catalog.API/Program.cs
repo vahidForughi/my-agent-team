@@ -59,11 +59,32 @@ builder.Services.Configure<Catalog.Infrastructure.Services.AwsS3Settings>(
 builder.Services.Configure<Catalog.Infrastructure.Services.ImageSettings>(
     builder.Configuration.GetSection("ImageSettings"));
 
-//Register AWS S3 Client
-var awsOptions = builder.Configuration.GetAWSOptions();
-awsOptions.Region = Amazon.RegionEndpoint.GetBySystemName(builder.Configuration["AWS:S3:Region"] ?? "ap-southeast-1");
-builder.Services.AddDefaultAWSOptions(awsOptions);
-builder.Services.AddAWSService<Amazon.S3.IAmazonS3>();
+//Register AWS S3 Client with LocalStack support
+var useLocalStack = builder.Configuration.GetValue<bool>("USE_LOCALSTACK");
+var awsEndpointUrl = builder.Configuration["AWS_ENDPOINT_URL"];
+
+if (useLocalStack && !string.IsNullOrEmpty(awsEndpointUrl))
+{
+    // Configure for LocalStack
+    var s3Config = new Amazon.S3.AmazonS3Config
+    {
+        ServiceURL = awsEndpointUrl,
+        ForcePathStyle = true,
+        AuthenticationRegion = "us-east-1",
+        UseHttp = true
+    };
+    builder.Services.AddSingleton<Amazon.S3.IAmazonS3>(sp =>
+        new Amazon.S3.AmazonS3Client(s3Config));
+}
+else
+{
+    // Configure for real AWS
+    var awsOptions = builder.Configuration.GetAWSOptions();
+    awsOptions.Region = Amazon.RegionEndpoint.GetBySystemName(
+        builder.Configuration["AWS:S3:Region"] ?? "ap-southeast-1");
+    builder.Services.AddDefaultAWSOptions(awsOptions);
+    builder.Services.AddAWSService<Amazon.S3.IAmazonS3>();
+}
 
 //Register Image Storage Service
 builder.Services.AddScoped<Catalog.Core.Services.IImageStorageService,

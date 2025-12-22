@@ -50,11 +50,11 @@ if [ "$PODS_WITHOUT_SIDECAR" -gt 0 ]; then
     
     # Restart deployments to inject sidecars
     log_info "Restarting microservice deployments to inject Istio sidecars..."
-    kubectl rollout restart deployment/catalog deployment/basket deployment/ordering deployment/discountapi deployment/ocelotapigw -n default
-    
+    kubectl rollout restart deployment/eshopping-catalog deployment/eshopping-basket deployment/eshopping-ordering deployment/eshopping-discount-discount-grpc deployment/eshopping-gateway-ocelotapigw -n default
+
     # Wait for rollouts to complete
     log_info "Waiting for deployments to complete..."
-    kubectl rollout status deployment/catalog deployment/basket deployment/ordering deployment/discountapi deployment/ocelotapigw -n default --timeout=300s
+    kubectl rollout status deployment/eshopping-catalog deployment/eshopping-basket deployment/eshopping-ordering deployment/eshopping-discount-discount-grpc deployment/eshopping-gateway-ocelotapigw -n default --timeout=300s
     
     # Verify sidecar injection
     log_info "Verifying Istio sidecar injection..."
@@ -73,7 +73,7 @@ fi
 
 # Generate some traffic to create metrics
 log_info "Generating traffic to create initial metrics..."
-if kubectl port-forward svc/ocelotapigw 8010:80 -n default > /dev/null 2>&1 &
+if kubectl port-forward svc/eshopping-gateway-ocelotapigw 8010:80 -n default > /dev/null 2>&1 &
 then
     PORT_FORWARD_PID=$!
     sleep 3
