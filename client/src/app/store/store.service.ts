@@ -22,7 +22,7 @@ export class StoreService {
 
   constructor() {}
 
-  baseUrl = environment.apiUrl + '/';
+  baseUrl = 'http://localhost:8010/';
 
   getProductById(id: string): Observable<IProductWithDiscount> {
     return this.http

@@ -20,7 +20,7 @@ export class BasketService {
   private acntService = inject(AcntService);
   private router = inject(Router);
 
-  baseUrl = environment.apiUrl;
+  baseUrl = 'http://localhost:8010';
 
   /** Inserted by Angular inject() migration for backwards compatibility */
   constructor(...args: unknown[]);

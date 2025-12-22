@@ -14,7 +14,7 @@ image:
 
 imagePullSecrets: []
 nameOverride: ""
-fullnameOverride: "catalog"
+fullnameOverride: ""
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -84,6 +84,12 @@ env:
   values:
   - name: ASPNETCORE_ENVIRONMENT
     value: Development
+  - name: AWS_ACCESS_KEY_ID
+    value: test
+  - name: AWS_SECRET_ACCESS_KEY
+    value: test
+  - name: AWS_ENDPOINT_URL
+    value: http://localstack:4566
   urls:
   # configmap declares variables which value is taken from the config map defined in template configmap.yaml (name is name of var and key the key in configmap).
   configmap:
@@ -105,3 +111,7 @@ env:
       key: AWS__S3__Region
     - name: AWS__S3__ImagePrefix
       key: AWS__S3__ImagePrefix
+    - name: AWS__S3__ServiceUrl
+      key: AWS__S3__ServiceUrl
+    - name: USE_LOCALSTACK
+      key: USE_LOCALSTACK

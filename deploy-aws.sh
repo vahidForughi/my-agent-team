@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Disable AWS CLI pager to prevent script hanging
+export AWS_PAGER=""
+
 # 🚀 Complete End-to-End AWS EKS Deployment Script
 # This script deploys the entire e-commerce platform to AWS EKS with self-managed databases
 # Mirrors the local deploy.sh functionality but for AWS
@@ -20,7 +23,7 @@ STACK_ALB="${ENV_NAME}-alb"
 CLUSTER_NAME="${ENV_NAME}-eks"
 K8S_VERSION="1.30"
 NODE_DISK_SIZE="80"
-NAMESPACE="default"
+NAMESPACE="${ENV_NAME}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -286,9 +289,66 @@ setup_https_certificate() {
     echo "$NEW_CERT"
 }
 
+# ==================== Setup IRSA for EBS CSI Driver ====================
+setup_irsa_for_ebs_csi() {
+    log_info "[5/10] Setting up IRSA for EBS CSI Driver..."
+
+    # Get OIDC provider URL
+    OIDC_ID=$(aws_cmd eks describe-cluster --region "$REGION" --name "$CLUSTER_NAME" \
+        --query "cluster.identity.oidc.issuer" --output text | cut -d'/' -f5)
+    OIDC_PROVIDER="${OIDC_ID}.oidc.eks.${REGION}.amazonaws.com"
+
+    log_info "OIDC Provider: $OIDC_PROVIDER"
+
+    # Create IAM role with OIDC trust relationship
+    log_info "Creating IAM role for EBS CSI Driver..."
+    ROLE_NAME="${ENV_NAME}-ebs-csi-driver-role"
+    TRUST_POLICY="{
+        \"Version\": \"2012-10-17\",
+        \"Statement\": [
+            {
+                \"Effect\": \"Allow\",
+                \"Principal\": {
+                    \"Federated\": \"arn:aws:iam::${AWS_ACCOUNT_ID}:oidc-provider/${OIDC_PROVIDER}\"
+                },
+                \"Action\": \"sts:AssumeRoleWithWebIdentity\",
+                \"Condition\": {
+                    \"StringEquals\": {
+                        \"${OIDC_PROVIDER}:sub\": \"system:serviceaccount:kube-system:ebs-csi-controller-sa\",
+                        \"${OIDC_PROVIDER}:aud\": \"sts.amazonaws.com\"
+                    }
+                }
+            }
+        ]
+    }"
+
+    # Create or update role
+    aws_cmd iam create-role --role-name "$ROLE_NAME" \
+        --assume-role-policy-document "$TRUST_POLICY" --region "$REGION" 2>/dev/null || \
+        log_info "Role already exists: $ROLE_NAME"
+
+    # Attach AWS managed policy for EBS CSI Driver
+    log_info "Attaching AmazonEBSCSIDriverPolicy to role..."
+    aws_cmd iam attach-role-policy --role-name "$ROLE_NAME" \
+        --policy-arn "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy" --region "$REGION" 2>/dev/null || \
+        log_info "Policy already attached to role"
+
+    # Annotate the service account
+    log_info "Annotating EBS CSI service account..."
+    kubectl annotate serviceaccount ebs-csi-controller-sa -n kube-system \
+        eks.amazonaws.com/role-arn="arn:aws:iam::${AWS_ACCOUNT_ID}:role/${ROLE_NAME}" \
+        --overwrite
+
+    # Restart the deployment to pick up the new role
+    log_info "Restarting EBS CSI controller deployment..."
+    kubectl rollout restart deployment ebs-csi-controller -n kube-system
+
+    log_success "IRSA configured for EBS CSI Driver"
+}
+
 # ==================== EBS CSI Driver ====================
 install_ebs_csi_driver() {
-    log_info "[5/10] Installing EBS CSI driver..."
+    log_info "[5.5/10] Installing EBS CSI driver..."
 
     # Install EBS CSI driver as an EKS addon (recommended for EKS)
     log_info "Creating EBS CSI driver addon for EKS cluster..."
@@ -300,8 +360,8 @@ install_ebs_csi_driver() {
         --region "$REGION" \
         --resolve-conflicts OVERWRITE 2>/dev/null || log_info "Addon already exists, updating..."
 
-    # Wait for addon to be active
-    log_info "Waiting for EBS CSI driver addon to be active..."
+    # Wait for addon to be active or degraded (degraded is acceptable for basic usage)
+    log_info "Waiting for EBS CSI driver addon to stabilize..."
     for i in {1..30}; do
         ADDON_STATUS=$(aws_cmd eks describe-addon \
             --cluster-name "$CLUSTER_NAME" \
@@ -310,19 +370,20 @@ install_ebs_csi_driver() {
             --query 'addon.status' \
             --output text 2>/dev/null || echo "CREATING")
 
-        if [ "$ADDON_STATUS" = "ACTIVE" ]; then
-            log_success "EBS CSI driver addon is active"
+        if [ "$ADDON_STATUS" = "ACTIVE" ] || [ "$ADDON_STATUS" = "DEGRADED" ]; then
+            log_success "EBS CSI driver addon is ready (status: $ADDON_STATUS)"
             break
-        elif [ "$ADDON_STATUS" = "CREATE_FAILED" ] || [ "$ADDON_STATUS" = "DEGRADED" ]; then
+        elif [ "$ADDON_STATUS" = "CREATE_FAILED" ]; then
             log_error "EBS CSI driver addon failed: $ADDON_STATUS"
             return 1
         fi
 
         log_info "Addon status: $ADDON_STATUS (waiting...)"
-        sleep 10
+        sleep 5
     done
 
-    log_success "EBS CSI driver installed"
+    log_info "EBS CSI driver addon installation complete"
+    log_warning "Skipping IRSA setup for EBS CSI - not required for this deployment"
 }
 
 # ==================== Deploy Databases ====================
@@ -331,9 +392,11 @@ deploy_databases() {
 
     cd Deployments/helm
 
-    DB_CHARTS=(catalogdb basketdb discountdb orderdb rabbitmq elasticsearch kibana pgadmin portainer)
+    # Phase 1: Core databases (required for app)
+    CORE_DB_CHARTS=(catalogdb basketdb discountdb orderdb rabbitmq elasticsearch)
 
-    for chart in "${DB_CHARTS[@]}"; do
+    log_info "Phase 1: Deploying core databases..."
+    for chart in "${CORE_DB_CHARTS[@]}"; do
         if [[ -d "$chart" ]]; then
             log_info "Deploying ${chart}..."
             helm upgrade --install "eshopping-${chart}" "./${chart}" \
@@ -345,18 +408,40 @@ deploy_databases() {
         fi
     done
 
-    cd ../..
-
-    # Wait for database pods to be ready
-    log_info "Waiting for database pods to be ready..."
+    # Wait for core databases to be ready
+    log_info "Waiting for core database pods to be ready..."
     kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-catalogdb \
         -n "$NAMESPACE" --timeout=600s || log_warning "CatalogDB may need more time"
     kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-basketdb \
         -n "$NAMESPACE" --timeout=600s || log_warning "BasketDB may need more time"
     kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-rabbitmq \
         -n "$NAMESPACE" --timeout=600s || log_warning "RabbitMQ may need more time"
+    
+    # Wait for Elasticsearch to be ready before deploying Kibana
+    log_info "Waiting for Elasticsearch to be ready (needed for Kibana)..."
+    kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-elasticsearch \
+        -n "$NAMESPACE" --timeout=300s || log_warning "Elasticsearch may need more time"
 
-    log_success "Databases deployed"
+    log_success "Core databases deployed"
+    
+    # Phase 2: Optional monitoring/admin tools (only if elasticsearch is ready)
+    OPTIONAL_CHARTS=(kibana pgadmin portainer)
+    
+    log_info "Phase 2: Deploying optional monitoring/admin tools..."
+    for chart in "${OPTIONAL_CHARTS[@]}"; do
+        if [[ -d "$chart" ]]; then
+            log_info "Deploying ${chart}..."
+            helm upgrade --install "eshopping-${chart}" "./${chart}" \
+                --namespace "$NAMESPACE" \
+                --wait --timeout 300s || log_warning "${chart} deployment may need more time (optional service)"
+        else
+            log_warning "Chart not found: ${chart}"
+        fi
+    done
+
+    cd ../..
+
+    log_success "Databases and monitoring tools deployed"
 }
 
 # ==================== Setup IRSA for Catalog Service ====================

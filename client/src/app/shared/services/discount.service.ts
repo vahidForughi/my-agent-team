@@ -18,7 +18,7 @@ export interface IDiscount {
 export class DiscountService {
   private http = inject(HttpClient);
 
-  private baseUrl = environment.apiUrl + '/';
+  private baseUrl = 'http://localhost:8010/';
 
   /** Inserted by Angular inject() migration for backwards compatibility */
   constructor(...args: unknown[]);

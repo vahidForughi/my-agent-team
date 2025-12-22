@@ -22,6 +22,9 @@
     <None Update="Data\SeedData\products.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Data\SeedData\products-local.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Data\SeedData\types.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
