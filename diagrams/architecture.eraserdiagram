@@ -1,85 +1,114 @@
-// Define groups and nodes
-User [icon: user]
+// Cloud-Native E-Commerce Platform - System Architecture
 
-AWS Cloud [icon: aws] {
-  Region (ap-southeast-1) {
-    VPC [icon: aws-vpc] {
-      Public Subnets {
-        ALB [icon: aws-elb-application-load-balancer]
-        NAT Gateway [icon: aws-nat-gateway]
-      }
-
-      Private Subnets {
-        EKS Cluster (Worker Nodes) [icon: aws-elastic-kubernetes-service] {
-          Ingress Controller {
-            Ocelot API Gateway [icon: aws-api-gateway]
-          }
-
-          Microservices {
-            Catalog API [icon: aws-lambda]
-            Basket API [icon: aws-lambda]
-            Discount API (gRPC) [icon: aws-lambda]
-            Ordering API [icon: aws-lambda]
-          }
-
-          Data Layer (Self-Managed Pods) {
-            Catalog DB (Mongo) [icon: aws-documentdb]
-            Basket DB (Redis) [icon: aws-elasticache]
-            Discount DB (Postgres) [icon: aws-rds]
-            Ordering DB (SQL Server) [icon: aws-rds]
-            RabbitMQ [icon: aws-mq]
-            ElasticSearch [icon: aws-opensearch-service]
-          }
-
-          Monitoring {
-            Prometheus [icon: aws-managed-service-for-prometheus]
-            Grafana [icon: aws-managed-grafana]
-            Jaeger [icon: aws-x-ray]
-            Kiali
-            Kibana
-          }
-        }
-      }
-    }
-
-    AWS Managed VPC {
-      EKS Control Plane [icon: k8s-control-plane]
-    }
-
-    External Services {
-      ECR [icon: aws-elastic-container-registry]
-      S3 Bucket [icon: aws-simple-storage-service]
-      ACM [icon: aws-certificate-manager]
-    }
+// ==================== FRONTEND LAYER ====================
+Frontend Layer [color: blue] {
+  Angular Client [icon: angular]
+  
+  Micro Frontends (Module Federation) {
+    Host Shell [icon: react]
+    Store MFE [icon: react]
+    Checkout MFE [icon: react]
+    Admin MFE [icon: react]
+    Account MFE [icon: react]
   }
 }
 
-// Define connections
-User > ALB
-ALB > Ocelot API Gateway
-Ocelot API Gateway > Catalog API, Basket API, Ordering API
+// ==================== API GATEWAY LAYER ====================
+API Gateway Layer [color: orange] {
+  Ocelot API Gateway [icon: aws-api-gateway]
+}
 
-// Internal gRPC connections
-Basket API > Discount API (gRPC)
+// ==================== MICROSERVICES LAYER ====================
+Microservices Layer [color: green] {
+  Catalog API [icon: dotnet]
+  Basket API [icon: dotnet]
+  Discount API (gRPC) [icon: dotnet]
+  Ordering API [icon: dotnet]
+}
 
-// Service to DB connections
-Catalog API > Catalog DB (Mongo)
-Basket API > Basket DB (Redis)
-Discount API (gRPC) > Discount DB (Postgres)
-Ordering API > Ordering DB (SQL Server)
+// ==================== DATA LAYER ====================
+Data Layer [color: purple] {
+  catalogdb [icon: mongodb]
+  basketdb [icon: redis]
+  discountdb [icon: postgresql]
+  orderdb [icon: mssql]
+}
 
-// Event Bus connections
-Ordering API > RabbitMQ
-Catalog API > RabbitMQ
-Basket API > RabbitMQ
+// ==================== INFRASTRUCTURE SERVICES ====================
+Infrastructure Services [color: gray] {
+  RabbitMQ [icon: rabbitmq]
+  Elasticsearch [icon: elasticsearch]
+  LocalStack S3 [icon: aws-simple-storage-service]
+}
 
-// Other connections
-Catalog API > S3 Bucket
-Microservices > ElasticSearch
-ElasticSearch > Kibana
-Prometheus > Microservices
-Grafana > Prometheus
-Microservices > ECR : Pull Images
-ACM > ALB : SSL Cert
-EKS Control Plane > EKS Cluster (Worker Nodes) : Manage
-NAT Gateway > ECR : Image Pull (via Internet)
+// ==================== MONITORING STACK ====================
+Monitoring Stack [color: cyan] {
+  Prometheus [icon: prometheus]
+  Grafana [icon: grafana]
+  Jaeger [icon: jaeger]
+  Kiali [icon: kiali]
+  Kibana [icon: kibana]
+}
+
+// ==================== ADMIN TOOLS ====================
+Admin Tools [color: yellow] {
+  pgAdmin [icon: postgresql]
+  Portainer [icon: docker]
+}
+
+// ==================== CONTAINER ORCHESTRATION ====================
+Container Orchestration [color: red] {
+  Kubernetes (Minikube) [icon: k8s-node]
+  Helm Charts [icon: helm]
+  Istio Service Mesh [icon: istio]
+  Docker [icon: docker]
+}
+
+// =====================================================
+// CONNECTIONS
+// =====================================================
+
+// Frontend Flow
+Angular Client > Ocelot API Gateway : HTTP
+Host Shell > Ocelot API Gateway : HTTP
+Store MFE > Host Shell : Loads
+Checkout MFE > Host Shell : Loads
+Account MFE > Host Shell : Loads
+
+// Gateway to Services
+Ocelot API Gateway > Catalog API : Routes
+Ocelot API Gateway > Basket API : Routes
+Ocelot API Gateway > Ordering API : Routes
+
+// Internal gRPC
+Basket API > Discount API (gRPC) : gRPC
+
+// Service to Database
+Catalog API > catalogdb
+Basket API > basketdb
+Discount API (gRPC) > discountdb
+Ordering API > orderdb
+
+// S3 Storage
+Catalog API > LocalStack S3 : Product Images
+
+// Async Messaging
+Basket API > RabbitMQ : Publish
+RabbitMQ > Ordering API : Subscribe
+
+// Logging
+Catalog API, Basket API, Discount API (gRPC), Ordering API > Elasticsearch : Structured Logs
+Elasticsearch > Kibana
+
+// Metrics & Tracing
+Microservices Layer > Prometheus : Metrics
+Prometheus > Grafana
+Microservices Layer > Jaeger : Traces
+Istio Service Mesh > Kiali : Observability
+
+// Kubernetes Orchestration
+Container Orchestration > Microservices Layer : Deploys
+Container Orchestration > Data Layer : Deploys
+Container Orchestration > Infrastructure Services : Deploys
+Container Orchestration > Monitoring Stack : Deploys
+Admin MFE > Host Shell: [color: blue]

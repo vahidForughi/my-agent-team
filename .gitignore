@@ -442,3 +442,5 @@ backups/
 # Stakpak session files
 .stakpak/session*
 /certs
+thesis.md
+repomix-output.md
