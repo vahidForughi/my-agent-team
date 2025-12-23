@@ -7,15 +7,19 @@ import * as path from 'path';
 
 import baseConfig from './module-federation.config';
 
-// Load environment variables from .env.production file
+// Load environment variables from .env.production file as defaults
 const envPath = path.resolve(__dirname, '../.env.production');
 console.log('[webpack.config.prod] Loading .env from:', envPath);
 
-const env = dotenv.config({
+const fileEnv = dotenv.config({
   path: envPath
 }).parsed || {};
 
-console.log('[webpack.config.prod] Loaded env vars:', env);
+// Merge: Amplify env vars (process.env) take precedence over .env file
+const env = { ...fileEnv, ...process.env };
+
+console.log('[webpack.config.prod] Loaded env vars from file:', fileEnv);
+console.log('[webpack.config.prod] Runtime env vars:', process.env);
 
 // Filter only NX_ prefixed variables and prepare for DefinePlugin
 const envVars = Object.keys(env)
@@ -24,6 +28,8 @@ const envVars = Object.keys(env)
     acc[`process.env.${key}`] = JSON.stringify(env[key]);
     return acc;
   }, {} as Record<string, string>);
+
+console.log('[webpack.config.prod] Final env vars for DefinePlugin:', envVars);
 
 console.log('[webpack.config.prod] Injecting env vars:', envVars);
 
