@@ -1,0 +1,85 @@
+// Define groups and nodes
+User [icon: user]
+
+AWS Cloud [icon: aws] {
+  Region (ap-southeast-1) {
+    VPC [icon: aws-vpc] {
+      Public Subnets {
+        ALB [icon: aws-elb-application-load-balancer]
+        NAT Gateway [icon: aws-nat-gateway]
+      }
+
+      Private Subnets {
+        EKS Cluster (Worker Nodes) [icon: aws-elastic-kubernetes-service] {
+          Ingress Controller {
+            Ocelot API Gateway [icon: aws-api-gateway]
+          }
+
+          Microservices {
+            Catalog API [icon: aws-lambda]
+            Basket API [icon: aws-lambda]
+            Discount API (gRPC) [icon: aws-lambda]
+            Ordering API [icon: aws-lambda]
+          }
+
+          Data Layer (Self-Managed Pods) {
+            Catalog DB (Mongo) [icon: aws-documentdb]
+            Basket DB (Redis) [icon: aws-elasticache]
+            Discount DB (Postgres) [icon: aws-rds]
+            Ordering DB (SQL Server) [icon: aws-rds]
+            RabbitMQ [icon: aws-mq]
+            ElasticSearch [icon: aws-opensearch-service]
+          }
+
+          Monitoring {
+            Prometheus [icon: aws-managed-service-for-prometheus]
+            Grafana [icon: aws-managed-grafana]
+            Jaeger [icon: aws-x-ray]
+            Kiali
+            Kibana
+          }
+        }
+      }
+    }
+
+    AWS Managed VPC {
+      EKS Control Plane [icon: k8s-control-plane]
+    }
+
+    External Services {
+      ECR [icon: aws-elastic-container-registry]
+      S3 Bucket [icon: aws-simple-storage-service]
+      ACM [icon: aws-certificate-manager]
+    }
+  }
+}
+
+// Define connections
+User > ALB
+ALB > Ocelot API Gateway
+Ocelot API Gateway > Catalog API, Basket API, Ordering API
+
+// Internal gRPC connections
+Basket API > Discount API (gRPC)
+
+// Service to DB connections
+Catalog API > Catalog DB (Mongo)
+Basket API > Basket DB (Redis)
+Discount API (gRPC) > Discount DB (Postgres)
+Ordering API > Ordering DB (SQL Server)
+
+// Event Bus connections
+Ordering API > RabbitMQ
+Catalog API > RabbitMQ
+Basket API > RabbitMQ
+
+// Other connections
+Catalog API > S3 Bucket
+Microservices > ElasticSearch
+ElasticSearch > Kibana
+Prometheus > Microservices
+Grafana > Prometheus
+Microservices > ECR : Pull Images
+ACM > ALB : SSL Cert
+EKS Control Plane > EKS Cluster (Worker Nodes) : Manage
+NAT Gateway > ECR : Image Pull (via Internet)

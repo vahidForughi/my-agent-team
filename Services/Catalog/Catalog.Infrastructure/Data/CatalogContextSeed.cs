@@ -10,7 +10,12 @@ public static class CatalogContextSeed
     public static void SeedData(IMongoCollection<Product> productCollection)
     {
         var checkProducts = productCollection.Find(b => true).Any();
-        var path = Path.Combine("Data", "SeedData", "products.json");
+
+        // Determine which seed file to use based on environment
+        var useLocalStack = Environment.GetEnvironmentVariable("USE_LOCALSTACK")?.ToLower() == "true";
+        var seedFileName = useLocalStack ? "products-local.json" : "products.json";
+        var path = Path.Combine("Data", "SeedData", seedFileName);
+
         if (!checkProducts)
         {
             var productsData = File.ReadAllText(path);

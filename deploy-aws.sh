@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Disable AWS CLI pager to prevent script hanging
+export AWS_PAGER=""
+
 # 🚀 Complete End-to-End AWS EKS Deployment Script
 # This script deploys the entire e-commerce platform to AWS EKS with self-managed databases
 # Mirrors the local deploy.sh functionality but for AWS
@@ -20,7 +23,7 @@ STACK_ALB="${ENV_NAME}-alb"
 CLUSTER_NAME="${ENV_NAME}-eks"
 K8S_VERSION="1.30"
 NODE_DISK_SIZE="80"
-NAMESPACE="default"
+NAMESPACE="${ENV_NAME}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -56,9 +59,9 @@ require_bin() {
 
 aws_cmd() {
     if [[ -n "${AWS_PROFILE:-}" ]]; then
-        aws --profile "$AWS_PROFILE" "$@"
+        aws --profile "$AWS_PROFILE" --no-paginate "$@"
     else
-        aws "$@"
+        aws --no-paginate "$@"
     fi
 }
 
@@ -286,9 +289,66 @@ setup_https_certificate() {
     echo "$NEW_CERT"
 }
 
+# ==================== Setup IRSA for EBS CSI Driver ====================
+setup_irsa_for_ebs_csi() {
+    log_info "[5/10] Setting up IRSA for EBS CSI Driver..."
+
+    # Get OIDC provider URL
+    OIDC_ID=$(aws_cmd eks describe-cluster --region "$REGION" --name "$CLUSTER_NAME" \
+        --query "cluster.identity.oidc.issuer" --output text | cut -d'/' -f5)
+    OIDC_PROVIDER="${OIDC_ID}.oidc.eks.${REGION}.amazonaws.com"
+
+    log_info "OIDC Provider: $OIDC_PROVIDER"
+
+    # Create IAM role with OIDC trust relationship
+    log_info "Creating IAM role for EBS CSI Driver..."
+    ROLE_NAME="${ENV_NAME}-ebs-csi-driver-role"
+    TRUST_POLICY="{
+        \"Version\": \"2012-10-17\",
+        \"Statement\": [
+            {
+                \"Effect\": \"Allow\",
+                \"Principal\": {
+                    \"Federated\": \"arn:aws:iam::${AWS_ACCOUNT_ID}:oidc-provider/${OIDC_PROVIDER}\"
+                },
+                \"Action\": \"sts:AssumeRoleWithWebIdentity\",
+                \"Condition\": {
+                    \"StringEquals\": {
+                        \"${OIDC_PROVIDER}:sub\": \"system:serviceaccount:kube-system:ebs-csi-controller-sa\",
+                        \"${OIDC_PROVIDER}:aud\": \"sts.amazonaws.com\"
+                    }
+                }
+            }
+        ]
+    }"
+
+    # Create or update role
+    aws_cmd iam create-role --role-name "$ROLE_NAME" \
+        --assume-role-policy-document "$TRUST_POLICY" --region "$REGION" 2>/dev/null || \
+        log_info "Role already exists: $ROLE_NAME"
+
+    # Attach AWS managed policy for EBS CSI Driver
+    log_info "Attaching AmazonEBSCSIDriverPolicy to role..."
+    aws_cmd iam attach-role-policy --role-name "$ROLE_NAME" \
+        --policy-arn "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy" --region "$REGION" 2>/dev/null || \
+        log_info "Policy already attached to role"
+
+    # Annotate the service account
+    log_info "Annotating EBS CSI service account..."
+    kubectl annotate serviceaccount ebs-csi-controller-sa -n kube-system \
+        eks.amazonaws.com/role-arn="arn:aws:iam::${AWS_ACCOUNT_ID}:role/${ROLE_NAME}" \
+        --overwrite
+
+    # Restart the deployment to pick up the new role
+    log_info "Restarting EBS CSI controller deployment..."
+    kubectl rollout restart deployment ebs-csi-controller -n kube-system
+
+    log_success "IRSA configured for EBS CSI Driver"
+}
+
 # ==================== EBS CSI Driver ====================
 install_ebs_csi_driver() {
-    log_info "[5/10] Installing EBS CSI driver..."
+    log_info "[5.5/10] Installing EBS CSI driver..."
 
     # Install EBS CSI driver as an EKS addon (recommended for EKS)
     log_info "Creating EBS CSI driver addon for EKS cluster..."
@@ -300,8 +360,8 @@ install_ebs_csi_driver() {
         --region "$REGION" \
         --resolve-conflicts OVERWRITE 2>/dev/null || log_info "Addon already exists, updating..."
 
-    # Wait for addon to be active
-    log_info "Waiting for EBS CSI driver addon to be active..."
+    # Wait for addon to be active or degraded (degraded is acceptable for basic usage)
+    log_info "Waiting for EBS CSI driver addon to stabilize..."
     for i in {1..30}; do
         ADDON_STATUS=$(aws_cmd eks describe-addon \
             --cluster-name "$CLUSTER_NAME" \
@@ -310,19 +370,20 @@ install_ebs_csi_driver() {
             --query 'addon.status' \
             --output text 2>/dev/null || echo "CREATING")
 
-        if [ "$ADDON_STATUS" = "ACTIVE" ]; then
-            log_success "EBS CSI driver addon is active"
+        if [ "$ADDON_STATUS" = "ACTIVE" ] || [ "$ADDON_STATUS" = "DEGRADED" ]; then
+            log_success "EBS CSI driver addon is ready (status: $ADDON_STATUS)"
             break
-        elif [ "$ADDON_STATUS" = "CREATE_FAILED" ] || [ "$ADDON_STATUS" = "DEGRADED" ]; then
+        elif [ "$ADDON_STATUS" = "CREATE_FAILED" ]; then
             log_error "EBS CSI driver addon failed: $ADDON_STATUS"
             return 1
         fi
 
         log_info "Addon status: $ADDON_STATUS (waiting...)"
-        sleep 10
+        sleep 5
     done
 
-    log_success "EBS CSI driver installed"
+    log_info "EBS CSI driver addon installation complete"
+    log_warning "Skipping IRSA setup for EBS CSI - not required for this deployment"
 }
 
 # ==================== Deploy Databases ====================
@@ -331,9 +392,11 @@ deploy_databases() {
 
     cd Deployments/helm
 
-    DB_CHARTS=(catalogdb basketdb discountdb orderdb rabbitmq elasticsearch kibana pgadmin portainer)
+    # Phase 1: Core databases (required for app)
+    CORE_DB_CHARTS=(catalogdb basketdb discountdb orderdb rabbitmq elasticsearch)
 
-    for chart in "${DB_CHARTS[@]}"; do
+    log_info "Phase 1: Deploying core databases..."
+    for chart in "${CORE_DB_CHARTS[@]}"; do
         if [[ -d "$chart" ]]; then
             log_info "Deploying ${chart}..."
             helm upgrade --install "eshopping-${chart}" "./${chart}" \
@@ -345,18 +408,123 @@ deploy_databases() {
         fi
     done
 
-    cd ../..
-
-    # Wait for database pods to be ready
-    log_info "Waiting for database pods to be ready..."
+    # Wait for core databases to be ready
+    log_info "Waiting for core database pods to be ready..."
     kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-catalogdb \
         -n "$NAMESPACE" --timeout=600s || log_warning "CatalogDB may need more time"
     kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-basketdb \
         -n "$NAMESPACE" --timeout=600s || log_warning "BasketDB may need more time"
     kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-rabbitmq \
         -n "$NAMESPACE" --timeout=600s || log_warning "RabbitMQ may need more time"
+    
+    # Wait for Elasticsearch to be ready before deploying Kibana
+    log_info "Waiting for Elasticsearch to be ready (needed for Kibana)..."
+    kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-elasticsearch \
+        -n "$NAMESPACE" --timeout=300s || log_warning "Elasticsearch may need more time"
 
-    log_success "Databases deployed"
+    log_success "Core databases deployed"
+    
+    # Phase 2: Optional monitoring/admin tools (only if elasticsearch is ready)
+    OPTIONAL_CHARTS=(kibana pgadmin portainer)
+    
+    log_info "Phase 2: Deploying optional monitoring/admin tools..."
+    for chart in "${OPTIONAL_CHARTS[@]}"; do
+        if [[ -d "$chart" ]]; then
+            log_info "Deploying ${chart}..."
+            helm upgrade --install "eshopping-${chart}" "./${chart}" \
+                --namespace "$NAMESPACE" \
+                --wait --timeout 300s || log_warning "${chart} deployment may need more time (optional service)"
+        else
+            log_warning "Chart not found: ${chart}"
+        fi
+    done
+
+    cd ../..
+
+    log_success "Databases and monitoring tools deployed"
+}
+
+# ==================== Setup IRSA for Catalog Service ====================
+setup_irsa_for_catalog() {
+    log_info "[6.5/10] Setting up IRSA (IAM Role for Service Account) for Catalog Service..."
+
+    # Get OIDC provider URL
+    OIDC_ID=$(aws_cmd eks describe-cluster --region "$REGION" --name "$CLUSTER_NAME" \
+        --query "cluster.identity.oidc.issuer" --output text | cut -d'/' -f5)
+    OIDC_PROVIDER="${OIDC_ID}.oidc.eks.${REGION}.amazonaws.com"
+
+    log_info "OIDC Provider: $OIDC_PROVIDER"
+
+    # Create IAM policy for S3 access
+    log_info "Creating IAM policy for S3 access..."
+    POLICY_NAME="${ENV_NAME}-catalog-s3-policy"
+    POLICY_DOC='{
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "s3:GetObject",
+                    "s3:PutObject",
+                    "s3:DeleteObject",
+                    "s3:ListBucket"
+                ],
+                "Resource": [
+                    "arn:aws:s3:::ecommerce-product-images-471112812838",
+                    "arn:aws:s3:::ecommerce-product-images-471112812838/*"
+                ]
+            }
+        ]
+    }'
+
+    # Create or update policy
+    aws_cmd iam create-policy --policy-name "$POLICY_NAME" \
+        --policy-document "$POLICY_DOC" --region "$REGION" 2>/dev/null || \
+        log_info "Policy already exists: $POLICY_NAME"
+
+    POLICY_ARN="arn:aws:iam::${AWS_ACCOUNT_ID}:policy/${POLICY_NAME}"
+
+    # Create IAM role with OIDC trust relationship
+    log_info "Creating IAM role with OIDC trust relationship..."
+    ROLE_NAME="${ENV_NAME}-catalog-s3-role"
+    TRUST_POLICY="{
+        \"Version\": \"2012-10-17\",
+        \"Statement\": [
+            {
+                \"Effect\": \"Allow\",
+                \"Principal\": {
+                    \"Federated\": \"arn:aws:iam::${AWS_ACCOUNT_ID}:oidc-provider/${OIDC_PROVIDER}\"
+                },
+                \"Action\": \"sts:AssumeRoleWithWebIdentity\",
+                \"Condition\": {
+                    \"StringEquals\": {
+                        \"${OIDC_PROVIDER}:sub\": \"system:serviceaccount:${NAMESPACE}:catalog\",
+                        \"${OIDC_PROVIDER}:aud\": \"sts.amazonaws.com\"
+                    }
+                }
+            }
+        ]
+    }"
+
+    # Create or update role
+    aws_cmd iam create-role --role-name "$ROLE_NAME" \
+        --assume-role-policy-document "$TRUST_POLICY" --region "$REGION" 2>/dev/null || \
+        log_info "Role already exists: $ROLE_NAME"
+
+    # Attach policy to role
+    log_info "Attaching S3 policy to role..."
+    aws_cmd iam attach-role-policy --role-name "$ROLE_NAME" \
+        --policy-arn "$POLICY_ARN" --region "$REGION" 2>/dev/null || \
+        log_info "Policy already attached to role"
+
+    # Update service account annotation
+    log_info "Creating/updating service account with IRSA annotation..."
+    kubectl create serviceaccount catalog -n "$NAMESPACE" --dry-run=client -o yaml | \
+        kubectl annotate -f - --overwrite \
+        eks.amazonaws.com/role-arn="arn:aws:iam::${AWS_ACCOUNT_ID}:role/${ROLE_NAME}" | \
+        kubectl apply -f -
+
+    log_success "IRSA configured for Catalog Service"
 }
 
 # ==================== Deploy API Services ====================
@@ -384,15 +552,30 @@ deploy_api_services() {
                     ;;
             esac
 
-            # Deploy with ECR image override and ClusterIP service type
-            helm upgrade --install "eshopping-${chart}" "./${chart}" \
-                --namespace "$NAMESPACE" \
-                --set image.registry="$ECR_REGISTRY" \
-                --set image.repository="$IMAGE_NAME" \
-                --set image.tag="latest" \
-                --set imagePullSecrets=null \
-                --set service.type=ClusterIP \
-                --wait --timeout 600s
+            # Special handling for catalog service to set service account
+            if [[ "$chart" == "catalog" ]]; then
+                log_info "Deploying catalog service with IRSA-enabled service account..."
+                helm upgrade --install "eshopping-${chart}" "./${chart}" \
+                    --namespace "$NAMESPACE" \
+                    --set image.registry="$ECR_REGISTRY" \
+                    --set image.repository="$IMAGE_NAME" \
+                    --set image.tag="latest" \
+                    --set imagePullSecrets=null \
+                    --set service.type=ClusterIP \
+                    --set serviceAccount.create=false \
+                    --set serviceAccount.name=catalog \
+                    --wait --timeout 600s
+            else
+                # Deploy other services normally
+                helm upgrade --install "eshopping-${chart}" "./${chart}" \
+                    --namespace "$NAMESPACE" \
+                    --set image.registry="$ECR_REGISTRY" \
+                    --set image.repository="$IMAGE_NAME" \
+                    --set image.tag="latest" \
+                    --set imagePullSecrets=null \
+                    --set service.type=ClusterIP \
+                    --wait --timeout 600s
+            fi
         else
             log_warning "Chart not found: ${chart}"
         fi
@@ -401,6 +584,42 @@ deploy_api_services() {
     cd ../..
 
     log_success "API services deployed"
+}
+
+# ==================== Trigger Data Migration ====================
+trigger_migration() {
+    log_info "[7.5/10] Triggering product image migration to S3..."
+
+    # Get the catalog service endpoint
+    log_info "Waiting for catalog service to be ready..."
+    kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-catalog \
+        -n "$NAMESPACE" --timeout=300s || log_warning "Catalog pod not ready, migration may fail"
+
+    # Get service IP (use port-forward as alternative)
+    log_info "Attempting to connect to catalog service for migration..."
+
+    # Port-forward to catalog service in background
+    kubectl port-forward -n "$NAMESPACE" svc/eshopping-catalog 8000:80 &
+    PF_PID=$!
+    sleep 3
+
+    # Trigger migration via API Gateway
+    log_info "Calling migration endpoint: POST /Admin/MigrateImagesToS3"
+    MIGRATION_RESPONSE=$(curl -s -X POST http://localhost:8000/Admin/MigrateImagesToS3)
+
+    # Clean up port-forward
+    kill $PF_PID 2>/dev/null || true
+
+    if echo "$MIGRATION_RESPONSE" | grep -q "TotalProducts"; then
+        log_success "Migration triggered successfully"
+        log_info "Migration response: $MIGRATION_RESPONSE"
+    else
+        log_warning "Migration endpoint may not have responded properly"
+        log_info "Response: $MIGRATION_RESPONSE"
+        log_info "Products may still have local image paths. Migration can be triggered manually with:"
+        log_info "  kubectl port-forward -n $NAMESPACE svc/eshopping-catalog 8000:80"
+        log_info "  curl -X POST http://localhost:8000/Admin/MigrateImagesToS3"
+    fi
 }
 
 # ==================== Deploy Monitoring Stack ====================
@@ -671,16 +890,34 @@ main() {
 
     # Step 5-10: Kubernetes workloads
     # Setup HTTPS certificate first
-    CERT_ARN=$(setup_https_certificate)
+    CERT_ARN=$(setup_https_certificate | tr -d '\n')
 
     # Update Helm values with the certificate ARN
     log_info "Updating Helm values with certificate ARN..."
-    sed -i.bak "s|service.beta.kubernetes.io/aws-load-balancer-ssl-cert:.*|service.beta.kubernetes.io/aws-load-balancer-ssl-cert: \"$CERT_ARN\"|g" \
-        Deployments/helm/ocelotapigw/values.yaml
+    if [ -n "$CERT_ARN" ]; then
+        # Use Python for safer string replacement with special characters
+        python3 << EOF
+import sys
+cert_arn = "$CERT_ARN"
+with open("Deployments/helm/ocelotapigw/values.yaml", "r") as f:
+    content = f.read()
+content = content.replace(
+    "service.beta.kubernetes.io/aws-load-balancer-ssl-cert: \"\"",
+    f"service.beta.kubernetes.io/aws-load-balancer-ssl-cert: \"{cert_arn}\""
+)
+with open("Deployments/helm/ocelotapigw/values.yaml", "w") as f:
+    f.write(content)
+print("Certificate updated successfully")
+EOF
+    else
+        log_warning "No certificate ARN returned, skipping Helm values update"
+    fi
 
     install_ebs_csi_driver
     deploy_databases
+    setup_irsa_for_catalog
     deploy_api_services
+    trigger_migration
     deploy_monitoring
     deploy_alb
     verify_deployment

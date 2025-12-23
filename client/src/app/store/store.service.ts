@@ -22,7 +22,7 @@ export class StoreService {
 
   constructor() {}
 
-  baseUrl = environment.apiUrl + '/';
+  baseUrl = 'http://localhost:8010/';
 
   getProductById(id: string): Observable<IProductWithDiscount> {
     return this.http
@@ -85,5 +85,11 @@ export class StoreService {
 
   createProduct(payload: any): Observable<any> {
     return this.http.post(this.baseUrl + 'Catalog/CreateProduct', payload);
+  }
+
+  uploadProductImage(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('imageFile', file);
+    return this.http.post(this.baseUrl + 'Catalog/UploadProductImage', formData);
   }
 }

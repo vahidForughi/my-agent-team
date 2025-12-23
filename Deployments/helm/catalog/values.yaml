@@ -14,7 +14,7 @@ image:
 
 imagePullSecrets: []
 nameOverride: ""
-fullnameOverride: "catalog"
+fullnameOverride: ""
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -84,6 +84,12 @@ env:
   values:
   - name: ASPNETCORE_ENVIRONMENT
     value: Development
+  - name: AWS_ACCESS_KEY_ID
+    value: test
+  - name: AWS_SECRET_ACCESS_KEY
+    value: test
+  - name: AWS_ENDPOINT_URL
+    value: http://localstack:4566
   urls:
   # configmap declares variables which value is taken from the config map defined in template configmap.yaml (name is name of var and key the key in configmap).
   configmap:
@@ -99,3 +105,28 @@ env:
       key: DatabaseSettings__TypesCollection
     - name: ElasticConfiguration__Uri
       key: ElasticConfiguration__Uri
+    - name: AWS__S3__BucketName
+      key: AWS__S3__BucketName
+    - name: AWS__S3__Region
+      key: AWS__S3__Region
+    - name: AWS__S3__ImagePrefix
+      key: AWS__S3__ImagePrefix
+    - name: AWS__S3__ServiceUrl
+      key: AWS__S3__ServiceUrl
+    - name: USE_LOCALSTACK
+      key: USE_LOCALSTACK
+
+# ConfigMap data values (used by templates/configmap.yaml)
+# Override these for different environments
+configmap:
+  DatabaseSettings__ConnectionString: "mongodb://admin:admin1234@catalogdb:27017/CatalogDb?authSource=admin"
+  DatabaseSettings__DatabaseName: "CatalogDb"
+  DatabaseSettings__CollectionName: "Products"
+  DatabaseSettings__BrandsCollection: "Brands"
+  DatabaseSettings__TypesCollection: "Types"
+  ElasticConfiguration__Uri: "http://elasticsearch:9200"
+  AWS__S3__BucketName: "ecommerce-product-images"
+  AWS__S3__Region: "us-east-1"
+  AWS__S3__ImagePrefix: "products/"
+  AWS__S3__ServiceUrl: "http://localstack:4566"  # Leave empty for AWS S3
+  USE_LOCALSTACK: "true"

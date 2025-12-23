@@ -109,6 +109,23 @@ public class CatalogController : ApiController
         return Ok(result);
     }
 
+    [HttpPost]
+    [Route("UploadProductImage")]
+    [ProducesResponseType(typeof(ImageUploadResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+    public async Task<ActionResult<ImageUploadResponse>> UploadProductImage([FromForm] IFormFile imageFile)
+    {
+        var command = new UploadProductImageCommand { ImageFile = imageFile };
+        var result = await _mediator.Send(command);
+
+        if (!result.Success)
+        {
+            return BadRequest(result);
+        }
+
+        return Ok(result);
+    }
+
     [HttpPut]
     [Route("UpdateProduct")]
     [ProducesResponseType(typeof(bool), (int)HttpStatusCode.OK)]
