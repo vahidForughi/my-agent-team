@@ -30,7 +30,7 @@ const MicroFrontendRoute: React.FC<MicroFrontendRouteProps> = ({ appName, isProt
 /**
  * Routes that require authentication
  */
-const PROTECTED_ROUTES = ['checkout', 'account'];
+const PROTECTED_ROUTES = ['checkout', 'account', 'admin'];
 
 /**
  * Dynamic route element based on whether the route requires authentication
@@ -50,6 +50,11 @@ export const routes: RouteObject[] = [
   {
     path: '/login',
     element: <LoginPage />,
+  },
+  // Admin - protected route (auth required) - standalone without Layout
+  {
+    path: '/admin/*',
+    element: <MicroFrontendRoute appName="admin" isProtected />,
   },
   {
     path: '/',
