@@ -1,0 +1,44 @@
+// Figure 3.3b: Catalog Service - Clean Architecture Example
+// Shows request flow: Controller → Query → Handler → Repository → MongoDB
+
+// ==================== API LAYER ====================
+API Layer [icon: globe, color: blue] {
+  CatalogController.cs [icon: server]
+}
+
+// ==================== APPLICATION LAYER ====================
+Application Layer [icon: cpu, color: green] {
+  // Queries
+  GetAllProductsQuery.cs [icon: search]
+  GetProductByIdQuery.cs [icon: search]
+  GetAllProductsHandler.cs [icon: zap]
+  GetProductByIdQueryHandler.cs [icon: zap]
+  
+  // Commands
+  CreateProductCommand.cs [icon: edit]
+  CreateProductCommandHandler.cs [icon: zap]
+}
+
+// ==================== CORE LAYER ====================
+Core Layer [icon: hexagon, color: orange] {
+  // Entities
+  Product.cs [icon: box]
+  ProductBrand.cs [icon: box]
+  ProductType.cs [icon: box]
+  
+  // Interfaces
+  IProductRepository.cs [icon: file-text]
+  IBrandRepository.cs [icon: file-text]
+}
+
+// ==================== INFRASTRUCTURE LAYER ====================
+Infrastructure Layer [icon: database, color: purple] {
+  CatalogContext.cs [icon: mongodb]
+  ProductRepository.cs [icon: code]
+}
+
+// ==================== REQUEST FLOW ====================
+CatalogController.cs > GetAllProductsQuery.cs : sends
+GetAllProductsQuery.cs > GetAllProductsHandler.cs : MediatR
+GetAllProductsHandler.cs > IProductRepository.cs : calls interface
+ProductRepository.cs > CatalogContext.cs : MongoDB

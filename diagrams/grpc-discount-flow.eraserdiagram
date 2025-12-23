@@ -1,0 +1,24 @@
+// Figure 4.3: Basket → Discount gRPC Synchronous Call
+// Low-latency discount lookup during cart operations
+
+// ==================== ACTORS ====================
+Basket API [icon: shopping-cart, color: green]
+Basket Handler [icon: zap, color: green]
+DiscountGrpcService [icon: code, color: orange]
+Discount gRPC Server [icon: tag, color: cyan]
+PostgreSQL [icon: aws-rds, color: purple]
+
+// ==================== gRPC CALL FLOW ====================
+Basket API > Basket Handler : CreateShoppingCartCommand
+Basket Handler > DiscountGrpcService : GetDiscount(productName)
+DiscountGrpcService > Discount gRPC Server : GetDiscountRequest (gRPC)
+Discount gRPC Server > PostgreSQL : SELECT FROM Coupon
+PostgreSQL > Discount gRPC Server : Coupon data
+Discount gRPC Server > DiscountGrpcService : CouponModel (amount)
+DiscountGrpcService > Basket Handler : Apply discount to item
+Basket Handler > Basket API : Cart with enriched prices
+
+// ==================== KEY COMPONENTS ====================
+// DiscountGrpcService.cs: gRPC client in Basket.Application
+// DiscountProtoServiceClient: Auto-generated from .proto
+// CouponModel: Contains ProductName, Description, Amount

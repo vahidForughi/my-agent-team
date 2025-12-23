@@ -1,0 +1,29 @@
+// Figure 4.6: Module Federation Runtime Composition
+// Host → RemoteEntry resolution → inject/unmount lifecycle
+
+// ==================== ACTORS ====================
+Browser [icon: chrome, color: blue]
+Host Shell [icon: home, color: green]
+Registry [icon: list, color: orange]
+Remote Entry [icon: file-code, color: purple]
+Remote Module [icon: box, color: cyan]
+
+// ==================== RUNTIME COMPOSITION FLOW ====================
+Browser > Host Shell : Navigate to /store/*
+Host Shell > Registry : getMicroFrontendConfig('store')
+Registry > Host Shell : { remoteName, exposedModule, urls }
+Host Shell > Remote Entry : Fetch remoteEntry.js
+Remote Entry > Host Shell : Module Federation manifest
+Host Shell > Remote Module : loadRemote('store/ConsoleMicroApp')
+Remote Module > Host Shell : { inject, unmount }
+Host Shell > Browser : Mount remote into container
+
+// ==================== UNMOUNT LIFECYCLE ====================
+// On navigation away:
+// Host Shell > Remote Module : unmount()
+// Host Shell > Browser : Clean container
+
+// ==================== KEY COMPONENTS ====================
+// microFrontendRegistry.ts: Central registry
+// MicroFrontendApp.tsx: Dynamic loader component
+// ConsoleMicroApp: Standardized exposed module

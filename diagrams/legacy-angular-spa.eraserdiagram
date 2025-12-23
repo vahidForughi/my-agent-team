@@ -1,0 +1,27 @@
+// Figure 4.5: Legacy Angular SPA - Single Deployment Unit
+// Shows: Frontend Monolith consuming API Gateway
+
+// ==================== LEGACY ARCHITECTURE ====================
+Angular SPA [icon: angular, color: red] {
+  All Features [icon: package]
+  Shared Modules [icon: layers]
+  Single Build [icon: box]
+}
+
+Single Artifact [icon: file, color: orange] {
+  dist/client [icon: folder]
+}
+
+Ocelot Gateway [icon: aws-api-gateway, color: blue]
+
+// ==================== BUILD & DEPLOY FLOW ====================
+Angular SPA > Single Artifact : ng build
+
+// ==================== RUNTIME ====================
+Single Artifact > Ocelot Gateway : All API calls
+
+// ==================== PROBLEMS ====================
+// - Any change = full rebuild + redeploy
+// - Tight coupling via shared dependencies  
+// - Merge conflicts across teams
+// - Single release pipeline bottleneck

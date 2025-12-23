@@ -1,0 +1,57 @@
+// Figure 4.1: Clean Architecture Implementation (.NET Core)
+// Shows: API → Application → Core ← Infrastructure (dependency inward)
+
+// ==================== MICROSERVICE STRUCTURE ====================
+// Each service follows this layered structure
+
+// ==================== API LAYER (Entry Points) ====================
+API Layer [icon: globe, color: blue] {
+  Controllers [icon: server]
+  EventBusConsumers [icon: message-circle]
+  Program.cs [icon: file]
+  Dockerfile [icon: docker]
+}
+
+// ==================== APPLICATION LAYER (Use Cases) ====================
+Application Layer [icon: cpu, color: green] {
+  Commands [icon: edit]
+  Queries [icon: search]
+  Handlers [icon: zap]
+  Validators [icon: check-circle]
+  Behaviours [icon: layers]
+  Mappers [icon: shuffle]
+}
+
+// ==================== CORE LAYER (Domain) ====================
+Core Layer [icon: hexagon, color: orange] {
+  Entities [icon: box]
+  IRepository [icon: file-text]
+  Domain Rules [icon: shield]
+  Specifications [icon: filter]
+}
+
+// ==================== INFRASTRUCTURE LAYER (External) ====================
+Infrastructure Layer [icon: database, color: purple] {
+  DbContext [icon: database]
+  Repository Impl [icon: code]
+  Migrations [icon: git-branch]
+  External Clients [icon: cloud]
+}
+
+// ==================== DEPENDENCY DIRECTION (INWARD) ====================
+// API depends on Application
+API Layer > Application Layer : uses MediatR
+
+// Application depends on Core
+Application Layer > Core Layer : uses Entities + Interfaces
+
+// Infrastructure implements Core interfaces
+Infrastructure Layer > Core Layer : implements IRepository
+
+// API configures Infrastructure (DI)
+API Layer > Infrastructure Layer : registers services
+
+// ==================== KEY PRINCIPLE ====================
+// Core has NO external dependencies
+// Dependencies point INWARD toward Core
+// External concerns (DB, APIs) are in Infrastructure
