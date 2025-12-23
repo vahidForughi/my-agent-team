@@ -1,5 +1,5 @@
 import { createAppInjector, AppInjectorProps } from '@ecommerce-platform/app-injector';
-import AdminModule from './app/Module';
+import App from './App';
 
 /**
  * Admin App Injector
@@ -7,7 +7,7 @@ import AdminModule from './app/Module';
  * This creates standardized inject/unmount methods for the Admin micro-frontend.
  * Used by the host application to dynamically load and unload this remote app.
  */
-const AdminAppInjector = createAppInjector(AdminModule);
+const AdminAppInjector = createAppInjector(App);
 
 /**
  * Inject the Admin app into a DOM element
@@ -54,3 +54,4 @@ export default {
   inject,
   unmount,
 };
+

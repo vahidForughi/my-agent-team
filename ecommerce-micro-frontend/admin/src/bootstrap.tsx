@@ -9,9 +9,9 @@ import { StrictMode } from 'react';
 import * as ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ConfigProvider, App as AntApp, message, theme } from 'antd';
+import { ConfigProvider, App as AntApp, message } from 'antd';
 import { adminThemeConfig } from './config/theme';
-import Module from './app/Module';
+import App from './App';
 
 // Configure message to show only 1 notification at a time
 message.config({
@@ -42,8 +42,8 @@ const StandaloneApp: React.FC = () => {
           theme={adminThemeConfig}
         >
           <AntApp>
-            {/* Module runs without host config, triggering standalone MSAL mode */}
-            <Module />
+            {/* App runs without host config, triggering standalone MSAL mode */}
+            <App />
           </AntApp>
         </ConfigProvider>
       </BrowserRouter>
