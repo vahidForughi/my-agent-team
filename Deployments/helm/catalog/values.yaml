@@ -115,3 +115,18 @@ env:
       key: AWS__S3__ServiceUrl
     - name: USE_LOCALSTACK
       key: USE_LOCALSTACK
+
+# ConfigMap data values (used by templates/configmap.yaml)
+# Override these for different environments
+configmap:
+  DatabaseSettings__ConnectionString: "mongodb://admin:admin1234@catalogdb:27017/CatalogDb?authSource=admin"
+  DatabaseSettings__DatabaseName: "CatalogDb"
+  DatabaseSettings__CollectionName: "Products"
+  DatabaseSettings__BrandsCollection: "Brands"
+  DatabaseSettings__TypesCollection: "Types"
+  ElasticConfiguration__Uri: "http://elasticsearch:9200"
+  AWS__S3__BucketName: "ecommerce-product-images"
+  AWS__S3__Region: "us-east-1"
+  AWS__S3__ImagePrefix: "products/"
+  AWS__S3__ServiceUrl: "http://localstack:4566"  # Leave empty for AWS S3
+  USE_LOCALSTACK: "true"

@@ -1,0 +1,91 @@
+# AWS-specific values for Catalog API
+# Usage: helm install -f values.yaml -f values-aws.yaml
+
+# Image configuration
+image:
+  # registry will be set via --set flag during deployment
+  repository: catalogapi
+  pullPolicy: Always
+  tag: "latest"
+
+imagePullSecrets:
+  - name: ecr-registry
+
+# Service configuration
+service:
+  type: LoadBalancer
+  port: 80
+
+# Resource limits for AWS t3.small nodes
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+# Autoscaling (disabled for minimal deployment to save costs)
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+
+# Environment variables for AWS
+env:
+  values:
+    - name: ASPNETCORE_ENVIRONMENT
+      value: "Production"
+    - name: USE_LOCALSTACK
+      value: "false"
+    - name: AWS_REGION
+      value: "ap-southeast-1"
+
+# ConfigMap values (will be set via --set flags)
+configmap:
+  - name: DatabaseSettings__ConnectionString
+    key: DatabaseSettings__ConnectionString
+  - name: DatabaseSettings__DatabaseName
+    key: DatabaseSettings__DatabaseName
+  - name: DatabaseSettings__CollectionName
+    key: DatabaseSettings__CollectionName
+  - name: DatabaseSettings__BrandsCollection
+    key: DatabaseSettings__BrandsCollection
+  - name: DatabaseSettings__TypesCollection
+    key: DatabaseSettings__TypesCollection
+  - name: AWS__S3__BucketName
+    key: AWS__S3__BucketName
+  - name: AWS__S3__Region
+    key: AWS__S3__Region
+  - name: AWS__S3__ImagePrefix
+    key: AWS__S3__ImagePrefix
+
+# Service Account for IRSA (IAM Roles for Service Accounts)
+serviceAccount:
+  create: true
+  name: catalog
+  # Annotation will be set via --set flag during deployment
+  # annotations:
+  #   eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/ROLE_NAME
+
+# Health checks
+livenessProbe:
+  enabled: true
+  httpGet:
+    path: /health
+    port: 80
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  enabled: true
+  httpGet:
+    path: /ready
+    port: 80
+  initialDelaySeconds: 20
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3

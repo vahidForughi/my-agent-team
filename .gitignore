@@ -441,3 +441,4 @@ backups/
 
 # Stakpak session files
 .stakpak/session*
+/certs
