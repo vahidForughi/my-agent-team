@@ -9,7 +9,7 @@ on:
 
 env:
   DOTNET_VERSION: "8.0.x"
-  NODE_VERSION: "18.x"
+  NODE_VERSION: "20.19.0"
   DOCKER_BUILDKIT: 1
 
 jobs:
@@ -123,23 +123,23 @@ jobs:
           output: "trivy-results.sarif"
 
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: "trivy-results.sarif"
 
       # Initialize CodeQL before analysis
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: csharp, javascript
 
       # Autobuild attempts to build any compiled languages
       - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
+        uses: github/codeql-action/autobuild@v4
 
       # Run CodeQL Analysis for both languages
       - name: Run CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
 
   frontend-quality:
     runs-on: ubuntu-latest

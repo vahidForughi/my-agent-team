@@ -14,41 +14,15 @@ interface EnvironmentConfig {
   enableApiLogging: boolean;
 }
 
-const getEnvVar = (key: string, defaultValue?: string): string => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const envValue = (process as any).env?.[key];
-
-  if (envValue === undefined) {
-    if (defaultValue === undefined) {
-      console.warn(`[store/env] Variable ${key} is not set, using empty string`);
-      return '';
-    }
-    return defaultValue;
-  }
-
-  return envValue;
-};
-
-const getBooleanEnv = (key: string, defaultValue = false): boolean => {
-  const value = getEnvVar(key, String(defaultValue));
-  return value === 'true' || value === '1';
-};
-
-const getNumberEnv = (key: string, defaultValue: number): number => {
-  const value = getEnvVar(key, String(defaultValue));
-  const parsed = parseInt(value, 10);
-  return isNaN(parsed) ? defaultValue : parsed;
-};
-
 export const env: EnvironmentConfig = {
-  apiBaseUrl: getEnvVar('NX_API_BASE_URL', 'http://localhost:8010'),
-  apiTimeout: getNumberEnv('NX_API_TIMEOUT', 30000),
-  useMockData: getBooleanEnv('NX_USE_MOCK_DATA', false),
-  enableAuthentication: getBooleanEnv('NX_ENABLE_AUTHENTICATION', true),
-  enableDiscountService: getBooleanEnv('NX_ENABLE_DISCOUNT_SERVICE', true),
-  enableOrderTracking: getBooleanEnv('NX_ENABLE_ORDER_TRACKING', true),
-  logLevel: getEnvVar('NX_LOG_LEVEL', 'info') as EnvironmentConfig['logLevel'],
-  enableApiLogging: getBooleanEnv('NX_ENABLE_API_LOGGING', false),
+  apiBaseUrl: process.env.NX_API_BASE_URL || 'http://localhost:8010',
+  apiTimeout: parseInt(process.env.NX_API_TIMEOUT || '30000', 10),
+  useMockData: process.env.NX_USE_MOCK_DATA === 'true',
+  enableAuthentication: process.env.NX_ENABLE_AUTHENTICATION !== 'false',
+  enableDiscountService: process.env.NX_ENABLE_DISCOUNT_SERVICE !== 'false',
+  enableOrderTracking: process.env.NX_ENABLE_ORDER_TRACKING !== 'false',
+  logLevel: (process.env.NX_LOG_LEVEL || 'info') as EnvironmentConfig['logLevel'],
+  enableApiLogging: process.env.NX_ENABLE_API_LOGGING === 'true',
 };
 
 // Validate configuration

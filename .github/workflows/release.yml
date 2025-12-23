@@ -184,6 +184,60 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate release notes (job-local)
+        id: changelog
+        run: |
+          previous_tag=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+          if [ -z "$previous_tag" ]; then
+            echo "No previous tag found, generating full changelog"
+            git log --pretty=format:"- %s (%h)" > CHANGELOG_TEMP.md
+          else
+            echo "Generating changelog since $previous_tag"
+            git log $previous_tag..HEAD --pretty=format:"- %s (%h)" > CHANGELOG_TEMP.md
+          fi
+
+          cat > RELEASE_NOTES.md << EOF
+          ## What's Changed
+          
+          ### 🚀 Features
+          $(grep -i "feat\\|feature" CHANGELOG_TEMP.md || echo "- No new features")
+          
+          ### 🐛 Bug Fixes
+          $(grep -i "fix\\|bug" CHANGELOG_TEMP.md || echo "- No bug fixes")
+          
+          ### 🔧 Improvements
+          $(grep -i "improve\\|enhance\\|refactor" CHANGELOG_TEMP.md || echo "- No improvements")
+          
+          ### 📚 Documentation
+          $(grep -i "doc\\|readme" CHANGELOG_TEMP.md || echo "- No documentation updates")
+          
+          ### 🔐 Security
+          $(grep -i "security\\|vulnerability" CHANGELOG_TEMP.md || echo "- No security updates")
+          
+          ### 🏗️ Infrastructure
+          $(grep -i "ci\\|cd\\|workflow\\|docker\\|k8s\\|helm" CHANGELOG_TEMP.md || echo "- No infrastructure changes")
+          
+          ### Other Changes
+          $(grep -v -i "feat\\|feature\\|fix\\|bug\\|improve\\|enhance\\|refactor\\|doc\\|readme\\|security\\|vulnerability\\|ci\\|cd\\|workflow\\|docker\\|k8s\\|helm" CHANGELOG_TEMP.md || echo "- No other changes")
+          
+          ## Docker Images
+          All services are available as Docker images:
+          - `ghcr.io/${{ github.repository }}/catalog-api:${{ needs.analyze-changes.outputs.new_version }}`
+          - `ghcr.io/${{ github.repository }}/basket-api:${{ needs.analyze-changes.outputs.new_version }}`
+          - `ghcr.io/${{ github.repository }}/discount-api:${{ needs.analyze-changes.outputs.new_version }}`
+          - `ghcr.io/${{ github.repository }}/ordering-api:${{ needs.analyze-changes.outputs.new_version }}`
+          - `ghcr.io/${{ github.repository }}/ocelot-gateway:${{ needs.analyze-changes.outputs.new_version }}`
+          
+          ## Helm Deployment
+          ```bash
+          helm upgrade --install ecommerce-platform ./Deployments/helm/platform \
+            --set global.image.tag=${{ needs.analyze-changes.outputs.new_version }}
+          ```
+          
+          **Full Changelog**: https://github.com/${{ github.repository }}/compare/$previous_tag...${{ needs.analyze-changes.outputs.new_version }}
+          EOF
       
       - name: Update CHANGELOG.md
         run: |
@@ -213,17 +267,18 @@ jobs:
           
           # Clean up
           rm -f NEW_ENTRY.md RELEASE_NOTES.md CHANGELOG_TEMP.md
-      
-      - name: Configure Git
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-      
-      - name: Commit and push changelog
-        run: |
-          git add CHANGELOG.md
-          git commit -m "docs: update changelog for ${{ needs.analyze-changes.outputs.new_version }} [skip ci]"
-          git push origin main
+
+      - name: Create changelog pull request
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: changelog/${{ needs.analyze-changes.outputs.new_version }}
+          title: "docs: update changelog for ${{ needs.analyze-changes.outputs.new_version }}"
+          commit-message: "docs: update changelog for ${{ needs.analyze-changes.outputs.new_version }} [skip ci]"
+          body: |
+            Automated changelog update for ${{ needs.analyze-changes.outputs.new_version }}.
+          add-paths: |
+            CHANGELOG.md
 
   notify-release:
     runs-on: ubuntu-latest
