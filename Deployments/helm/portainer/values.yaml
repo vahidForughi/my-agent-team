@@ -38,7 +38,7 @@ affinity: {}
 
 persistence:
   enabled: true
-  storageClass: "gp2"
+  storageClass: "standard"  # Changed from gp2 to standard for Minikube compatibility
   accessMode: ReadWriteOnce
   size: 1Gi
 

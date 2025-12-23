@@ -16,8 +16,21 @@
         <textarea formControlName="description" rows="3" placeholder="Full description"></textarea>
       </label>
       <label>
-        Image URL
-        <input formControlName="imageFile" type="text" placeholder="images/products/example.png" />
+        Product Image
+        <div class="image-upload-section">
+          <input
+            type="file"
+            (change)="onFileSelected($event)"
+            accept=".png,.jpg,.jpeg,.webp"
+            [disabled]="isUploading || isSubmitting"
+            aria-label="Select product image"
+          />
+          <small class="text-muted">
+            Max 5MB. Formats: PNG, JPG, JPEG, WebP
+            <span *ngIf="selectedFile" class="file-name">Selected: {{ selectedFile.name }}</span>
+            <span *ngIf="uploadedImageUrl && !selectedFile" class="success">✓ Image uploaded</span>
+          </small>
+        </div>
       </label>
       <label>
         Price
@@ -40,7 +53,9 @@
     </div>
 
     <div class="actions">
-      <button type="submit" [disabled]="isSubmitting">{{ isSubmitting ? 'Saving…' : 'Create Product' }}</button>
+      <button type="submit" [disabled]="isSubmitting || isUploading">
+        {{ isUploading ? 'Uploading image…' : isSubmitting ? 'Saving…' : 'Create Product' }}
+      </button>
       <span class="success" *ngIf="submitSuccess">Product created!</span>
       <span class="error" *ngIf="submitError">{{ submitError }}</span>
     </div>

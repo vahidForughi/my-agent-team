@@ -7,6 +7,7 @@ import { User, UserManager, UserManagerSettings } from 'oidc-client';
 import { Constants } from './constants';
 import { MsalService } from '@azure/msal-angular';
 import { AuthenticationResult } from '@azure/msal-browser';
+import { environment } from '../../environments/environment';
 
 
 @Injectable({
@@ -43,7 +44,7 @@ export class AcntService {
 
   logout() {
     this.msalService.logoutRedirect({
-      postLogoutRedirectUri: 'http://localhost:4200',
+      postLogoutRedirectUri: environment.azureB2C.postLogoutRedirectUri,
     });
     this.currentUserSource.next(null);
   }

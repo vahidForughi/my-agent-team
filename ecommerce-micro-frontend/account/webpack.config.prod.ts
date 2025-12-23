@@ -2,36 +2,26 @@ import { composePlugins, withNx } from '@nx/webpack';
 import { withReact } from '@nx/react';
 import { withModuleFederation } from '@nx/module-federation/webpack.js';
 import { DefinePlugin } from 'webpack';
-import * as dotenv from 'dotenv';
-import * as path from 'path';
 
 import baseConfig from './module-federation.config';
 
-// Load environment variables from .env.production file as defaults
-const envPath = path.resolve(__dirname, '../.env.production');
-console.log('[webpack.config.prod] Loading .env from:', envPath);
+// Use Amplify environment variables directly (no .env files)
+// Required env vars should be set in Amplify Console:
+// - NX_API_BASE_URL: API Gateway URL
+// - NX_API_TIMEOUT: API timeout in ms (optional, defaults to 30000)
+// - NX_USE_MOCK_DATA: Enable mock data (optional, defaults to false)
+// - NX_ENABLE_AUTHENTICATION: Enable auth (optional, defaults to true)
+// - NX_LOG_LEVEL: Log level (optional, defaults to 'info')
 
-const fileEnv = dotenv.config({
-  path: envPath
-}).parsed || {};
-
-// Merge: Amplify env vars (process.env) take precedence over .env file
-const env = { ...fileEnv, ...process.env };
-
-console.log('[webpack.config.prod] Loaded env vars from file:', fileEnv);
-console.log('[webpack.config.prod] Runtime env vars:', process.env);
-
-// Filter only NX_ prefixed variables and prepare for DefinePlugin
-const envVars = Object.keys(env)
+// Filter only NX_ prefixed variables from process.env
+const envVars = Object.keys(process.env)
   .filter(key => key.startsWith('NX_'))
   .reduce((acc, key) => {
-    acc[`process.env.${key}`] = JSON.stringify(env[key]);
+    acc[`process.env.${key}`] = JSON.stringify(process.env[key]);
     return acc;
   }, {} as Record<string, string>);
 
-console.log('[webpack.config.prod] Final env vars for DefinePlugin:', envVars);
-
-console.log('[webpack.config.prod] Injecting env vars:', envVars);
+console.log('[account/webpack.config.prod] Injecting env vars:', Object.keys(envVars));
 
 export default composePlugins(
   withNx(),

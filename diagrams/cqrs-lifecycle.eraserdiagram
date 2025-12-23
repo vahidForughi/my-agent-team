@@ -1,0 +1,38 @@
+// Figure 4.2: CQRS Request Lifecycle with MediatR
+// Client → API → Validation → Handler → Repository → DB → Response
+
+// ==================== ACTORS ====================
+Client [icon: user, color: blue]
+API Controller [icon: server, color: blue]
+MediatR Pipeline [icon: cpu, color: green]
+Validation Behaviour [icon: check-circle, color: orange]
+Handler [icon: zap, color: green]
+Repository [icon: database, color: purple]
+Database [icon: hard-drive, color: red]
+
+// ==================== COMMAND FLOW (Write) ====================
+Client > API Controller : HTTP Request (POST/PUT/DELETE)
+API Controller > MediatR Pipeline : Send(Command)
+MediatR Pipeline > Validation Behaviour : Validate request
+Validation Behaviour > Handler : If valid, continue
+Handler > Repository : Execute business logic
+Repository > Database : Persist changes
+Database > Repository : Confirm
+Repository > Handler : Return result
+Handler > API Controller : Response
+API Controller > Client : HTTP Response
+
+// ==================== QUERY FLOW (Read) ====================
+// Queries skip validation behaviour (no side effects)
+// Client > API Controller : HTTP GET
+// API Controller > MediatR Pipeline : Send(Query)
+// MediatR Pipeline > Handler : Direct to handler
+// Handler > Repository : Fetch data
+// Repository > Database : SELECT
+// Database > Handler : Return data
+// Handler > API Controller : DTO Response
+
+// ==================== KEY COMPONENTS ====================
+// ValidationBehaviour: FluentValidation pipeline behavior
+// Handler: IRequestHandler<TRequest, TResponse>
+// Repository: IRepository interface from Core

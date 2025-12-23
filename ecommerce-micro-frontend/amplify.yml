@@ -5,8 +5,8 @@ applications:
       phases:
         preBuild:
           commands:
-            # Install dependencies
-            - npm ci
+            # Install dependencies (using npm install for better compatibility)
+            - npm install --legacy-peer-deps
             # Build shared packages (app-injector and auth-provider)
             - npm run build:packages
         build:

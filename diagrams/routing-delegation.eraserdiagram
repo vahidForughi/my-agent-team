@@ -1,0 +1,31 @@
+// Figure 4.7: Routing Delegation Strategy
+// Host selects remote → Remote handles internal routes → Navigation sync
+
+// ==================== ACTORS ====================
+Browser [icon: chrome, color: blue]
+Host Router [icon: git-branch, color: green]
+Registry [icon: list, color: orange]
+Store Remote [icon: shopping-bag, color: cyan]
+Checkout Remote [icon: shopping-cart, color: purple]
+Account Remote [icon: user, color: pink]
+
+// ==================== ROUTE RESOLUTION ====================
+Browser > Host Router : URL: /store/product/123
+Host Router > Registry : Match basePath '/store'
+Registry > Host Router : Store config
+Host Router > Store Remote : Load + inject
+Store Remote > Host Router : Handle /product/123 internally
+
+// ==================== PROTECTED ROUTES ====================
+Browser > Host Router : URL: /checkout/cart
+Host Router > Registry : Match basePath '/checkout'
+Host Router > Host Router : Check auth (ProtectedRoute)
+Host Router > Checkout Remote : Load if authenticated
+
+// ==================== NAVIGATION SYNC ====================
+Store Remote > Host Router : onNavigate('/store/product/456')
+Host Router > Browser : Update browser history
+
+// ==================== ROUTE OWNERSHIP ====================
+// Host owns: route prefix matching, auth guards, history
+// Remote owns: internal subroutes, feature logic
