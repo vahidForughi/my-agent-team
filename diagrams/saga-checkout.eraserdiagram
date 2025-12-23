@@ -1,0 +1,25 @@
+// Figure 3.4: Place Order Saga - Sequence Diagram
+// Client → Gateway → Basket → RabbitMQ → Ordering
+
+// ==================== ACTORS ====================
+Client [icon: user, color: blue]
+Ocelot Gateway [icon: aws-api-gateway, color: orange]
+Basket Service [icon: shopping-cart, color: green]
+RabbitMQ [icon: rabbitmq, color: yellow]
+Ordering Service [icon: clipboard-list, color: purple]
+SQL Server [icon: mssql, color: red]
+Redis [icon: redis, color: green]
+
+// ==================== SYNCHRONOUS PHASE ====================
+Client > Ocelot Gateway : POST /Basket/Checkout
+Ocelot Gateway > Basket Service : Route to /api/v1/Basket/Checkout
+Basket Service > Redis : GetBasketByUserNameQuery
+Basket Service > RabbitMQ : Publish BasketCheckoutEvent
+Basket Service > Redis : DeleteBasketByUserNameCommand
+Basket Service > Ocelot Gateway : 202 Accepted
+Ocelot Gateway > Client : 202 Accepted
+
+// ==================== ASYNCHRONOUS PHASE ====================
+RabbitMQ > Ordering Service : Consume BasketCheckoutEvent
+Ordering Service > Ordering Service : Map + Validate
+Ordering Service > SQL Server : INSERT Order

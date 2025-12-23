@@ -1,0 +1,33 @@
+// Figure 4.4: Event-Driven Checkout Flow (Saga Pattern)
+// Basket → RabbitMQ → Ordering (async decoupling)
+
+// ==================== ACTORS ====================
+Frontend [icon: react, color: blue]
+Ocelot Gateway [icon: aws-api-gateway, color: orange]
+Basket API [icon: shopping-cart, color: green]
+Redis [icon: redis, color: green]
+RabbitMQ [icon: rabbitmq, color: yellow]
+Ordering Consumer [icon: message-circle, color: purple]
+Ordering API [icon: clipboard-list, color: purple]
+SQL Server [icon: mssql, color: red]
+
+// ==================== SYNCHRONOUS PHASE ====================
+Frontend > Ocelot Gateway : POST /Basket/Checkout
+Ocelot Gateway > Basket API : Route to service
+Basket API > Redis : Get cart data
+Basket API > RabbitMQ : Publish BasketCheckoutEvent
+Basket API > Redis : Delete cart
+Basket API > Ocelot Gateway : 202 Accepted
+Ocelot Gateway > Frontend : Checkout initiated
+
+// ==================== ASYNCHRONOUS PHASE ====================
+RabbitMQ > Ordering Consumer : Deliver event
+Ordering Consumer > Ordering API : CheckoutOrderCommand
+Ordering API > SQL Server : INSERT Order
+Ordering API > Ordering Consumer : Order created
+
+// ==================== SAGA CHARACTERISTICS ====================
+// - No distributed transaction (2PC avoided)
+// - Eventual consistency via async events
+// - User gets 202 Accepted immediately
+// - Order creation happens reliably via messaging

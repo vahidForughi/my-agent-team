@@ -1,0 +1,41 @@
+// Service Mesh Implementation - Sidecar Pattern
+// Istio with Envoy Proxy Injection
+
+// ==================== EXTERNAL CLIENTS ====================
+External Traffic [icon: aws-api-gateway]
+
+// ==================== SINGLE POD (CLOSE-UP) ====================
+Catalog API Pod [icon: k8s-pod, color: green] {
+  
+  // Envoy Sidecar Proxy (Injected by Istio)
+  Envoy Proxy [icon: istio, color: orange]
+
+  // Application Container
+  Catalog API [icon: dotnet, color: blue]
+}
+
+// ==================== ANOTHER POD ====================
+Basket API Pod [icon: k8s-pod, color: green] {
+  Envoy Proxy 2 [icon: istio, color: orange]
+  Basket API [icon: dotnet, color: blue]
+}
+
+// ==================== ISTIO CONTROL PLANE ====================
+Istio Control Plane [icon: istio, color: purple] {
+  istiod [icon: k8s-control-plane]
+}
+
+// ==================== TRAFFIC FLOW ====================
+
+// Inbound: External → Sidecar → App
+External Traffic > Envoy Proxy : 1. Inbound Request
+Envoy Proxy > Catalog API : 2. Forward to App (localhost)
+
+// Outbound: App → Sidecar → Other Pod's Sidecar → Other App
+Catalog API > Envoy Proxy : 3. Outbound Request
+Envoy Proxy > Envoy Proxy 2 : 4. mTLS Encrypted
+Envoy Proxy 2 > Basket API : 5. Forward to App
+
+// Control Plane Configuration
+istiod > Envoy Proxy : Push Config
+istiod > Envoy Proxy 2 : Push Config

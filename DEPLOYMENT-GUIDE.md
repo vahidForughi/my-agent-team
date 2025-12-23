@@ -4,27 +4,63 @@
 
 ### **Required Tools**
 
+#### **For Local Development (Minikube)**
 ```bash
 # Install required tools (macOS)
 brew install minikube helm kubectl docker
 
 # Or check if already installed
 minikube version
-helm version  
+helm version
 kubectl version --client
+docker --version
+```
+
+#### **For AWS Deployment (EKS)**
+```bash
+# Install AWS CLI and tools
+brew install awscli kubectl helm docker
+
+# Configure AWS credentials
+aws configure
+
+# Verify installation
+aws --version
+kubectl version --client
+helm version
 docker --version
 ```
 
 ### **System Requirements**
 
+#### **Local Development**
 - **RAM**: Minimum 8GB (12GB+ recommended)
 - **CPU**: 4+ cores
 - **Disk**: 50GB+ free space
 - **OS**: macOS, Linux, or Windows with WSL2
 
-## 🔧 **Method 1: One-Command Deployment (Recommended)**
+#### **AWS Deployment**
+- **AWS Account**: Active AWS account with appropriate permissions
+- **IAM Permissions**: EKS, EC2, VPC, S3, ECR, CloudFormation access
+- **AWS Region**: Default: ap-southeast-1 (configurable)
+- **Budget**: Estimated $50-200/month depending on usage
 
-### **Quick Start**
+## 🔧 **Deployment Methods**
+
+### **Choose Your Deployment Target**
+
+| Method | Environment | Use Case | Script |
+|--------|-------------|----------|--------|
+| **Local Full** | Minikube | Complete local development with monitoring | `./deploy.sh` |
+| **Local Docker** | Docker Compose | Quick local testing without K8s | `./docker-deploy.sh` |
+| **AWS Minimal** | AWS EKS | Production core services only | `./deploy-aws-minimal.sh` |
+| **AWS Full** | AWS EKS | Production with full monitoring | `./deploy-aws.sh` |
+
+---
+
+## 🔧 **Method 1: Local Deployment (Minikube)**
+
+### **1A: One-Command Full Deployment (Recommended for Local)**
 
 ```bash
 # Clone repository
@@ -39,7 +75,7 @@ chmod +x deploy.sh
 **This script will:**
 
 - ✅ Start minikube with optimal configuration
-- ✅ Install Helm and required addons  
+- ✅ Install Helm and required addons
 - ✅ Deploy all infrastructure services (databases, RabbitMQ)
 - ✅ Deploy all API microservices
 - ✅ Deploy monitoring stack (Prometheus, Grafana, Jaeger)
@@ -47,9 +83,101 @@ chmod +x deploy.sh
 - ✅ Start all port-forwards for easy access
 - ✅ Display access URLs and credentials
 
+### **1B: Docker Compose Deployment (Quickest Local Setup)**
+
+```bash
+# Run Docker Compose
+chmod +x docker-deploy.sh
+./docker-deploy.sh
+
+# Or manually
+docker-compose up -d
+```
+
+**Advantages:**
+- ⚡ Fastest startup time
+- 💻 Lower resource usage
+- 🔧 Easier debugging
+- 📦 No Kubernetes overhead
+
+**Note:** Does not include monitoring stack or service mesh.
+
 ---
 
-## 🔨 **Method 2: Step-by-Step Manual Deployment**
+## ☁️ **Method 2: AWS Deployment (Production)**
+
+### **2A: AWS Minimal Deployment (Recommended for Production)**
+
+Deploys only core services needed for the application to run.
+
+```bash
+# Run minimal AWS deployment
+chmod +x deploy-aws-minimal.sh
+./deploy-aws-minimal.sh dev ap-southeast-1
+
+# Arguments:
+#   dev - Environment name (dev/staging/prod)
+#   ap-southeast-1 - AWS region
+```
+
+**What's Included:**
+- ✅ VPC + EKS Cluster (minimal configuration)
+- ✅ Core Databases (MongoDB, Redis, PostgreSQL, SQL Server)
+- ✅ Message Broker (RabbitMQ)
+- ✅ Core APIs (Catalog, Basket, Discount, Ordering)
+- ✅ API Gateway (Ocelot)
+- ✅ S3 for product images
+
+**What's NOT Included:**
+- ❌ Monitoring (Prometheus, Grafana, Jaeger, Kiali)
+- ❌ Service Mesh (Istio)
+- ❌ Logging Stack (Elasticsearch, Kibana)
+
+**Time:** ~15-20 minutes
+**Cost:** Lower (core services only)
+
+### **2B: AWS Full Deployment (Development/Staging)**
+
+Deploys complete stack with monitoring and observability.
+
+```bash
+# Run full AWS deployment
+chmod +x deploy-aws.sh
+./deploy-aws.sh dev ap-southeast-1
+```
+
+**Additional Features:**
+- ✅ Prometheus for metrics
+- ✅ Grafana for dashboards
+- ✅ Jaeger for distributed tracing
+- ✅ Kiali for service mesh visualization
+- ✅ Elasticsearch + Kibana for logging
+- ✅ Istio service mesh
+
+**Time:** ~25-30 minutes
+**Cost:** Higher (full observability stack)
+
+### **2C: AWS Deployment Options**
+
+During deployment, you'll be prompted to choose:
+
+```
+🎯 Deployment Options:
+  1) Full deployment (all steps)
+  2) Skip image build (use existing images in ECR)
+  3) Skip images + infrastructure (start from EBS CSI driver)
+  4) Deploy only Kubernetes workloads (skip infrastructure)
+  5) Exit
+```
+
+**Recommended choices:**
+- **First deployment:** Option 1 (Full deployment)
+- **Code changes only:** Option 2 (Skip infrastructure, rebuild images)
+- **Config changes only:** Option 4 (Skip infrastructure and images)
+
+---
+
+## 🔨 **Method 3: Step-by-Step Manual Deployment (Local)**
 
 ### **Step 1: Start Minikube**
 
@@ -171,40 +299,99 @@ kubectl port-forward svc/rabbitmq 15672:15672 -n default &
 
 ## 🎯 **Access Information**
 
-### **Frontend Application**
+### **Local Deployment (Minikube)**
 
+#### **Frontend Application**
 ```bash
 🌐 Angular Client: http://localhost:4200
 ```
 
-### **API Gateway**
-
+#### **API Gateway**
 ```bash
 🔗 API Gateway: http://localhost:8010
-📝 Test: curl http://localhost:8010/
+📝 Test: curl http://localhost:8010/Catalog/GetAllProducts
 ```
 
-### **Monitoring Stack**
-
+#### **Monitoring Stack**
 ```bash
 📈 Prometheus: http://localhost:9090
-📊 Grafana: http://localhost:3000  
+📊 Grafana: http://localhost:3000
 🔍 Jaeger: http://localhost:16686
 🕸️ Kiali: http://localhost:20001
 ```
 
-### **RabbitMQ Management**
-
+#### **RabbitMQ Management**
 ```bash
 🐰 Management UI: http://localhost:15672
 📋 Credentials: guest/guest
+```
+
+#### **Easy Access Script**
+```bash
+# Use the interactive access script
+./access-services.sh
+
+# Select service by number and access instantly
+```
+
+### **AWS Deployment (EKS)**
+
+#### **Smart Access Script (Recommended)**
+```bash
+# Auto-detects namespace and service names
+./access-services-aws-smart.sh
+
+# Shows which services are available
+# Works with both deploy-aws.sh and deploy-aws-minimal.sh
+```
+
+**Features:**
+- ✅ Auto-detects namespace (dev/default/ecommerce)
+- ✅ Auto-detects service names (handles different naming conventions)
+- ✅ Shows service availability status
+- ✅ One-command access to any service
+- ✅ Supports starting all port-forwards at once
+
+#### **Manual Access (AWS)**
+
+**RabbitMQ:**
+```bash
+kubectl port-forward -n dev svc/rabbitmq 15672:15672 5672:5672
+# Access: http://localhost:15672 (guest/guest)
+```
+
+**API Gateway:**
+```bash
+kubectl port-forward -n dev svc/eshopping-ocelotapigw 8010:80
+# Access: http://localhost:8010
+```
+
+**Catalog API:**
+```bash
+kubectl port-forward -n dev svc/eshopping-catalog 8001:80
+# Test: curl http://localhost:8001/GetAllProducts
+```
+
+**MongoDB:**
+```bash
+kubectl port-forward -n dev svc/catalogdb 27017:27017
+# Connect: mongo mongodb://admin:admin1234@localhost:27017/CatalogDb?authSource=admin
+```
+
+**View LoadBalancer URLs (External Access):**
+```bash
+# Get all LoadBalancer service URLs
+kubectl get svc -n dev | grep LoadBalancer
+
+# API Gateway external URL
+kubectl get svc -n dev eshopping-ocelotapigw -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
 ```
 
 ---
 
 ## 🛠️ **Troubleshooting**
 
-### **Common Issues**
+### **Local Deployment Issues**
 
 **1. Minikube Won't Start**
 
@@ -220,7 +407,7 @@ minikube start --driver=docker --memory=7168 --cpus=4
 # Check pod status
 kubectl describe pod <pod-name> -n default
 
-# Check logs  
+# Check logs
 kubectl logs <pod-name> -n default
 
 # Restart deployment
@@ -247,8 +434,84 @@ eval $(minikube docker-env)
 docker build -t <image-name>:latest -f <dockerfile-path> .
 ```
 
+### **AWS Deployment Issues**
+
+**1. ECR Login Failed**
+
+```bash
+# Re-authenticate to ECR
+aws ecr get-login-password --region ap-southeast-1 | \
+  docker login --username AWS --password-stdin <account-id>.dkr.ecr.ap-southeast-1.amazonaws.com
+```
+
+**2. EKS Cluster Not Accessible**
+
+```bash
+# Update kubeconfig
+aws eks update-kubeconfig --name dev-ecommerce-eks --region ap-southeast-1
+
+# Verify connection
+kubectl cluster-info
+kubectl get nodes
+```
+
+**3. Pods Stuck in ImagePullBackOff**
+
+```bash
+# Check ECR permissions
+aws ecr describe-repositories --region ap-southeast-1
+
+# Check pod events
+kubectl describe pod <pod-name> -n dev
+
+# Verify image exists in ECR
+aws ecr list-images --repository-name catalogapi --region ap-southeast-1
+```
+
+**4. LoadBalancer Service Stuck in Pending**
+
+```bash
+# Check AWS Load Balancer Controller
+kubectl get pods -n kube-system | grep aws-load-balancer
+
+# Check service events
+kubectl describe svc <service-name> -n dev
+
+# Verify security groups and subnets
+aws ec2 describe-security-groups --filters "Name=tag:kubernetes.io/cluster/dev-ecommerce-eks,Values=owned"
+```
+
+**5. IRSA (IAM Roles for Service Accounts) Issues**
+
+```bash
+# Verify OIDC provider exists
+aws eks describe-cluster --name dev-ecommerce-eks --region ap-southeast-1 \
+  --query "cluster.identity.oidc.issuer" --output text
+
+# Check service account annotation
+kubectl get sa catalog -n dev -o yaml | grep eks.amazonaws.com/role-arn
+
+# Test S3 access from pod
+kubectl exec -it <catalog-pod> -n dev -- aws s3 ls
+```
+
+**6. Products Showing LocalStack URLs in AWS**
+
+```bash
+# Run migration script to update MongoDB
+bash scripts/migrate-products-to-aws-s3.sh dev ecommerce-product-images-<account-id>
+
+# Verify ConfigMap settings
+kubectl get configmap cfg-eshopping-catalog -n dev -o yaml | grep -E "(USE_LOCALSTACK|AWS__S3__ServiceUrl)"
+
+# Should show:
+# USE_LOCALSTACK: "false"
+# AWS__S3__ServiceUrl: ""
+```
+
 ### **Verification Commands**
 
+#### **Local (Minikube)**
 ```bash
 # Check all pods status
 kubectl get pods --all-namespaces
@@ -260,21 +523,60 @@ kubectl get svc --all-namespaces
 helm list --all-namespaces
 
 # Test API Gateway
-curl http://localhost:8010/
+curl http://localhost:8010/Catalog/GetAllProducts
 
 # Check minikube status
 minikube status
+```
+
+#### **AWS (EKS)**
+```bash
+# Check cluster status
+aws eks describe-cluster --name dev-ecommerce-eks --region ap-southeast-1
+
+# Check all pods in dev namespace
+kubectl get pods -n dev
+
+# Check services with external IPs
+kubectl get svc -n dev | grep LoadBalancer
+
+# Test API Gateway (replace with your LoadBalancer DNS)
+GATEWAY_URL=$(kubectl get svc -n dev eshopping-ocelotapigw -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+curl http://$GATEWAY_URL/Catalog/GetAllProducts
+
+# Check ECR images
+aws ecr describe-images --repository-name catalogapi --region ap-southeast-1
+
+# Check S3 bucket
+aws s3 ls s3://ecommerce-product-images-<account-id>/products/
+
+# View pod logs
+kubectl logs -n dev <pod-name> --tail=100
 ```
 
 ---
 
 ## 🔄 **Clean Up**
 
-### **Remove Everything**
+### **Local Deployment Cleanup**
 
+#### **Quick Cleanup Script**
+```bash
+# Run cleanup script
+./cleanup.sh
+
+# This will:
+# - Uninstall all Helm releases
+# - Delete namespaces
+# - Stop minikube (optional)
+```
+
+#### **Manual Cleanup**
 ```bash
 # Delete Helm releases
-helm uninstall eshopping-basket eshopping-basketdb eshopping-catalog eshopping-catalogdb eshopping-discount eshopping-discountdb eshopping-gateway eshopping-orderdb eshopping-ordering eshopping-rabbitmq eshopping-elasticsearch eshopping-kibana -n default
+helm uninstall eshopping-basket eshopping-basketdb eshopping-catalog eshopping-catalogdb \
+  eshopping-discount eshopping-discountdb eshopping-gateway eshopping-orderdb \
+  eshopping-ordering eshopping-rabbitmq eshopping-elasticsearch eshopping-kibana -n default
 helm uninstall prometheus -n monitoring
 
 # Delete namespaces
@@ -283,18 +585,205 @@ kubectl delete namespace monitoring istio-system
 # Stop minikube
 minikube stop
 
-# Delete minikube cluster (optional)
+# Delete minikube cluster (optional - destroys everything)
 minikube delete
+```
+
+### **AWS Deployment Cleanup**
+
+#### **Quick Cleanup Script**
+```bash
+# Run AWS cleanup script
+./cleanup-aws.sh dev
+
+# Arguments:
+#   dev - Environment name to clean up
+```
+
+**This will:**
+- ✅ Uninstall all Helm releases
+- ✅ Delete EKS cluster
+- ✅ Delete VPC and networking
+- ✅ Delete ECR repositories (optional)
+- ✅ Delete S3 bucket (optional)
+
+#### **Manual AWS Cleanup**
+
+**Step 1: Delete Kubernetes Workloads**
+```bash
+# Delete all Helm releases in dev namespace
+helm uninstall -n dev $(helm list -n dev -q)
+
+# Delete monitoring stack
+helm uninstall -n monitoring prometheus
+```
+
+**Step 2: Delete CloudFormation Stacks**
+```bash
+# Delete in reverse order
+aws cloudformation delete-stack --stack-name dev-alb --region ap-southeast-1
+aws cloudformation delete-stack --stack-name dev-eks --region ap-southeast-1
+aws cloudformation delete-stack --stack-name dev-vpc --region ap-southeast-1
+
+# Wait for stacks to delete
+aws cloudformation wait stack-delete-complete --stack-name dev-alb --region ap-southeast-1
+aws cloudformation wait stack-delete-complete --stack-name dev-eks --region ap-southeast-1
+aws cloudformation wait stack-delete-complete --stack-name dev-vpc --region ap-southeast-1
+```
+
+**Step 3: Delete ECR Repositories (Optional)**
+```bash
+# List repositories
+aws ecr describe-repositories --region ap-southeast-1
+
+# Delete each repository
+for repo in catalogapi basketapi discountapi orderingapi ocelotapigateway; do
+  aws ecr delete-repository --repository-name $repo --region ap-southeast-1 --force
+done
+```
+
+**Step 4: Delete S3 Bucket (Optional)**
+```bash
+# Empty bucket first
+aws s3 rm s3://ecommerce-product-images-<account-id> --recursive
+
+# Delete bucket
+aws s3 rb s3://ecommerce-product-images-<account-id>
+```
+
+**Step 5: Delete IAM Resources (Optional)**
+```bash
+# Delete IAM policies and roles
+aws iam detach-role-policy --role-name dev-catalog-s3-role \
+  --policy-arn arn:aws:iam::<account-id>:policy/dev-catalog-s3-policy
+
+aws iam delete-role --role-name dev-catalog-s3-role
+aws iam delete-policy --policy-arn arn:aws:iam::<account-id>:policy/dev-catalog-s3-policy
+```
+
+**Step 6: Verify Cleanup**
+```bash
+# Check CloudFormation stacks
+aws cloudformation describe-stacks --region ap-southeast-1
+
+# Check EKS clusters
+aws eks list-clusters --region ap-southeast-1
+
+# Check ECR repositories
+aws ecr describe-repositories --region ap-southeast-1
+
+# Check S3 buckets
+aws s3 ls | grep ecommerce-product-images
+```
+
+### **Docker Compose Cleanup**
+
+```bash
+# Stop all containers
+docker-compose down
+
+# Remove volumes (deletes all data)
+docker-compose down -v
+
+# Remove images
+docker-compose down --rmi all
 ```
 
 ---
 
 ## 📚 **Next Steps**
 
-1. **Explore the Platform**: Browse <http://localhost:4200>
-2. **Monitor Services**: Use Grafana dashboards at <http://localhost:3000>
-3. **View Traces**: Check distributed tracing at <http://localhost:16686>  
-4. **Scale Services**: Use `kubectl scale deployment <name> --replicas=3`
+### **After Local Deployment**
+1. **Explore the Platform**: Browse http://localhost:4200
+2. **Monitor Services**: Use Grafana dashboards at http://localhost:3000
+3. **View Traces**: Check distributed tracing at http://localhost:16686
+4. **Access Services**: Run `./access-services.sh` for easy access
 5. **Test APIs**: Use Postman collections in `/PostmanCollection/`
+6. **Scale Services**: `kubectl scale deployment <name> --replicas=3`
+
+### **After AWS Deployment**
+1. **Get LoadBalancer URLs**: `kubectl get svc -n dev | grep LoadBalancer`
+2. **Access Services**: Run `./access-services-aws-smart.sh`
+3. **Configure Frontend**: Update Angular environment with LoadBalancer URLs
+4. **Monitor Costs**: Check AWS Cost Explorer regularly
+5. **Setup Alerts**: Configure CloudWatch alarms for critical metrics
+6. **Backup Data**: Setup automated backups for databases
+7. **Security**: Review IAM policies and security groups
+
+### **Learning Resources**
+- **Architecture**: See `docs/architecture.md` for system design
+- **API Documentation**: Check Swagger UI at API Gateway endpoints
+- **Kubernetes**: Learn `kubectl` commands - https://kubernetes.io/docs/
+- **AWS EKS**: AWS EKS Workshop - https://www.eksworkshop.com/
+- **Monitoring**: Grafana tutorials - https://grafana.com/tutorials/
+
+---
+
+## 🚀 **Quick Reference**
+
+### **Common Commands**
+
+| Task | Local (Minikube) | AWS (EKS) |
+|------|------------------|-----------|
+| **Deploy** | `./deploy.sh` | `./deploy-aws-minimal.sh dev` |
+| **Access Services** | `./access-services.sh` | `./access-services-aws-smart.sh` |
+| **View Pods** | `kubectl get pods -n default` | `kubectl get pods -n dev` |
+| **View Logs** | `kubectl logs <pod> -n default` | `kubectl logs <pod> -n dev` |
+| **Restart Service** | `kubectl rollout restart deployment <name> -n default` | `kubectl rollout restart deployment <name> -n dev` |
+| **Scale Service** | `kubectl scale deployment <name> --replicas=3` | `kubectl scale deployment <name> --replicas=3 -n dev` |
+| **Cleanup** | `./cleanup.sh` | `./cleanup-aws.sh dev` |
+
+### **Useful Scripts**
+
+| Script | Purpose |
+|--------|---------|
+| `deploy.sh` | Full local deployment with monitoring |
+| `docker-deploy.sh` | Quick Docker Compose deployment |
+| `deploy-aws-minimal.sh` | AWS deployment (core services only) |
+| `deploy-aws.sh` | AWS deployment (with monitoring) |
+| `access-services.sh` | Access local services interactively |
+| `access-services-aws-smart.sh` | Access AWS services (auto-detection) |
+| `cleanup.sh` | Clean up local deployment |
+| `cleanup-aws.sh` | Clean up AWS deployment |
+| `check-logs.sh` | View logs from all services |
+| `database-access.sh` | Connect to databases |
+| `scripts/migrate-products-to-aws-s3.sh` | Migrate product URLs to AWS S3 |
+| `scripts/setup-https-self-signed.sh` | Setup HTTPS with self-signed cert |
+
+### **Key Files**
+
+| File | Description |
+|------|-------------|
+| `DEPLOYMENT-GUIDE.md` | Complete deployment instructions (this file) |
+| `ACCESS-SERVICES-AWS-GUIDE.md` | AWS service access guide |
+| `FIX-LOCALSTACK-URLS.md` | Fix LocalStack URL issues |
+| `RABBITMQ-ACCESS.md` | RabbitMQ management guide |
+| `docker-compose.yml` | Docker Compose configuration |
+| `Deployments/helm/*` | Helm charts for all services |
+| `Services/*/Dockerfile` | Docker images for microservices |
+| `Infrastructure/aws/cloudformation/*` | AWS infrastructure templates |
+
+### **Default Credentials**
+
+| Service | Username | Password | Port |
+|---------|----------|----------|------|
+| RabbitMQ | guest | guest | 15672 |
+| MongoDB | admin | admin1234 | 27017 |
+| PostgreSQL | postgres | postgres | 5432 |
+| Redis | - | (none) | 6379 |
+| Grafana | admin | prom-operator | 3000 |
+
+**⚠️ WARNING:** Change these credentials in production!
+
+---
+
+## 📖 **Additional Documentation**
+
+- **[ACCESS-SERVICES-AWS-GUIDE.md](ACCESS-SERVICES-AWS-GUIDE.md)** - Comprehensive AWS service access guide
+- **[FIX-LOCALSTACK-URLS.md](FIX-LOCALSTACK-URLS.md)** - Troubleshooting LocalStack URLs in AWS
+- **[RABBITMQ-ACCESS.md](RABBITMQ-ACCESS.md)** - RabbitMQ management and monitoring
+- **[CLEANUP-SUMMARY.md](CLEANUP-SUMMARY.md)** - Script cleanup documentation
+
+---
 
 **🎊 Happy Deploying! 🎊**

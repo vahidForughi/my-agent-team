@@ -1,0 +1,59 @@
+// Kubernetes Cluster Topology
+// Master-Worker Architecture for High Availability
+
+Kubernetes Cluster [icon: k8s-node] {
+  
+  // ==================== CONTROL PLANE ====================
+  Control Plane (Master Node) [icon: k8s-control-plane, color: blue] {
+    API Server [icon: k8s-api]
+    Scheduler [icon: k8s-sched]
+    Controller Manager [icon: k8s-c-m]
+    etcd [icon: k8s-etcd]
+  }
+
+  // ==================== WORKER NODES ====================
+  Worker Nodes [color: green] {
+    
+    // Application Node Pool
+    Application Node Pool [icon: k8s-node, color: green] {
+      Catalog API [icon: dotnet]
+      Basket API [icon: dotnet]
+      Discount API [icon: dotnet]
+      Ordering API [icon: dotnet]
+      Ocelot Gateway [icon: aws-api-gateway]
+      Nginx (MFE Host) [icon: nginx]
+    }
+
+    // Data Node Pool
+    Data Node Pool [icon: k8s-node, color: purple] {
+      MongoDB [icon: mongodb]
+      SQL Server [icon: mssql]
+      Redis [icon: redis]
+      PostgreSQL [icon: postgresql]
+      RabbitMQ [icon: rabbitmq]
+    }
+
+    // Infrastructure Node Pool
+    Infrastructure Node Pool [icon: k8s-node, color: orange] {
+      Elasticsearch [icon: elasticsearch]
+      Prometheus [icon: prometheus]
+      Grafana [icon: grafana]
+      Jaeger [icon: jaeger]
+      Kibana [icon: kibana]
+    }
+  }
+}
+
+// ==================== CONNECTIONS ====================
+
+// Control Plane manages Worker Nodes
+Control Plane (Master Node) > Worker Nodes : Schedules Pods
+
+// API Server is the central hub
+API Server > Scheduler : Pod Scheduling
+API Server > Controller Manager : State Management
+API Server > etcd : Cluster State Storage
+
+// Cross-pool communication
+Application Node Pool > Data Node Pool : Database Access
+Application Node Pool > Infrastructure Node Pool : Logs & Metrics

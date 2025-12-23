@@ -1,0 +1,49 @@
+// Figure 3.3c: Ordering Service - Clean Architecture Example
+// Shows event-driven flow: Consumer → Command → Behaviour → Handler → Repository → SQL Server
+
+// ==================== API LAYER ====================
+API Layer [icon: globe, color: blue] {
+  OrderController.cs [icon: server]
+  BasketOrderingConsumer.cs [icon: message-circle]
+}
+
+// ==================== APPLICATION LAYER ====================
+Application Layer [icon: cpu, color: green] {
+  // Commands
+  CheckoutOrderCommand.cs [icon: edit]
+  CheckoutOrderCommandHandler.cs [icon: zap]
+  DeleteOrderCommand.cs [icon: edit]
+  UpdateOrderCommand.cs [icon: edit]
+  
+  // Queries
+  GetOrderListQuery.cs [icon: search]
+  GetOrderListQueryHandler.cs [icon: zap]
+  
+  // Behaviours (Pipeline)
+  ValidationBehaviour.cs [icon: check-circle]
+  UnhandledExceptionBehaviour.cs [icon: alert-triangle]
+}
+
+// ==================== CORE LAYER ====================
+Core Layer [icon: hexagon, color: orange] {
+  // Entities
+  Order.cs [icon: box]
+  
+  // Interfaces
+  IOrderRepository.cs [icon: file-text]
+  IAsyncRepository.cs [icon: file-text]
+}
+
+// ==================== INFRASTRUCTURE LAYER ====================
+Infrastructure Layer [icon: database, color: purple] {
+  OrderContext.cs [icon: mssql]
+  OrderRepository.cs [icon: code]
+  RepositoryBase.cs [icon: code]
+}
+
+// ==================== EVENT-DRIVEN REQUEST FLOW ====================
+BasketOrderingConsumer.cs > CheckoutOrderCommand.cs : maps event
+CheckoutOrderCommand.cs > ValidationBehaviour.cs : pipeline
+ValidationBehaviour.cs > CheckoutOrderCommandHandler.cs : validated
+CheckoutOrderCommandHandler.cs > IOrderRepository.cs : calls interface
+OrderRepository.cs > OrderContext.cs : SQL Server

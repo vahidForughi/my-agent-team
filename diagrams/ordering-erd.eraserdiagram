@@ -1,0 +1,55 @@
+// Figure 3.3: ER Diagram - Ordering Database (SQL Server)
+// Table: Orders (from Order.cs + EntityBase.cs)
+
+Orders [icon: table, color: blue] {
+  // Primary Key
+  Id int [pk]
+  
+  // User Identity
+  UserName nvarchar
+  
+  // Order Total
+  TotalPrice decimal(18,2)
+  
+  // Customer Info
+  FirstName nvarchar
+  LastName nvarchar
+  EmailAddress nvarchar
+  
+  // Shipping Address
+  AddressLine nvarchar
+  Country nvarchar
+  State nvarchar
+  ZipCode nvarchar
+  
+  // Payment Info
+  CardName nvarchar
+  CardNumber nvarchar
+  Expiration nvarchar
+  Cvv nvarchar
+  PaymentMethod int
+  
+  // Audit Fields (from EntityBase)
+  CreatedBy nvarchar
+  CreatedDate datetime2
+  LastModifiedBy nvarchar
+  LastModifiedDate datetime2
+}
+
+// Note: Current implementation stores TotalPrice directly
+// OrderItems table is recommended for thesis-level design
+// (1:N relationship - Orders has many OrderItems)
+
+OrderItems [icon: table, color: green] {
+  // Recommended extension
+  Id int [pk]
+  OrderId int [fk]
+  ProductId string
+  ProductName nvarchar
+  UnitPrice decimal
+  Quantity int
+  DiscountAmount decimal
+}
+
+// Relationship
+Orders 1--* OrderItems : has
