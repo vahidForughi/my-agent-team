@@ -269,7 +269,7 @@ jobs:
           rm -f NEW_ENTRY.md RELEASE_NOTES.md CHANGELOG_TEMP.md
 
       - name: Create changelog pull request
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: changelog/${{ needs.analyze-changes.outputs.new_version }}
