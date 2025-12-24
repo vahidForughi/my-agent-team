@@ -14,6 +14,7 @@ import {
   Tooltip,
   theme,
   Checkbox,
+  message,
 } from 'antd';
 import {
   PlusOutlined,
@@ -65,7 +66,7 @@ function ProductsManagement() {
   });
   const { data: brands } = useGetAllBrands();
   const { data: types } = useGetAllTypes();
-  const { mutate: deleteProduct } = useDeleteProduct();
+  const { mutate: deleteProduct, isPending: isDeleting } = useDeleteProduct();
 
   // Derived state
   const products = productsData?.data || [];
@@ -90,8 +91,18 @@ function ProductsManagement() {
   }, [navigate]);
 
   const handleDelete = useCallback((id: string) => {
-    deleteProduct(id);
-  }, [deleteProduct]);
+    console.log('[ProductsManagement] Deleting product:', id);
+    deleteProduct(id, {
+      onSuccess: () => {
+        message.success('Product deleted successfully');
+        refetch();
+      },
+      onError: (error) => {
+        console.error('[ProductsManagement] Delete product error:', error);
+        message.error(error?.message || 'Failed to delete product. Please try again.');
+      },
+    });
+  }, [deleteProduct, refetch]);
 
   function handleRefresh() {
     refetch();
@@ -105,11 +116,42 @@ function ProductsManagement() {
   }
 
   function handleBulkDelete() {
-    // Bulk delete functionality
-    selectedRowKeys.forEach((key) => {
-      deleteProduct(key as string);
+    console.log('[ProductsManagement] Bulk deleting products:', selectedRowKeys);
+    const count = selectedRowKeys.length;
+    let successCount = 0;
+    let errorCount = 0;
+
+    selectedRowKeys.forEach((key, index) => {
+      deleteProduct(key as string, {
+        onSuccess: () => {
+          successCount++;
+          if (index === count - 1) {
+            // Last item processed
+            if (errorCount === 0) {
+              message.success(`Successfully deleted ${count} ${getProductPlural(count)}`);
+            } else {
+              message.warning(`Deleted ${successCount} ${getProductPlural(successCount)}, ${errorCount} failed`);
+            }
+            refetch();
+            setSelectedRowKeys([]);
+          }
+        },
+        onError: (error) => {
+          errorCount++;
+          console.error('[ProductsManagement] Bulk delete error:', error);
+          if (index === count - 1) {
+            // Last item processed
+            if (successCount === 0) {
+              message.error(`Failed to delete ${getProductPlural(count)}`);
+            } else {
+              message.warning(`Deleted ${successCount} ${getProductPlural(successCount)}, ${errorCount} failed`);
+            }
+            refetch();
+            setSelectedRowKeys([]);
+          }
+        },
+      });
     });
-    setSelectedRowKeys([]);
   }
 
   const filterChips = useMemo(() => {
@@ -284,6 +326,7 @@ function ProductsManagement() {
                   danger
                   icon={<DeleteOutlined />}
                   size="small"
+                  loading={isDeleting}
                 />
               </Tooltip>
             </Popconfirm>
@@ -291,7 +334,7 @@ function ProductsManagement() {
         ),
       },
     ],
-    [handleEdit, handleDelete, token]
+    [handleEdit, handleDelete, token, isDeleting]
   );
 
   return (
@@ -408,7 +451,7 @@ function ProductsManagement() {
                   cancelText="Cancel"
                   okButtonProps={{ danger: true }}
                 >
-                  <Button danger icon={<DeleteOutlined />}>
+                  <Button danger icon={<DeleteOutlined />} loading={isDeleting}>
                     Delete Selected
                   </Button>
                 </Popconfirm>

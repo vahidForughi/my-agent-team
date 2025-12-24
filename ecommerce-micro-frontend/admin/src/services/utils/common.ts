@@ -37,6 +37,6 @@ export function isApiErrorResponse<T>(
 export function isApiResponse<T>(
   response: ApiResult<T>
 ): response is ApiResponse<T> {
-  return !!response && 'data' in response;
+  return !!response && typeof response === 'object' && 'data' in response;
 }
 

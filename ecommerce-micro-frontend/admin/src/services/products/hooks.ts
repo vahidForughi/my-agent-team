@@ -167,13 +167,15 @@ export const useCreateProduct = (options?: ReactMutationOptions<Product | null, 
  * });
  * ```
  */
-export const useUpdateProduct = (options?: ReactMutationOptions<Product | null, Error, UpdateProductInput>) => {
+export const useUpdateProduct = (options?: ReactMutationOptions<boolean, Error, UpdateProductInput>) => {
   const queryClient = useQueryClient();
 
-  return useMutation<Product | null, Error, UpdateProductInput>({
-    mutationFn: async (payload: UpdateProductInput) => {
+  return useMutation({
+    mutationFn: async (payload: UpdateProductInput): Promise<boolean> => {
+      console.log('[useUpdateProduct] mutationFn called with payload:', payload);
       const result = await productsApi.updateProduct({ payload });
-      return result?.data ?? null;
+      console.log('[useUpdateProduct] API result:', result);
+      return result?.data ?? false;
     },
     onSuccess: (data, variables, context) => {
       // Invalidate relevant queries
@@ -211,7 +213,9 @@ export const useDeleteProduct = (options?: ReactMutationOptions<boolean, Error, 
 
   return useMutation<boolean, Error, string>({
     mutationFn: async (id: string) => {
+      console.log('[useDeleteProduct] mutationFn called with id:', id);
       const result = await productsApi.deleteProduct({ params: { id } });
+      console.log('[useDeleteProduct] API result:', result);
       return result?.data ?? true;
     },
     onSuccess: (data, variables, context) => {

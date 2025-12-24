@@ -209,6 +209,8 @@ function ProductForm(props: ProductFormProps) {
         types: selectedType ? { id: selectedType.id, name: selectedType.name } : undefined,
       };
 
+      console.log('[ProductForm] Calling updateProduct with data:', updateData);
+
       updateProduct(updateData, {
         onSuccess: () => {
           message.success('Product updated successfully');

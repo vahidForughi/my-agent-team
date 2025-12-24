@@ -157,17 +157,20 @@ export async function createProduct(
 export async function updateProduct(
   request: RequestPayloadRequired<UpdateProductInput>
 ) {
-  return apiFactory<ProductResponse, Product>(
+  console.log('[updateProduct API] Called with request:', request);
+  const result = await apiFactory<boolean, boolean>(
     'PUT',
     '/UpdateProduct',
     request,
     {
-      transformer: productMapper.toDto,
+      transformer: (data) => data,
       payloadSchema: updateProductInput,
-      responseSchema: productResponseSchema,
+      responseSchema: z.boolean(),
       useMock: request?.params?.useMock ?? false,
     }
   );
+  console.log('[updateProduct API] Result:', result);
+  return result;
 }
 
 /**
@@ -188,7 +191,8 @@ export async function updateProduct(
 export async function deleteProduct(
   request: RequestParamsRequired<ProductByIdInput>
 ) {
-  return apiFactory<unknown, boolean>(
+  console.log('[deleteProduct API] Called with request:', request);
+  const result = await apiFactory<unknown, boolean>(
     'DELETE',
     `/${request.params.id}`,
     request,
@@ -199,4 +203,6 @@ export async function deleteProduct(
       useMock: request?.params?.useMock ?? false,
     }
   );
+  console.log('[deleteProduct API] Result:', result);
+  return result;
 }
