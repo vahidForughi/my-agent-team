@@ -57,7 +57,7 @@ services:
       interval: 15s
       timeout: 10s
       retries: 15
-      start_period: 90s
+      start_period: 60s
 
   rabbitmq:
     container_name: rabbitmq
@@ -187,6 +187,7 @@ services:
 
   elasticsearch:
     container_name: elasticsearch
+    restart: always
     environment:
       - ES_JAVA_OPTS=${ES_JAVA_OPTS}
       - discovery.type=single-node
@@ -198,11 +199,11 @@ services:
     volumes:
       - elasticsearch-data:/usr/share/elasticsearch/data
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
-      interval: 10s
-      timeout: 5s
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s || exit 1"]
+      interval: 15s
+      timeout: 10s
       retries: 10
-      start_period: 30s
+      start_period: 90s
 
   kibana:
     container_name: kibana

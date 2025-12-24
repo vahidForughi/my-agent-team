@@ -1,20 +1,22 @@
 import { createMapper } from '../factory/createMapper';
 import {
+  UploadImageResponseRaw,
   UploadImageResponse,
 } from './types';
 import {
-  uploadImageResponseSchema,
+  uploadImageResponseRawSchema,
 } from './schemas';
 
 // Mapper for upload image response
-export const uploadImageMapper = createMapper<UploadImageResponse, UploadImageResponse>(
+// Maps errorMessage from API response to message in frontend DTO
+export const uploadImageMapper = createMapper<UploadImageResponseRaw, UploadImageResponse>(
   (response) => {
     return {
       success: response.success,
-      message: response.message,
+      message: response.errorMessage ?? '',
       imageUrl: response.imageUrl ?? undefined,
     };
   },
-  uploadImageResponseSchema
+  uploadImageResponseRawSchema
 );
 

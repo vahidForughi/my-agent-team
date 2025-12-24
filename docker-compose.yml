@@ -9,8 +9,7 @@ services:
     image: postgres:14-alpine
 
   orderdb:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    platform: linux/amd64
+    image: mcr.microsoft.com/azure-sql-edge:latest
 
   rabbitmq:
     image: rabbitmq:3-management-alpine

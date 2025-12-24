@@ -12,15 +12,18 @@ import {
   message,
   Row,
   Col,
-  Divider,
   Alert,
   theme,
+  Image,
+  Tag,
+  Flex,
 } from 'antd';
 import {
   SaveOutlined,
   ArrowLeftOutlined,
-  UploadOutlined,
   InboxOutlined,
+  FileImageOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from '@tanstack/react-router';
 import {
@@ -427,68 +430,83 @@ function ProductForm(props: ProductFormProps) {
           <Col xs={24} lg={8}>
             <Card
               title={
-                <Text strong style={{ fontSize: token.fontSizeLG }}>
-                  Product Image
-                  {!isEditMode && <Text type="danger"> *</Text>}
-                </Text>
+                <Flex align="center" gap={8}>
+                  <FileImageOutlined />
+                  <Text strong>
+                    Product Image
+                    {!isEditMode && <Text type="danger"> *</Text>}
+                  </Text>
+                </Flex>
               }
-              bodyStyle={{ padding: token.sizeUnit * 4 }}
             >
               <Space direction="vertical" size="middle" style={{ width: '100%' }}>
                 {imageUrl && (
-                  <Card
-                    hoverable
-                    cover={
-                      <img
-                        src={imageUrl}
-                        alt="Product"
-                        style={{
-                          width: '100%',
-                          height: 200,
-                          objectFit: 'cover',
-                        }}
-                      />
-                    }
-                    actions={[
+                  <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                    <Card
+                      hoverable
+                      cover={
+                        <Image
+                          src={imageUrl}
+                          alt="Product"
+                          style={{
+                            width: '100%',
+                            height: 200,
+                            objectFit: 'cover',
+                          }}
+                          preview
+                        />
+                      }
+                    />
+                    
+                    <Flex justify="space-between" align="center">
+                      <Tag color="success" icon={<FileImageOutlined />}>
+                        Image Uploaded
+                      </Tag>
                       <Button
-                        key="change"
-                        icon={<UploadOutlined />}
+                        danger
+                        icon={<DeleteOutlined />}
                         onClick={handleRemoveImage}
-                        block
                       >
-                        Change Image
-                      </Button>,
-                    ]}
-                  />
+                        Remove
+                      </Button>
+                    </Flex>
+                  </Space>
                 )}
 
                 {!imageUrl && (
-                  <>
+                  <Space direction="vertical" size="middle" style={{ width: '100%' }}>
                     <Dragger
                       beforeUpload={handleFileSelect}
                       showUploadList={false}
                       accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
                       disabled={isUploading}
-                      style={{
-                        padding: `${token.sizeUnit * 6}px ${token.sizeUnit * 3}px`,
-                        background: token.colorFillTertiary,
-                        border: `2px dashed ${token.colorBorder}`,
-                        opacity: isUploading ? 0.6 : 1,
-                        cursor: isUploading ? 'not-allowed' : 'pointer',
-                      }}
                     >
-                      <Space direction="vertical" size="middle" align="center">
-                        <InboxOutlined style={{ fontSize: 40, color: token.colorPrimary }} />
+                      <Space
+                        direction="vertical"
+                        align="center"
+                        size="large"
+                        style={{ padding: '48px 0' }}
+                      >
+                        <InboxOutlined style={{ fontSize: 56, color: token.colorPrimary }} />
                         <Space direction="vertical" size="small" align="center">
-                          <Text strong>
+                          <Text strong style={{ fontSize: 15 }}>
                             Click or drag image to upload
                           </Text>
-                          <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
+                          <Text type="secondary">
                             PNG, JPG, JPEG, WebP, GIF. Max 10MB
                           </Text>
                         </Space>
                       </Space>
                     </Dragger>
+
+                    {isUploading && (
+                      <Alert
+                        message="Uploading..."
+                        description="Please wait while your image is being uploaded to S3."
+                        type="info"
+                        showIcon
+                      />
+                    )}
 
                     {uploadError && (
                       <Alert
@@ -500,7 +518,16 @@ function ProductForm(props: ProductFormProps) {
                         onClose={() => setUploadError('')}
                       />
                     )}
-                  </>
+
+                    {selectedFile && !isUploading && !uploadError && (
+                      <Alert
+                        message="Ready to Upload"
+                        description={`Selected: ${selectedFile.name} (${(selectedFile.size / 1024 / 1024).toFixed(2)} MB)`}
+                        type="success"
+                        showIcon
+                      />
+                    )}
+                  </Space>
                 )}
               </Space>
             </Card>

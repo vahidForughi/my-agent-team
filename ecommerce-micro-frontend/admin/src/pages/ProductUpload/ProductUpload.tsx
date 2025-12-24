@@ -9,13 +9,21 @@ import {
   Alert,
   Row,
   Col,
+  Tag,
+  Flex,
+  Divider,
   theme,
 } from 'antd';
 import type { UploadRequestOption } from 'rc-upload/lib/interface';
-import { UploadOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import {
+  UploadOutlined,
+  CheckCircleOutlined,
+  FileImageOutlined,
+  ReloadOutlined,
+} from '@ant-design/icons';
 import { useUploadProductImage } from '../../services';
 
-const { Title, Text } = Typography;
+const { Title, Text, Paragraph } = Typography;
 const { Dragger } = Upload;
 
 /**
@@ -96,16 +104,54 @@ function ProductUpload() {
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
         <Alert
           message="Upload Successful"
-          description="Your image has been uploaded to S3 successfully."
+          description="Your image has been uploaded to S3 storage successfully and is ready to use."
           type="success"
           icon={<CheckCircleOutlined />}
           showIcon
+          closable
         />
-        <Card title="Uploaded Image">
+        
+        <Card>
           <Space direction="vertical" size="large" style={{ width: '100%' }}>
-            <Image src={uploadedUrl} alt="Uploaded" style={{ maxWidth: '100%' }} />
-            <Text copyable={{ text: uploadedUrl }}>Image URL: {uploadedUrl}</Text>
-            <Button onClick={handleRemove}>Upload Another Image</Button>
+            <Flex justify="space-between" align="center">
+              <Title level={4} style={{ margin: 0 }}>
+                Uploaded Image
+              </Title>
+              <Tag color="success" icon={<CheckCircleOutlined />}>
+                Ready
+              </Tag>
+            </Flex>
+            
+            <Card
+              hoverable
+              cover={
+                <Image
+                  src={uploadedUrl}
+                  alt="Uploaded product image"
+                  style={{ width: '100%', maxHeight: 400, objectFit: 'contain' }}
+                  preview
+                />
+              }
+            />
+            
+            <Divider />
+            
+            <Space direction="vertical" size="small" style={{ width: '100%' }}>
+              <Text strong>Image URL</Text>
+              <Text copyable={{ text: uploadedUrl }} code style={{ display: 'block', wordBreak: 'break-all' }}>
+                {uploadedUrl}
+              </Text>
+            </Space>
+            
+            <Button
+              type="primary"
+              size="large"
+              block
+              icon={<ReloadOutlined />}
+              onClick={handleRemove}
+            >
+              Upload Another Image
+            </Button>
           </Space>
         </Card>
       </Space>
@@ -114,16 +160,27 @@ function ProductUpload() {
 
   return (
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
-      <Space direction="vertical" size="small" style={{ width: '100%' }}>
-        <Title level={2}>Upload Product Image</Title>
-        <Text type="secondary">
-          Upload product images to S3 storage. Supported formats: JPG, PNG, GIF. Max size: 10MB.
-        </Text>
-      </Space>
+      <Card>
+        <Space direction="vertical" size="small" style={{ width: '100%' }}>
+          <Title level={2} style={{ margin: 0 }}>
+            Upload Product Image
+          </Title>
+          <Paragraph type="secondary" style={{ margin: 0 }}>
+            Upload product images to S3 storage. Supported formats: JPG, PNG, JPEG, WebP, GIF. Maximum file size: 10MB.
+          </Paragraph>
+        </Space>
+      </Card>
 
       <Row gutter={[24, 24]}>
         <Col xs={24} lg={12}>
-          <Card title="Upload Area">
+          <Card
+            title={
+              <Space>
+                <FileImageOutlined />
+                <Text strong>Upload Area</Text>
+              </Space>
+            }
+          >
             <Space direction="vertical" size="large" style={{ width: '100%' }}>
               <Dragger
                 customRequest={handleCustomRequest}
@@ -138,19 +195,22 @@ function ProductUpload() {
                 }}
                 onRemove={handleRemove}
                 maxCount={1}
-                accept="image/*"
+                accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
                 disabled={isPending}
-                style={{
-                  background: token.colorFillTertiary,
-                  border: `2px dashed ${token.colorBorder}`,
-                }}
               >
-                <Space direction="vertical" align="center" size="middle">
-                  <UploadOutlined style={{ fontSize: 48, color: token.colorPrimary }} />
-                  <Text strong>Click or drag file to this area to upload</Text>
-                  <Text type="secondary">Support for single image upload</Text>
+                <Space direction="vertical" align="center" size="large" style={{ padding: '48px 0' }}>
+                  <UploadOutlined style={{ fontSize: 64, color: token.colorPrimary }} />
+                  <Space direction="vertical" size="small" align="center">
+                    <Text strong style={{ fontSize: 16 }}>
+                      Click or drag file to this area to upload
+                    </Text>
+                    <Text type="secondary">
+                      Support for single image upload
+                    </Text>
+                  </Space>
                 </Space>
               </Dragger>
+              
               {fileList.length > 0 && (
                 <Button
                   type="primary"
@@ -160,19 +220,52 @@ function ProductUpload() {
                   onClick={handleUpload}
                   icon={<UploadOutlined />}
                 >
-                  Upload to S3
+                  {isPending ? 'Uploading to S3...' : 'Upload to S3'}
                 </Button>
               )}
             </Space>
           </Card>
         </Col>
+        
         <Col xs={24} lg={12}>
-          <Card title="Preview">
+          <Card
+            title={
+              <Space>
+                <FileImageOutlined />
+                <Text strong>Preview</Text>
+              </Space>
+            }
+          >
             {previewUrl && (
               <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-                <Image src={previewUrl} alt="Preview" style={{ maxWidth: '100%' }} />
-                <Text type="secondary">File: {fileList[0]?.name}</Text>
-                <Text type="secondary">Size: {(fileList[0]?.size / 1024 / 1024).toFixed(2)} MB</Text>
+                <Card
+                  hoverable
+                  cover={
+                    <Image
+                      src={previewUrl}
+                      alt="Preview"
+                      style={{ width: '100%', maxHeight: 300, objectFit: 'contain' }}
+                      preview
+                    />
+                  }
+                />
+                
+                <Divider style={{ margin: '16px 0' }} />
+                
+                <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                  <Flex justify="space-between" align="center">
+                    <Text type="secondary">File name:</Text>
+                    <Text strong>{fileList[0]?.name}</Text>
+                  </Flex>
+                  <Flex justify="space-between" align="center">
+                    <Text type="secondary">File size:</Text>
+                    <Text strong>{(fileList[0]?.size / 1024 / 1024).toFixed(2)} MB</Text>
+                  </Flex>
+                  <Flex justify="space-between" align="center">
+                    <Text type="secondary">File type:</Text>
+                    <Tag>{fileList[0]?.type || 'Unknown'}</Tag>
+                  </Flex>
+                </Space>
               </Space>
             )}
 
@@ -180,10 +273,18 @@ function ProductUpload() {
               <Space
                 direction="vertical"
                 align="center"
-                style={{ width: '100%', padding: `${token.sizeUnit * 12}px 0`, minHeight: 200 }}
+                size="middle"
+                style={{ width: '100%', padding: '64px 0', minHeight: 300 }}
               >
-                <Text type="secondary">No image selected</Text>
-                <Text type="secondary">Select an image to see preview</Text>
+                <FileImageOutlined style={{ fontSize: 64, color: token.colorTextQuaternary }} />
+                <Space direction="vertical" size="small" align="center">
+                  <Text type="secondary" strong>
+                    No image selected
+                  </Text>
+                  <Text type="secondary">
+                    Select an image to see preview
+                  </Text>
+                </Space>
               </Space>
             )}
           </Card>

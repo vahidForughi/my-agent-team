@@ -4,10 +4,11 @@ import {
   uploadImageMapper,
 } from './mappers';
 import {
+  UploadImageResponseRaw,
   UploadImageResponse,
 } from './types';
 import {
-  uploadImageResponseSchema,
+  uploadImageResponseRawSchema,
 } from './schemas';
 
 export const apiFactory = createApiFactory('/Catalog', { version: 'v1' });
@@ -44,7 +45,7 @@ export async function uploadProductImage(
   // For FormData uploads, we need to pass it directly in options.data
   // The request interceptor will automatically remove Content-Type header
   // so axios can set it with the proper boundary (multipart/form-data; boundary=...)
-  return apiFactory<UploadImageResponse, UploadImageResponse>(
+  return apiFactory<UploadImageResponseRaw, UploadImageResponse>(
     'POST',
     '/UploadProductImage',
     {
@@ -59,7 +60,7 @@ export async function uploadProductImage(
       transformer: uploadImageMapper.toDto,
       // Skip paramsSchema validation for File uploads since File is in payload, not params
       // The File validation is done manually above
-      responseSchema: uploadImageResponseSchema,
+      responseSchema: uploadImageResponseRawSchema,
       useMock: request?.params?.useMock ?? false,
     }
   );

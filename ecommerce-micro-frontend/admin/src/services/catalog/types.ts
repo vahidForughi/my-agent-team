@@ -1,13 +1,14 @@
 import { z } from 'zod';
 import {
+  uploadImageResponseRawSchema,
   uploadImageResponseSchema,
 } from './schemas';
 
-// Response types (from API)
-export type UploadImageResponse = z.infer<typeof uploadImageResponseSchema>;
+// Raw API response type (matches backend structure)
+export type UploadImageResponseRaw = z.infer<typeof uploadImageResponseRawSchema>;
 
-// DTO types (same as response for this service)
-export type UploadImageResponseDto = UploadImageResponse;
+// DTO type (for frontend use)
+export type UploadImageResponse = z.infer<typeof uploadImageResponseSchema>;
 
 // Re-export input types from input.ts
 export type {
