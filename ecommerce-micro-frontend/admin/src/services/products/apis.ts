@@ -194,7 +194,7 @@ export async function deleteProduct(
   console.log('[deleteProduct API] Called with request:', request);
   const result = await apiFactory<unknown, boolean>(
     'DELETE',
-    `/${request.params.id}`,
+    '/:id',
     request,
     {
       transformer: () => true,

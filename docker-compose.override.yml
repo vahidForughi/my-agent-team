@@ -189,10 +189,9 @@ services:
     container_name: elasticsearch
     restart: always
     environment:
-      - ES_JAVA_OPTS=${ES_JAVA_OPTS}
+      - ES_JAVA_OPTS=${ES_JAVA_OPTS:--Xms1g -Xmx1g}
       - discovery.type=single-node
       - xpack.security.enabled=false
-      - xpack.monitoring.enabled=true
       - xpack.watcher.enabled=false
     ports:
       - "9200:9200"
@@ -203,7 +202,7 @@ services:
       interval: 15s
       timeout: 10s
       retries: 10
-      start_period: 90s
+      start_period: 120s
 
   kibana:
     container_name: kibana

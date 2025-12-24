@@ -78,7 +78,7 @@ export async function createBrand(
     request,
     {
       transformer: brandMapper.toDto,
-      paramsSchema: createBrandInput,
+      payloadSchema: createBrandInput,
       responseSchema: brandResponseSchema,
       useMock: request?.params?.useMock ?? false,
     }
@@ -139,7 +139,7 @@ export async function createType(
     request,
     {
       transformer: typeMapper.toDto,
-      paramsSchema: createTypeInput,
+      payloadSchema: createTypeInput,
       responseSchema: typeResponseSchema,
       useMock: request?.params?.useMock ?? false,
     }

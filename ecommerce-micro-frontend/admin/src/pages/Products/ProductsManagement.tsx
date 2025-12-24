@@ -241,7 +241,9 @@ function ProductsManagement() {
         title: 'Product Name',
         dataIndex: 'name',
         key: 'name',
+        width: '35%',
         sorter: true,
+        ellipsis: true,
         render: (name: string) => (
           <Text strong>
             {name}
@@ -252,6 +254,8 @@ function ProductsManagement() {
         title: 'Brand',
         dataIndex: ['brands', 'name'],
         key: 'brand',
+        width: '15%',
+        ellipsis: true,
         render: (brand: string) => {
           if (brand) {
             return (
@@ -267,6 +271,8 @@ function ProductsManagement() {
         title: 'Type',
         dataIndex: ['types', 'name'],
         key: 'type',
+        width: '15%',
+        ellipsis: true,
         render: (type: string) => {
           if (type) {
             return (
@@ -282,6 +288,7 @@ function ProductsManagement() {
         title: 'Price',
         dataIndex: 'price',
         key: 'price',
+        width: '15%',
         sorter: true,
         align: 'right' as const,
         render: (price: number) => (

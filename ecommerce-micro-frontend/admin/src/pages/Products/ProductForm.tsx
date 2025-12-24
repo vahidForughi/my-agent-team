@@ -195,6 +195,16 @@ function ProductForm(props: ProductFormProps) {
     const selectedBrand = brands?.find((b) => b.id === formValues.brandId);
     const selectedType = types?.find((t) => t.id === formValues.typeId);
 
+    if (!selectedBrand) {
+      message.error('Please select a valid brand');
+      return;
+    }
+
+    if (!selectedType) {
+      message.error('Please select a valid product type');
+      return;
+    }
+
     if (isEditMode && productId) {
       const updateData: UpdateProductInput = {
         id: productId,
@@ -203,10 +213,8 @@ function ProductForm(props: ProductFormProps) {
         description: formValues.description,
         price: formValues.price,
         imageFile: imageUrlToUse || undefined,
-        brands: selectedBrand
-          ? { id: selectedBrand.id, name: selectedBrand.name }
-          : undefined,
-        types: selectedType ? { id: selectedType.id, name: selectedType.name } : undefined,
+        brands: { id: selectedBrand.id, name: selectedBrand.name },
+        types: { id: selectedType.id, name: selectedType.name },
       };
 
       console.log('[ProductForm] Calling updateProduct with data:', updateData);
@@ -228,10 +236,8 @@ function ProductForm(props: ProductFormProps) {
         description: formValues.description,
         price: formValues.price,
         imageFile: imageUrlToUse,
-        brands: selectedBrand
-          ? { id: selectedBrand.id, name: selectedBrand.name }
-          : undefined,
-        types: selectedType ? { id: selectedType.id, name: selectedType.name } : undefined,
+        brands: { id: selectedBrand.id, name: selectedBrand.name },
+        types: { id: selectedType.id, name: selectedType.name },
       };
 
       console.log('[ProductForm] Calling createProduct with data:', createData);
@@ -348,10 +354,17 @@ function ProductForm(props: ProductFormProps) {
                   </Form.Item>
 
                   <Form.Item
+                  required
                     name="summary"
-                    label={<Text strong>Summary</Text>}
+                    label={
+                      <Text strong>
+                        Summary <Text type="danger">*</Text>
+                      </Text>
+                    }
                     help="A brief description that appears in product listings (max 200 characters)"
                     rules={[
+                      { required: true, message: 'Please enter product summary' },
+                      { min: 1, message: 'Summary is required' },
                       { max: 200, message: 'Summary must not exceed 200 characters' },
                     ]}
                     hasFeedback
@@ -365,9 +378,15 @@ function ProductForm(props: ProductFormProps) {
 
                   <Form.Item
                     name="description"
-                    label={<Text strong>Description</Text>}
+                    label={
+                      <Text strong>
+                        Description <Text type="danger">*</Text>
+                      </Text>
+                    }
                     help="Detailed product description for customers (max 2000 characters)"
                     rules={[
+                      { required: true, message: 'Please enter product description' },
+                      { min: 1, message: 'Description is required' },
                       { max: 2000, message: 'Description must not exceed 2000 characters' },
                     ]}
                     hasFeedback
@@ -418,22 +437,42 @@ function ProductForm(props: ProductFormProps) {
                       </Form.Item>
                     </Col>
                     <Col xs={24} sm={12}>
-                      <Form.Item name="brandId" label={<Text strong>Brand</Text>}>
+                      <Form.Item
+                        name="brandId"
+                        label={
+                          <Text strong>
+                            Brand <Text type="danger">*</Text>
+                          </Text>
+                        }
+                        rules={[
+                          { required: true, message: 'Please select a brand' },
+                        ]}
+                        hasFeedback
+                      >
                         <Select
                           placeholder="Select brand"
                           options={brandOptions}
-                          allowClear
                           notFoundContent={<Text type="secondary">No brands available</Text>}
                         />
                       </Form.Item>
                     </Col>
                   </Row>
 
-                  <Form.Item name="typeId" label={<Text strong>Type</Text>}>
+                  <Form.Item
+                    name="typeId"
+                    label={
+                      <Text strong>
+                        Type <Text type="danger">*</Text>
+                      </Text>
+                    }
+                    rules={[
+                      { required: true, message: 'Please select a product type' },
+                    ]}
+                    hasFeedback
+                  >
                     <Select
                       placeholder="Select product type"
                       options={typeOptions}
-                      allowClear
                       notFoundContent={<Text type="secondary">No types available</Text>}
                     />
                   </Form.Item>

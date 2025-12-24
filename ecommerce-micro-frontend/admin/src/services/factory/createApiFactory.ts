@@ -116,6 +116,9 @@ export function createApiFactory(
       allKeysUsedInPath, // Use combined keys
     );
 
+    // For DELETE requests, don't send body if payload is empty
+    const shouldSendBody = method.toUpperCase() !== 'DELETE' || Object.keys(filteredPayload).length > 0;
+
     const response = await axiosClient<ApiResult<TResponse>>({
       baseURL,
       method,
@@ -124,7 +127,7 @@ export function createApiFactory(
       params: {
         ...filteredParams,
       },
-      data: filteredPayload,
+      ...(shouldSendBody ? { data: filteredPayload } : {}),
       ...request?.options,
     }).then((res) => res.data); // destructure the data from the axios
 

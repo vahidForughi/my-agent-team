@@ -159,7 +159,7 @@ function OrdersManagement() {
         title: 'Order ID',
         dataIndex: 'id',
         key: 'id',
-        width: 120,
+        width: '10%',
         sorter: (a: Order, b: Order) => a.id - b.id,
         render: (id: number) => (
           <Text strong style={{ color: token.colorPrimary }}>
@@ -170,7 +170,8 @@ function OrdersManagement() {
       {
         title: 'Customer',
         key: 'customer',
-        width: 200,
+        width: '25%',
+        ellipsis: true,
         render: (_: unknown, record: Order) => {
           const name = `${record.firstName || ''} ${record.lastName || ''}`.trim();
           return (
@@ -189,7 +190,8 @@ function OrdersManagement() {
         title: 'User',
         dataIndex: 'userName',
         key: 'userName',
-        width: 150,
+        width: '15%',
+        ellipsis: true,
         render: (userName: string) => {
           if (userName) {
             return (
@@ -205,7 +207,7 @@ function OrdersManagement() {
         title: 'Total Amount',
         dataIndex: 'totalPrice',
         key: 'totalPrice',
-        width: 150,
+        width: '12%',
         align: 'right' as const,
         sorter: (a: Order, b: Order) => (a.totalPrice || 0) - (b.totalPrice || 0),
         render: (price: number) => {
@@ -223,7 +225,7 @@ function OrdersManagement() {
         title: 'Status',
         dataIndex: 'status',
         key: 'status',
-        width: 140,
+        width: '13%',
         filters: uniqueStatuses.map((status) => ({
           text: status,
           value: status,
@@ -239,7 +241,7 @@ function OrdersManagement() {
         title: 'Date',
         dataIndex: 'orderDate',
         key: 'orderDate',
-        width: 150,
+        width: '15%',
         render: (date: string | null | undefined) => {
           if (!date) return <Tag>N/A</Tag>;
           try {
@@ -260,7 +262,7 @@ function OrdersManagement() {
       {
         title: 'Actions',
         key: 'actions',
-        width: 100,
+        width: '10%',
         fixed: 'right' as const,
         render: (_: unknown, record: Order) => (
           <Popconfirm

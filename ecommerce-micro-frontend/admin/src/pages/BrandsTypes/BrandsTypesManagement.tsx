@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import {
   Card,
   Typography,
@@ -11,6 +11,7 @@ import {
   Tabs,
   Tag,
   theme,
+  message,
 } from 'antd';
 import {
   PlusOutlined,
@@ -40,29 +41,39 @@ function BrandsTypesManagement() {
 
   // Other hooks
   const { token } = theme.useToken();
-  const { data: brands = [], refetch: refetchBrands } = useGetAllBrands();
+  const { data: brands = [], isLoading: isLoadingBrands, refetch: refetchBrands } = useGetAllBrands();
   const { mutate: createBrand, isPending: isCreatingBrand } = useCreateBrand();
-  const { data: types = [], refetch: refetchTypes } = useGetAllTypes();
+  const { data: types = [], isLoading: isLoadingTypes, refetch: refetchTypes } = useGetAllTypes();
   const { mutate: createType, isPending: isCreatingType } = useCreateType();
 
   // Event handlers
-  function handleCreateBrand(values: { name: string }) {
+  const handleCreateBrand = useCallback((values: { name: string }) => {
     createBrand(values, {
-      onSuccess: () => {
+      onSuccess: (data) => {
         brandForm.resetFields();
         refetchBrands();
+        message.success(`Brand "${values.name}" created successfully`);
+      },
+      onError: (error) => {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to create brand';
+        message.error(errorMessage);
       },
     });
-  }
+  }, [createBrand, brandForm, refetchBrands]);
 
-  function handleCreateType(values: { name: string }) {
+  const handleCreateType = useCallback((values: { name: string }) => {
     createType(values, {
-      onSuccess: () => {
+      onSuccess: (data) => {
         typeForm.resetFields();
         refetchTypes();
+        message.success(`Type "${values.name}" created successfully`);
+      },
+      onError: (error) => {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to create type';
+        message.error(errorMessage);
       },
     });
-  }
+  }, [createType, typeForm, refetchTypes]);
 
   // Memoized values
   const brandColumns = useMemo(
@@ -71,7 +82,7 @@ function BrandsTypesManagement() {
         title: 'ID',
         dataIndex: 'id',
         key: 'id',
-        width: 100,
+        width: '30%',
         render: (id: string) => (
           <Text type="secondary" style={{ fontFamily: 'monospace' }}>
             {id.slice(-8)}
@@ -82,6 +93,8 @@ function BrandsTypesManagement() {
         title: 'Brand Name',
         dataIndex: 'name',
         key: 'name',
+        width: '70%',
+        ellipsis: true,
         render: (name: string) => (
           <Tag color="blue">
             {name}
@@ -98,7 +111,7 @@ function BrandsTypesManagement() {
         title: 'ID',
         dataIndex: 'id',
         key: 'id',
-        width: 100,
+        width: '30%',
         render: (id: string) => (
           <Text type="secondary" style={{ fontFamily: 'monospace' }}>
             {id.slice(-8)}
@@ -109,6 +122,8 @@ function BrandsTypesManagement() {
         title: 'Type Name',
         dataIndex: 'name',
         key: 'name',
+        width: '70%',
+        ellipsis: true,
         render: (name: string) => (
           <Tag color="purple">
             {name}
@@ -187,7 +202,11 @@ function BrandsTypesManagement() {
 
               {/* Brands Table */}
               <Card bodyStyle={{ padding: 0 }}>
-                {brands.length === 0 ? (
+                {isLoadingBrands ? (
+                  <div style={{ padding: token.sizeUnit * 8 }}>
+                    <SkeletonLoader />
+                  </div>
+                ) : brands.length === 0 ? (
                   <div style={{ padding: token.sizeUnit * 8 }}>
                     <EmptyState
                       title="No brands yet"
@@ -274,7 +293,11 @@ function BrandsTypesManagement() {
 
               {/* Types Table */}
               <Card bodyStyle={{ padding: 0 }}>
-                {types.length === 0 ? (
+                {isLoadingTypes ? (
+                  <div style={{ padding: token.sizeUnit * 8 }}>
+                    <SkeletonLoader />
+                  </div>
+                ) : types.length === 0 ? (
                   <div style={{ padding: token.sizeUnit * 8 }}>
                     <EmptyState
                       title="No types yet"
@@ -296,7 +319,21 @@ function BrandsTypesManagement() {
         ),
       },
     ],
-    [brands, types, brandForm, typeForm, isCreatingBrand, isCreatingType, token, brandColumns, typeColumns, handleCreateBrand, handleCreateType]
+    [
+      brands,
+      types,
+      token,
+      brandColumns,
+      typeColumns,
+      handleCreateBrand,
+      handleCreateType,
+      isCreatingBrand,
+      isCreatingType,
+      isLoadingBrands,
+      isLoadingTypes,
+      brandForm,
+      typeForm,
+    ]
   );
 
   return (
