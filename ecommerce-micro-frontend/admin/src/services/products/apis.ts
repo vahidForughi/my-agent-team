@@ -119,17 +119,20 @@ export async function getProductById(
 export async function createProduct(
   request: RequestPayloadRequired<CreateProductInput>
 ) {
-  return apiFactory<ProductResponse, Product>(
+  console.log('[createProduct API] Called with request:', request);
+  const result = await apiFactory<ProductResponse, Product>(
     'POST',
     '/CreateProduct',
     request,
     {
       transformer: productMapper.toDto,
-      paramsSchema: createProductInput,
+      payloadSchema: createProductInput,
       responseSchema: productResponseSchema,
       useMock: request?.params?.useMock ?? false,
     }
   );
+  console.log('[createProduct API] Result:', result);
+  return result;
 }
 
 /**
@@ -160,7 +163,7 @@ export async function updateProduct(
     request,
     {
       transformer: productMapper.toDto,
-      paramsSchema: updateProductInput,
+      payloadSchema: updateProductInput,
       responseSchema: productResponseSchema,
       useMock: request?.params?.useMock ?? false,
     }

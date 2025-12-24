@@ -23,6 +23,7 @@ export type ApiFactoryOptions<TResponse, TTransformed = TResponse> = {
   transformer?: (data: TResponse) => Nullable<TTransformed>;
   useMock?: boolean;
   paramsSchema?: ZodType<unknown>;
+  payloadSchema?: ZodType<unknown>;
   responseSchema?: ZodType<unknown>;
   [key: PropertyKey]: unknown;
 };
@@ -92,6 +93,7 @@ export function createApiFactory(
     const headers = mergeHeaderLocale(request);
 
     let validParams;
+    let validPayload;
 
     if (options?.paramsSchema) {
       validParams = parseParams(params, options.paramsSchema);
@@ -99,12 +101,18 @@ export function createApiFactory(
       validParams = params;
     }
 
+    if (options?.payloadSchema) {
+      validPayload = parseParams(payload, options.payloadSchema);
+    } else {
+      validPayload = payload;
+    }
+
     const filteredParams = filterUsedKeys(
       validParams as Record<PropertyKey, unknown>,
       allKeysUsedInPath, // Use combined keys
     );
     const filteredPayload = filterUsedKeys(
-      payload as Record<PropertyKey, unknown>,
+      validPayload as Record<PropertyKey, unknown>,
       allKeysUsedInPath, // Use combined keys
     );
 

@@ -190,6 +190,8 @@ function ProductForm(props: ProductFormProps) {
   }
 
   function submitFormWithValues(formValues: CreateProductInput & { brandId?: string; typeId?: string }, imageUrlToUse: string) {
+    console.log('[ProductForm] submitFormWithValues called', { formValues, imageUrlToUse, isEditMode });
+
     const selectedBrand = brands?.find((b) => b.id === formValues.brandId);
     const selectedType = types?.find((t) => t.id === formValues.typeId);
 
@@ -209,7 +211,12 @@ function ProductForm(props: ProductFormProps) {
 
       updateProduct(updateData, {
         onSuccess: () => {
+          message.success('Product updated successfully');
           navigate({ to: '/products' });
+        },
+        onError: (error) => {
+          console.error('[ProductForm] Update product error:', error);
+          message.error(error?.message || 'Failed to update product. Please try again.');
         },
       });
     } else {
@@ -225,9 +232,16 @@ function ProductForm(props: ProductFormProps) {
         types: selectedType ? { id: selectedType.id, name: selectedType.name } : undefined,
       };
 
+      console.log('[ProductForm] Calling createProduct with data:', createData);
+
       createProduct(createData, {
         onSuccess: () => {
+          message.success('Product created successfully');
           navigate({ to: '/products' });
+        },
+        onError: (error) => {
+          console.error('[ProductForm] Create product error:', error);
+          message.error(error?.message || 'Failed to create product. Please try again.');
         },
       });
     }

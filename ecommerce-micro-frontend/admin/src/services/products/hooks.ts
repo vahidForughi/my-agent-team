@@ -128,7 +128,9 @@ export const useCreateProduct = (options?: ReactMutationOptions<Product | null, 
 
   return useMutation<Product | null, Error, CreateProductInput>({
     mutationFn: async (payload: CreateProductInput) => {
+      console.log('[useCreateProduct] mutationFn called with payload:', payload);
       const result = await productsApi.createProduct({ payload });
+      console.log('[useCreateProduct] API result:', result);
       return result?.data ?? null;
     },
     onSuccess: (data, variables, context) => {
