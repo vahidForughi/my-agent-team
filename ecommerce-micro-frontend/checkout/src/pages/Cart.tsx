@@ -109,7 +109,7 @@ function Cart(props: CartProps) {
 
       message.success('Proceeding to checkout...');
       if (onNavigate) {
-        onNavigate('/checkout/payment');
+        onNavigate('/checkout');
       }
     } catch (err) {
       if (onError) {
