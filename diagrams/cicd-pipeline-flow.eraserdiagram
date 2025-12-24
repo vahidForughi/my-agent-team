@@ -1,0 +1,56 @@
+// Figure 4.9: CI/CD Pipeline Flow
+// GitHub → Actions (CI) → Registry → Actions (CD) → Helm upgrade → EKS
+
+// ==================== SOURCE ====================
+GitHub Repo [icon: github, color: black]
+
+// ==================== CI PIPELINE (ci.yml) ====================
+CI Pipeline [icon: git-merge, color: blue] {
+  Detect Changes [icon: search]
+  Code Quality [icon: check-circle]
+  Security Scan [icon: shield]
+  Frontend Quality [icon: react]
+  Docker Build [icon: docker]
+  Helm Lint [icon: kubernetes]
+}
+
+// ==================== RELEASE PIPELINE (release.yml) ====================
+Release Pipeline [icon: tag, color: green] {
+  Semantic Version [icon: git-branch]
+  Build Images [icon: docker]
+  Push to GHCR [icon: package]
+  Create Release [icon: file-text]
+}
+
+// ==================== CONTAINER REGISTRY ====================
+GHCR [icon: package, color: purple] {
+  catalog-api [icon: box]
+  basket-api [icon: shopping-cart]
+  discount-api [icon: tag]
+  ordering-api [icon: clipboard-list]
+  ocelot-gateway [icon: aws-api-gateway]
+}
+
+// ==================== CD PIPELINE (cd.yml) ====================
+CD Pipeline [icon: rocket, color: orange] {
+  Staging [icon: server]
+  Production [icon: globe]
+}
+
+// ==================== KUBERNETES ====================
+EKS Cluster [icon: aws-eks, color: cyan] {
+  Helm Upgrade [icon: kubernetes]
+  Namespaces [icon: layers]
+}
+
+// ==================== FLOW ====================
+GitHub Repo > CI Pipeline : push/PR
+CI Pipeline > Release Pipeline : main branch
+Release Pipeline > GHCR : docker push
+Release Pipeline > CD Pipeline : trigger deploy
+CD Pipeline > EKS Cluster : helm upgrade
+
+// ==================== WORKFLOW FILES ====================
+// ci.yml: Build, Test, Docker Build (matrix), Helm Lint
+// release.yml: Semantic versioning, GHCR push, GitHub Release
+// cd.yml: Staging/Production environment deployment
