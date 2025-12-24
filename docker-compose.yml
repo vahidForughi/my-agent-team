@@ -10,6 +10,7 @@ services:
 
   orderdb:
     image: mcr.microsoft.com/azure-sql-edge:latest
+    platform: linux/amd64
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
