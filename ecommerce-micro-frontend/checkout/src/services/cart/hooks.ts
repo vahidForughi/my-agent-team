@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@ecommerce-platform/auth-provider';
 import { ReactQueryOptions } from '../types';
 import * as apis from './apis';
 import { cartKeys } from './keys';
@@ -19,6 +20,13 @@ import type {
  */
 const CART_UPDATED_EVENT = 'ecommerce:cart:updated';
 
+/**
+ * Get current user's email or fallback to guest
+ */
+function getUserName(user: ReturnType<typeof useAuth>['user']): string {
+  return user?.email || user?.displayName || user?.id || 'guest';
+}
+
 // ====================================
 // QUERY HOOKS (READ OPERATIONS)
 // ====================================
@@ -34,6 +42,8 @@ export function useGetCart(
 ) {
   const { enabled = true } = options || {};
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const userName = input?.userName || getUserName(user);
 
   // Listen for cart updates from store module
   useEffect(() => {
@@ -56,10 +66,10 @@ export function useGetCart(
   }, [queryClient]);
 
   return useQuery<{ data: Cart } | null>({
-    queryKey: cartKeys.get.create(input),
+    queryKey: cartKeys.get.create({ ...input, userName }),
     queryFn: async () => {
       const result = await apis.getCart({
-        params: input,
+        params: { ...input, userName },
       });
       return result ?? null;
     },
@@ -75,20 +85,31 @@ export function useGetCart(
 // ====================================
 
 /**
- * Refetch all cart-related queries and notify other modules
- * Cache key structure: ['ecommerce-cache', '_cart', ...]
+ * Update cart cache with new data and notify other modules
+ * Uses setQueryData instead of refetch to avoid unnecessary API calls
  */
-function refetchAllCartQueries(queryClient: ReturnType<typeof useQueryClient>) {
-  // Refetch local cache immediately
-  queryClient.refetchQueries({
-    predicate: (query) => {
-      const key = query.queryKey;
-      // Cache keys: ['ecommerce-cache', '_cart', 'get', ...]
-      return Array.isArray(key) && key[1] === '_cart';
-    },
-  });
+function updateCartCache(
+  queryClient: ReturnType<typeof useQueryClient>,
+  newCartData: { data: Cart } | null,
+  userName: string
+) {
+  if (newCartData) {
+    // Update cache with new data instead of refetching
+    // This avoids an extra GET API call since we already have the updated data
+    queryClient.setQueryData(cartKeys.get.create({ userName }), newCartData);
+    console.log(
+      '[Checkout] Cart cache updated with new data for user:',
+      userName
+    );
+  } else {
+    // If no data, invalidate to force refetch
+    queryClient.invalidateQueries({
+      queryKey: cartKeys.get.create({ userName }),
+    });
+  }
 
   // Dispatch event to notify other modules (host's Navbar)
+  // Other modules can decide whether to refetch or use cached data
   console.log('[Checkout] Dispatching cart updated event...');
   window.dispatchEvent(new CustomEvent(CART_UPDATED_EVENT));
 }
@@ -98,16 +119,26 @@ function refetchAllCartQueries(queryClient: ReturnType<typeof useQueryClient>) {
  */
 export function useAddToCart() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const userName = getUserName(user);
 
   return useMutation<{ data: Cart } | null, Error, AddToCartRequest>({
     mutationFn: async (input) => {
-      const result = await apis.addToCart({
-        payload: input,
-      });
+      // Try to get current cart from cache to avoid extra API call
+      const cachedCart = queryClient.getQueryData<{ data: Cart } | null>(
+        cartKeys.get.create({ userName })
+      );
+      const result = await apis.addToCart(
+        {
+          payload: { ...input, userName },
+        },
+        cachedCart ?? null
+      );
       return result ?? null;
     },
-    onSuccess: () => {
-      refetchAllCartQueries(queryClient);
+    onSuccess: (data) => {
+      // Update cache with response data instead of refetching
+      updateCartCache(queryClient, data, userName);
     },
   });
 }
@@ -117,16 +148,26 @@ export function useAddToCart() {
  */
 export function useUpdateCartItem() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const userName = getUserName(user);
 
   return useMutation<{ data: Cart } | null, Error, UpdateCartItemRequest>({
     mutationFn: async (input) => {
-      const result = await apis.updateCartItem({
-        payload: input,
-      });
+      // Try to get current cart from cache to avoid extra API call
+      const cachedCart = queryClient.getQueryData<{ data: Cart } | null>(
+        cartKeys.get.create({ userName })
+      );
+      const result = await apis.updateCartItem(
+        {
+          payload: { ...input, userName },
+        },
+        cachedCart ?? null
+      );
       return result ?? null;
     },
-    onSuccess: () => {
-      refetchAllCartQueries(queryClient);
+    onSuccess: (data) => {
+      // Update cache with response data instead of refetching
+      updateCartCache(queryClient, data, userName);
     },
   });
 }
@@ -136,16 +177,26 @@ export function useUpdateCartItem() {
  */
 export function useRemoveCartItem() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const userName = getUserName(user);
 
   return useMutation<{ data: Cart } | null, Error, RemoveCartItemRequest>({
     mutationFn: async (input) => {
-      const result = await apis.removeCartItem({
-        payload: input,
-      });
+      // Try to get current cart from cache to avoid extra API call
+      const cachedCart = queryClient.getQueryData<{ data: Cart } | null>(
+        cartKeys.get.create({ userName })
+      );
+      const result = await apis.removeCartItem(
+        {
+          payload: { ...input, userName },
+        },
+        cachedCart ?? null
+      );
       return result ?? null;
     },
-    onSuccess: () => {
-      refetchAllCartQueries(queryClient);
+    onSuccess: (data) => {
+      // Update cache with response data instead of refetching
+      updateCartCache(queryClient, data, userName);
     },
   });
 }
@@ -155,16 +206,19 @@ export function useRemoveCartItem() {
  */
 export function useClearCart() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const userName = getUserName(user);
 
   return useMutation<{ data: Cart } | null, Error, ClearCartRequest | void>({
     mutationFn: async (input) => {
       const result = await apis.clearCart({
-        payload: input || {},
+        payload: { ...(input || {}), userName },
       });
       return result ?? null;
     },
-    onSuccess: () => {
-      refetchAllCartQueries(queryClient);
+    onSuccess: (data) => {
+      // Update cache with response data instead of refetching
+      updateCartCache(queryClient, data, userName);
     },
   });
 }
@@ -174,6 +228,8 @@ export function useClearCart() {
  */
 export function useCheckout() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const userName = getUserName(user);
 
   return useMutation<
     { success: boolean; orderId?: number },
@@ -182,12 +238,21 @@ export function useCheckout() {
   >({
     mutationFn: async (input) => {
       return apis.checkout({
-        payload: input,
+        payload: { ...input, userName },
       });
     },
     onSuccess: () => {
-      // Clear cart cache after checkout
-      refetchAllCartQueries(queryClient);
+      // Clear cart cache after checkout (set to empty cart)
+      const emptyCart: { data: Cart } = {
+        data: {
+          userName,
+          items: [],
+          totalPrice: 0,
+          itemCount: 0,
+          isEmpty: true,
+        },
+      };
+      updateCartCache(queryClient, emptyCart, userName);
     },
   });
 }

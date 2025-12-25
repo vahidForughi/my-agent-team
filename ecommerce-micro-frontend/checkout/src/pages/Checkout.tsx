@@ -27,7 +27,13 @@ import {
   MinusOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from '@tanstack/react-router';
-import { useGetCart, useCheckout, useUpdateCartItem, useRemoveCartItem } from '../services/cart/hooks';
+import { useAuth } from '@ecommerce-platform/auth-provider';
+import {
+  useGetCart,
+  useCheckout,
+  useUpdateCartItem,
+  useRemoveCartItem,
+} from '../services/cart/hooks';
 import type { CartItem } from '../services/cart/types';
 
 const { Title, Text, Paragraph } = Typography;
@@ -44,6 +50,7 @@ const { TextArea } = Input;
  */
 export default function Checkout() {
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
   const { data: cart, isLoading } = useGetCart();
   const { mutate: checkout, isPending: isCheckingOut } = useCheckout();
   const { mutate: updateItem } = useUpdateCartItem();
@@ -79,14 +86,43 @@ export default function Checkout() {
       return;
     }
 
-    // Prepare checkout data - use form values or defaults
+    // Get user info from auth if logged in, otherwise use form values or defaults
+    // Priority: user.firstName/lastName > user.displayName > form values > defaults
+    const getUserFirstName = () => {
+      if (isAuthenticated && user?.firstName) return user.firstName;
+      if (isAuthenticated && user?.displayName) {
+        return user.displayName.split(' ')[0] || 'Guest';
+      }
+      if (shippingInfo.fullName) return shippingInfo.fullName.split(' ')[0];
+      return 'Guest';
+    };
+
+    const getUserLastName = () => {
+      if (isAuthenticated && user?.lastName) return user.lastName;
+      if (isAuthenticated && user?.displayName) {
+        const parts = user.displayName.split(' ');
+        return parts.slice(1).join(' ') || 'User';
+      }
+      if (shippingInfo.fullName) {
+        const parts = shippingInfo.fullName.split(' ');
+        return parts.slice(1).join(' ') || 'User';
+      }
+      return 'User';
+    };
+
+    const getUserEmail = () => {
+      if (isAuthenticated && user?.email) return user.email;
+      return 'guest@example.com';
+    };
+
+    // Prepare checkout data - use user info if logged in, otherwise use form values or defaults
     checkout(
       {
         totalPrice: cart.data.totalPrice,
-        // Shipping info (use form values or defaults)
-        firstName: shippingInfo.fullName.split(' ')[0] || 'Guest',
-        lastName: shippingInfo.fullName.split(' ').slice(1).join(' ') || 'User',
-        emailAddress: 'guest@example.com', // Default email
+        // Shipping info (use user info if logged in, otherwise form values or defaults)
+        firstName: getUserFirstName(),
+        lastName: getUserLastName(),
+        emailAddress: getUserEmail(),
         addressLine: shippingInfo.address || 'N/A',
         country: shippingInfo.country || 'Vietnam',
         state: shippingInfo.city || 'N/A',
@@ -125,7 +161,9 @@ export default function Checkout() {
   if (!cart?.data || cart.data.items.length === 0) {
     return (
       <div style={{ textAlign: 'center', padding: '100px 20px' }}>
-        <ShoppingCartOutlined style={{ fontSize: 64, color: '#ccc', marginBottom: 16 }} />
+        <ShoppingCartOutlined
+          style={{ fontSize: 64, color: '#ccc', marginBottom: 16 }}
+        />
         <Title level={3}>Your cart is empty</Title>
         <Paragraph>Add some products to continue with checkout.</Paragraph>
         <Button type="primary" onClick={() => navigate({ to: '/' })}>
@@ -136,7 +174,10 @@ export default function Checkout() {
   }
 
   const cartData = cart.data;
-  const subtotal = cartData.items.reduce((sum: number, item: CartItem) => sum + item.price * item.quantity, 0);
+  const subtotal = cartData.items.reduce(
+    (sum: number, item: CartItem) => sum + item.price * item.quantity,
+    0
+  );
   const shipping = 0; // Free shipping
   const tax = 0; // No tax
   const total = subtotal + shipping + tax;
@@ -191,25 +232,38 @@ export default function Checkout() {
                       Qty: {item.quantity}
                     </Text>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'flex-end',
+                      gap: 8,
+                    }}
+                  >
                     <Space size="small">
                       <Button
                         size="small"
                         icon={<MinusOutlined />}
-                        onClick={() => handleUpdateQuantity(item, item.quantity - 1)}
+                        onClick={() =>
+                          handleUpdateQuantity(item, item.quantity - 1)
+                        }
                         disabled={item.quantity <= 1}
                       />
                       <InputNumber
                         size="small"
                         min={1}
                         value={item.quantity}
-                        onChange={(value) => handleUpdateQuantity(item, value || 1)}
+                        onChange={(value) =>
+                          handleUpdateQuantity(item, value || 1)
+                        }
                         style={{ width: 60 }}
                       />
                       <Button
                         size="small"
                         icon={<PlusOutlined />}
-                        onClick={() => handleUpdateQuantity(item, item.quantity + 1)}
+                        onClick={() =>
+                          handleUpdateQuantity(item, item.quantity + 1)
+                        }
                       />
                       <Button
                         size="small"
@@ -228,14 +282,22 @@ export default function Checkout() {
           </Card>
 
           {/* Shipping Information (Optional) */}
-          <Card title="Shipping Information (Optional)" style={{ marginBottom: 24 }}>
+          <Card
+            title="Shipping Information (Optional)"
+            style={{ marginBottom: 24 }}
+          >
             <Row gutter={[16, 16]}>
               <Col xs={24} sm={12}>
                 <Text>Full Name</Text>
                 <Input
                   placeholder="Your full name"
                   value={shippingInfo.fullName}
-                  onChange={(e) => setShippingInfo({ ...shippingInfo, fullName: e.target.value })}
+                  onChange={(e) =>
+                    setShippingInfo({
+                      ...shippingInfo,
+                      fullName: e.target.value,
+                    })
+                  }
                 />
               </Col>
               <Col xs={24} sm={12}>
@@ -243,7 +305,9 @@ export default function Checkout() {
                 <Input
                   placeholder="Your phone number"
                   value={shippingInfo.phone}
-                  onChange={(e) => setShippingInfo({ ...shippingInfo, phone: e.target.value })}
+                  onChange={(e) =>
+                    setShippingInfo({ ...shippingInfo, phone: e.target.value })
+                  }
                 />
               </Col>
               <Col xs={24}>
@@ -251,7 +315,12 @@ export default function Checkout() {
                 <Input
                   placeholder="Street address"
                   value={shippingInfo.address}
-                  onChange={(e) => setShippingInfo({ ...shippingInfo, address: e.target.value })}
+                  onChange={(e) =>
+                    setShippingInfo({
+                      ...shippingInfo,
+                      address: e.target.value,
+                    })
+                  }
                 />
               </Col>
               <Col xs={24} sm={12}>
@@ -259,7 +328,9 @@ export default function Checkout() {
                 <Input
                   placeholder="City"
                   value={shippingInfo.city}
-                  onChange={(e) => setShippingInfo({ ...shippingInfo, city: e.target.value })}
+                  onChange={(e) =>
+                    setShippingInfo({ ...shippingInfo, city: e.target.value })
+                  }
                 />
               </Col>
               <Col xs={24} sm={12}>
@@ -267,7 +338,12 @@ export default function Checkout() {
                 <Input
                   placeholder="ZIP code"
                   value={shippingInfo.zipCode}
-                  onChange={(e) => setShippingInfo({ ...shippingInfo, zipCode: e.target.value })}
+                  onChange={(e) =>
+                    setShippingInfo({
+                      ...shippingInfo,
+                      zipCode: e.target.value,
+                    })
+                  }
                 />
               </Col>
               <Col xs={24}>
@@ -275,10 +351,14 @@ export default function Checkout() {
                 <Select
                   style={{ width: '100%' }}
                   value={shippingInfo.country}
-                  onChange={(value) => setShippingInfo({ ...shippingInfo, country: value })}
+                  onChange={(value) =>
+                    setShippingInfo({ ...shippingInfo, country: value })
+                  }
                 >
                   <Select.Option value="Vietnam">Vietnam</Select.Option>
-                  <Select.Option value="United States">United States</Select.Option>
+                  <Select.Option value="United States">
+                    United States
+                  </Select.Option>
                   <Select.Option value="Japan">Japan</Select.Option>
                   <Select.Option value="South Korea">South Korea</Select.Option>
                   <Select.Option value="Singapore">Singapore</Select.Option>
@@ -290,7 +370,9 @@ export default function Checkout() {
                   rows={3}
                   placeholder="Special instructions for delivery"
                   value={shippingInfo.notes}
-                  onChange={(e) => setShippingInfo({ ...shippingInfo, notes: e.target.value })}
+                  onChange={(e) =>
+                    setShippingInfo({ ...shippingInfo, notes: e.target.value })
+                  }
                 />
               </Col>
             </Row>
@@ -303,7 +385,11 @@ export default function Checkout() {
               onChange={(e) => setPaymentMethod(e.target.value)}
               style={{ width: '100%' }}
             >
-              <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+              <Space
+                direction="vertical"
+                size="middle"
+                style={{ width: '100%' }}
+              >
                 <Radio value={0}>
                   <Space>
                     <DollarOutlined style={{ fontSize: 20 }} />

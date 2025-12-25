@@ -4,6 +4,8 @@ using Catalog.Core.Repositories;
 using Catalog.Infrastructure.Data;
 using Catalog.Infrastructure.Repositories;
 using Common.Logging;
+using EventBus.Messages.Common;
+using MassTransit;
 using Serilog;
 using System.Reflection;
 
@@ -94,6 +96,16 @@ else
 //Register Image Storage Service
 builder.Services.AddScoped<Catalog.Core.Services.IImageStorageService,
     Catalog.Infrastructure.Services.S3ImageStorageService>();
+
+// Mass Transit Configuration
+builder.Services.AddMassTransit(config =>
+{
+    config.UsingRabbitMq((ctx, cfg) =>
+    {
+        cfg.Host(builder.Configuration["EventBusSettings:HostAddress"]);
+    });
+});
+builder.Services.AddMassTransitHostedService();
 
 var app = builder.Build();
 

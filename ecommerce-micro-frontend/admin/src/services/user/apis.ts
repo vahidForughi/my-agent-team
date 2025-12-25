@@ -16,16 +16,17 @@ import {
 import {
   userResponseSchema,
 } from './schemas';
-import { AuthService } from '../../auth';
+import { getStoredUser } from '@ecommerce-platform/auth-provider';
 
 export const apiFactory = createApiFactory('/user', { version: 'v1' });
 
 /**
  * Get user profile for current user
- * Uses AuthService to get authenticated user info from Azure MSAL
+ * Uses auth-provider to get authenticated user info from Azure MSAL
  *
  * @param request - Optional request parameters
  * @param request.params.userName - Optional user name (defaults to current user)
+ * @param request.params.user - Optional user object from auth-provider
  * @param request.params.useMock - Use mock data for development/testing
  * @returns User profile data
  *
@@ -36,22 +37,22 @@ export const apiFactory = createApiFactory('/user', { version: 'v1' });
  * });
  * ```
  */
-export async function getUserProfile(request?: Request<GetUserProfileInput>) {
-  // Get current authenticated user from AuthService (MSAL)
-  const currentUser = AuthService.getCurrentUser();
+export async function getUserProfile(request?: Request<GetUserProfileInput & { user?: ReturnType<typeof getStoredUser> }>) {
+  // Get current authenticated user from auth-provider (MSAL)
+  const currentUser = request?.params?.user || getStoredUser();
 
   if (!currentUser) {
     console.log('[User API] No authenticated user found');
     return null;
   }
 
-  // Transform AuthService user to UserResponse format
+  // Transform auth-provider user to UserResponse format
   const userResponse: UserResponse = {
-    id: currentUser.username,
-    userName: currentUser.username,
-    firstName: currentUser.displayName?.split(' ')[0] || currentUser.username,
+    id: currentUser.id || currentUser.username || currentUser.email || '',
+    userName: currentUser.username || currentUser.email || currentUser.id || '',
+    firstName: currentUser.displayName?.split(' ')[0] || currentUser.username || currentUser.email || '',
     lastName: currentUser.displayName?.split(' ').slice(1).join(' ') || '',
-    email: currentUser.email || `${currentUser.username}@example.com`,
+    email: currentUser.email || `${currentUser.username || currentUser.id}@example.com`,
     phone: undefined,
     role: 'customer',
     avatar: undefined,

@@ -64,6 +64,7 @@
     "@types/jest": "^30.0.0",
     "@types/lodash": "^4.17.17",
     "@types/node": "^20.19.9",
+    "@types/papaparse": "^5.5.2",
     "@types/react": "19.0.0",
     "@types/react-dom": "19.0.0",
     "antd-zod": "^6.1.0",
@@ -104,10 +105,12 @@
     "dayjs": "^1.11.13",
     "i18next": "^25.7.1",
     "lodash": "^4.17.21",
+    "papaparse": "^5.5.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-i18next": "^16.4.0",
     "react-router-dom": "^6.25.1",
+    "xlsx": "^0.18.5",
     "zod": "^3.24.4",
     "zustand": "^5.0.4"
   }

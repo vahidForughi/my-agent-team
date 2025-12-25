@@ -5,7 +5,6 @@
 
 import { axiosClient } from '../httpClient';
 import { API_CONFIG } from '../../config';
-import { AuthService } from '../../auth';
 import { mapOrder } from './mappers';
 import { orderResponseSchema } from './schemas';
 import type {
@@ -17,12 +16,13 @@ import type {
 
 /**
  * Get orders for current user
+ * @param request - Request object with userName. If not provided, defaults to 'guest'
  */
 export async function getOrders(
   request?: { params?: GetOrdersRequest }
 ): Promise<{ data: Order[] } | null> {
-  const userName =
-    request?.params?.userName || AuthService.getCurrentUsername() || 'guest';
+  // userName should be passed from the hook using useAuth()
+  const userName = request?.params?.userName || 'guest';
   const url = API_CONFIG.ORDER.GET_ORDERS(userName);
 
   try {

@@ -40,6 +40,8 @@ builder.Services.AddInfraServices(builder.Configuration);
 //Consumer class
 builder.Services.AddScoped<BasketOrderingConsumer>();
 builder.Services.AddScoped<BasketOrderingConsumerV2>();
+builder.Services.AddScoped<ProductActivityConsumer>();
+builder.Services.AddScoped<OrderActivityConsumer>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -54,6 +56,8 @@ builder.Services.AddMassTransit(config =>
     // Mark this as consumer
     config.AddConsumer<BasketOrderingConsumer>();
     config.AddConsumer<BasketOrderingConsumerV2>();
+    config.AddConsumer<ProductActivityConsumer>();
+    config.AddConsumer<OrderActivityConsumer>();
     config.UsingRabbitMq((ctx, cfg) =>
     {
         cfg.Host(builder.Configuration["EventBusSettings:HostAddress"]);
@@ -63,6 +67,11 @@ builder.Services.AddMassTransit(config =>
         // V2 Version
         cfg.ReceiveEndpoint(EventBusConstant.BasketCheckoutQueueV2,
             c => { c.ConfigureConsumer<BasketOrderingConsumerV2>(ctx); });
+        // Activity queues
+        cfg.ReceiveEndpoint(EventBusConstant.ProductActivityQueue,
+            c => { c.ConfigureConsumer<ProductActivityConsumer>(ctx); });
+        cfg.ReceiveEndpoint(EventBusConstant.OrderActivityQueue,
+            c => { c.ConfigureConsumer<OrderActivityConsumer>(ctx); });
     });
 });
 builder.Services.AddMassTransitHostedService();

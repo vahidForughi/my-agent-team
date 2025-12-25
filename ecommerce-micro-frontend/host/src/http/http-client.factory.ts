@@ -5,7 +5,7 @@
 import axios from 'axios';
 import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 import { env } from '../config';
-import { AuthStorage } from '../auth';
+import { getStoredToken, getStoredUser } from '@ecommerce-platform/auth-provider';
 import { ApiErrorHandler } from './api-error.handler';
 import type { ApiRequestConfig } from './http-client.types';
 
@@ -32,12 +32,13 @@ export class HttpClientFactory {
           return config;
         }
 
-        const token = AuthStorage.getToken();
+        const token = getStoredToken();
         if (token && config.headers) {
           config.headers.Authorization = `Bearer ${token}`;
         }
 
-        const username = AuthStorage.getCurrentUsername();
+        const user = getStoredUser();
+        const username = user?.email || user?.displayName || user?.id || null;
         if (username && config.headers) {
           config.headers['X-User-Name'] = username;
         }

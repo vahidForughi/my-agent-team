@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@ecommerce-platform/auth-provider';
 import { ReactQueryOptions, ReactMutationOptions } from '../types';
 import { userKeys } from './keys';
 import { GetUserProfileInput, UpdateUserProfileInput } from './input';
@@ -29,6 +30,7 @@ export const useGetUserProfile = (
   options?: ReactQueryOptions<{ data: User } | null> & { useMock?: boolean }
 ) => {
   const { enabled = true, initialData, useMock, ...rest } = options || {};
+  const { user } = useAuth();
 
   const shouldUseMock = useMock ?? input?.useMock ?? env.useMockData;
 
@@ -38,7 +40,7 @@ export const useGetUserProfile = (
     queryKey: [userKeys.get.create(input)],
     queryFn: async () => {
       const result = await userApi.getUserProfile({
-        params: { ...input, useMock: shouldUseMock },
+        params: { ...input, useMock: shouldUseMock, user },
       });
       return result;
     },

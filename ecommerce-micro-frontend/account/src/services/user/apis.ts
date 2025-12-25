@@ -6,7 +6,7 @@
  * user information is obtained from the Azure MSAL authentication state.
  */
 
-import { AuthService } from '../../auth';
+import { getStoredUser } from '@ecommerce-platform/auth-provider';
 import { mapUser } from './mappers';
 import type {
   GetUserProfileRequest,
@@ -17,27 +17,28 @@ import type {
 
 /**
  * Get user profile for current user
- * Uses AuthService to get authenticated user info from Azure MSAL
+ * Uses auth-provider to get authenticated user info from Azure MSAL
+ * @param request - Request object with user info. If not provided, gets from stored user
  */
 export async function getUserProfile(request?: {
-  params?: GetUserProfileRequest;
+  params?: GetUserProfileRequest & { user?: ReturnType<typeof getStoredUser> };
 }): Promise<{ data: User } | null> {
   try {
-    // Get current authenticated user from AuthService (MSAL)
-    const currentUser = AuthService.getCurrentUser();
+    // Get current authenticated user from auth-provider (MSAL)
+    const currentUser = request?.params?.user || getStoredUser();
 
     if (!currentUser) {
       console.log('[User API] No authenticated user found');
       return null;
     }
 
-    // Transform AuthService user to UserResponse format
+    // Transform auth-provider user to UserResponse format
     const userResponse: UserResponse = {
-      id: currentUser.username, // Use username as ID
-      userName: currentUser.username,
-      firstName: currentUser.displayName?.split(' ')[0] || currentUser.username,
+      id: currentUser.id || currentUser.username || currentUser.email || '', // Use id, username, or email as ID
+      userName: currentUser.username || currentUser.email || currentUser.id || '',
+      firstName: currentUser.displayName?.split(' ')[0] || currentUser.username || currentUser.email || '',
       lastName: currentUser.displayName?.split(' ').slice(1).join(' ') || '',
-      email: currentUser.email || `${currentUser.username}@example.com`,
+      email: currentUser.email || `${currentUser.username || currentUser.id}@example.com`,
       phone: undefined,
       role: 'customer',
       avatar: undefined,

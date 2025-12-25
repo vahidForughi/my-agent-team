@@ -80,9 +80,14 @@ export function createApiFactory(
     const baseURL = options?.useMock ? `/api` : `${defaultBaseURL}`;
 
     // Remove leading slash from finalUrlPath to prevent double slashes
-    const cleanPath = finalUrlPath.startsWith('/')
+    // Also remove trailing slash to match Ocelot routes
+    let cleanPath = finalUrlPath.startsWith('/')
       ? finalUrlPath.slice(1)
       : finalUrlPath;
+    // Remove trailing slash if present (except for root path)
+    if (cleanPath.endsWith('/') && cleanPath.length > 1) {
+      cleanPath = cleanPath.slice(0, -1);
+    }
 
     // Construct URL - API Gateway expects /Catalog/... format (no version prefix)
     // The API Gateway will add /api/v1/ prefix when forwarding to backend

@@ -101,6 +101,7 @@ services:
       - DatabaseSettings__BrandsCollection=Brands
       - DatabaseSettings__TypesCollection=Types
       - ElasticConfiguration__Uri=${ELASTICSEARCH_URL}
+      - EventBusSettings__HostAddress=${RABBITMQ_URL}
       # LocalStack S3 Configuration
       - AWS_ACCESS_KEY_ID=test
       - AWS_SECRET_ACCESS_KEY=test

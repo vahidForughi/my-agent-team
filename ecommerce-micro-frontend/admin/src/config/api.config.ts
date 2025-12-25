@@ -28,4 +28,8 @@ export const API_CONFIG = {
     CREATE_TYPE: '/Catalog/CreateType',
     UPLOAD_IMAGE: '/Catalog/UploadProductImage',
   },
+  ACTIVITY: {
+    BASE: '/Activity',
+    GET_RECENT_ACTIVITIES: '/Activity',
+  },
 } as const;

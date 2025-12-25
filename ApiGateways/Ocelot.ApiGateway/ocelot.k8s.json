@@ -302,6 +302,19 @@
 			],
 			"UpstreamPathTemplate": "/Order/{id}",
 			"UpstreamHttpMethod": ["DELETE"]
+		},
+		{
+			"DownstreamPathTemplate": "/api/v1/Activity",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "eshopping-ordering",
+					"Port": 8080
+				}
+			],
+			"UpstreamPathTemplate": "/Activity",
+			"UpstreamHttpMethod": ["GET"],
+			"FileCacheOptions": { "TtlSeconds": 10 }
 		}
 	],
 	"GlobalConfiguration": {

@@ -9,7 +9,6 @@ import {
   Row,
   Col,
   Tooltip,
-  Statistic,
   theme,
   Select,
   Tag,
@@ -18,18 +17,22 @@ import {
   SearchOutlined,
   ReloadOutlined,
   DeleteOutlined,
-  ShoppingCartOutlined,
-  DollarOutlined,
   UserOutlined,
 } from '@ant-design/icons';
 import { useGetAllOrders, useDeleteOrder } from '../../services';
 import type { Order } from '../../services/orders';
-import { DataTable, FilterBar, EmptyState, SkeletonLoader, StatusBadge } from '../../components/shared';
-import { AuthService } from '../../auth';
+import {
+  DataTable,
+  FilterBar,
+  EmptyState,
+  SkeletonLoader,
+  StatusBadge,
+  StatsCards,
+} from '../../components/shared';
+import { useAuth } from '@ecommerce-platform/auth-provider';
 import { useRouteContext } from '@tanstack/react-router';
 
 const { Title, Text } = Typography;
-const { Search } = Input;
 
 /**
  * OrdersManagement Component
@@ -49,14 +52,18 @@ function OrdersManagement() {
   // Get current user's username - backend requires userName parameter
   // Note: Backend doesn't support "all orders" - it filters by specific userName
   // For admin views showing all orders, backend would need to be modified
-  // Try router context auth first (from host app), then fall back to local auth
-  const routerUser = routeContext?.auth?.user as { username?: string } | undefined;
-  const localUser = AuthService.getCurrentUser();
-  const currentUserName = routerUser?.username || localUser?.username;
-  const { data: orders = [], isLoading, refetch } = useGetAllOrders(
-    currentUserName || '',
-    { enabled: !!currentUserName }
-  );
+  // Try router context auth first (from host app), then fall back to auth-provider
+  const routerUser = routeContext?.auth?.user as
+    | { username?: string }
+    | undefined;
+  const { user } = useAuth();
+  const currentUserName =
+    routerUser?.username || user?.username || user?.email || user?.id || '';
+  const {
+    data: orders = [],
+    isLoading,
+    refetch,
+  } = useGetAllOrders(currentUserName || '', { enabled: !!currentUserName });
   const { mutate: deleteOrder } = useDeleteOrder();
 
   // Helper functions
@@ -71,26 +78,35 @@ function OrdersManagement() {
   const filteredOrders = useMemo(() => {
     if (!orders) return [];
     let filtered = orders;
-    
+
     if (search) {
       filtered = filtered.filter(
         (order: Order) =>
           order.userName?.toLowerCase().includes(search.toLowerCase()) ||
           order.emailAddress?.toLowerCase().includes(search.toLowerCase()) ||
           order.id.toString().includes(search) ||
-          `${order.firstName || ''} ${order.lastName || ''}`.toLowerCase().includes(search.toLowerCase())
+          `${order.firstName || ''} ${order.lastName || ''}`
+            .toLowerCase()
+            .includes(search.toLowerCase())
       );
     }
-    
+
     if (statusFilter) {
-      filtered = filtered.filter((order: Order) => order.status?.toLowerCase() === statusFilter.toLowerCase());
+      filtered = filtered.filter(
+        (order: Order) =>
+          order.status?.toLowerCase() === statusFilter.toLowerCase()
+      );
     }
-    
+
     return filtered;
   }, [orders, search, statusFilter]);
 
   const totalRevenue = useMemo(
-    () => filteredOrders.reduce((sum: number, order: Order) => sum + (order.totalPrice || 0), 0),
+    () =>
+      filteredOrders.reduce(
+        (sum: number, order: Order) => sum + (order.totalPrice || 0),
+        0
+      ),
     [filteredOrders]
   );
 
@@ -100,9 +116,12 @@ function OrdersManagement() {
   }, [filteredOrders, totalRevenue]);
 
   // Event handlers
-  const handleDelete = useCallback((id: number) => {
-    deleteOrder(id);
-  }, [deleteOrder]);
+  const handleDelete = useCallback(
+    (id: number) => {
+      deleteOrder(id);
+    },
+    [deleteOrder]
+  );
 
   function handleRefresh() {
     refetch();
@@ -173,7 +192,9 @@ function OrdersManagement() {
         width: '25%',
         ellipsis: true,
         render: (_: unknown, record: Order) => {
-          const name = `${record.firstName || ''} ${record.lastName || ''}`.trim();
+          const name = `${record.firstName || ''} ${
+            record.lastName || ''
+          }`.trim();
           return (
             <Space direction="vertical" size={2}>
               <Text strong>{name || record.emailAddress || 'Guest'}</Text>
@@ -209,7 +230,8 @@ function OrdersManagement() {
         key: 'totalPrice',
         width: '12%',
         align: 'right' as const,
-        sorter: (a: Order, b: Order) => (a.totalPrice || 0) - (b.totalPrice || 0),
+        sorter: (a: Order, b: Order) =>
+          (a.totalPrice || 0) - (b.totalPrice || 0),
         render: (price: number) => {
           if (price) {
             return (
@@ -230,7 +252,10 @@ function OrdersManagement() {
           text: status,
           value: status,
         })),
-        onFilter: (value: string | number | bigint | boolean, record: Order) => {
+        onFilter: (
+          value: string | number | bigint | boolean,
+          record: Order
+        ) => {
           return record.status === String(value);
         },
         render: (status: string | null | undefined) => (
@@ -317,58 +342,28 @@ function OrdersManagement() {
       </Row>
 
       {/* Statistics Cards */}
-      <Row gutter={[token.sizeUnit * 2, token.sizeUnit * 2]}>
-        <Col xs={24} sm={8}>
-          <Card
-            bodyStyle={{ padding: token.sizeUnit * 3 }}
-            style={{
-              background: token.colorSuccessBg,
-              border: `1px solid ${token.colorSuccess}40`,
-            }}
-          >
-            <Statistic
-              title="Total Orders"
-              value={filteredOrders.length}
-              prefix={<ShoppingCartOutlined style={{ color: token.colorSuccess }} />}
-              valueStyle={{ color: token.colorSuccess, fontSize: token.fontSizeHeading3 }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={8}>
-          <Card
-            bodyStyle={{ padding: token.sizeUnit * 3 }}
-            style={{
-              background: token.colorPrimaryBg,
-              border: `1px solid ${token.colorPrimary}40`,
-            }}
-          >
-            <Statistic
-              title="Total Revenue"
-              value={totalRevenue}
-              prefix={<DollarOutlined style={{ color: token.colorPrimary }} />}
-              precision={2}
-              valueStyle={{ color: token.colorPrimary, fontSize: token.fontSizeHeading3 }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={8}>
-          <Card
-            bodyStyle={{ padding: token.sizeUnit * 3 }}
-            style={{
-              background: token.colorInfoBg,
-              border: `1px solid ${token.colorInfo}40`,
-            }}
-          >
-            <Statistic
-              title="Average Order Value"
-              value={averageOrderValue}
-              prefix="$"
-              precision={2}
-              valueStyle={{ color: token.colorInfo, fontSize: token.fontSizeHeading3 }}
-            />
-          </Card>
-        </Col>
-      </Row>
+      <StatsCards
+        statistics={[
+          {
+            title: 'Total Orders',
+            value: filteredOrders.length,
+            iconType: 'orders',
+          },
+          {
+            title: 'Total Revenue',
+            value: totalRevenue,
+            iconType: 'revenue',
+            precision: 2,
+          },
+          {
+            title: 'Average Order Value',
+            value: averageOrderValue,
+            prefix: '$',
+            precision: 2,
+          },
+        ]}
+        colSpan={{ xs: 24, sm: 8 }}
+      />
 
       {/* Search and Filters */}
       <Card bodyStyle={{ padding: token.sizeUnit * 3 }}>
@@ -405,10 +400,7 @@ function OrdersManagement() {
 
           {/* Filter Chips */}
           {filterChips.length > 0 && (
-            <FilterBar
-              chips={filterChips}
-              onClearAll={handleClearFilters}
-            />
+            <FilterBar chips={filterChips} onClearAll={handleClearFilters} />
           )}
 
           {/* Bulk Actions */}
@@ -422,10 +414,13 @@ function OrdersManagement() {
             >
               <Space>
                 <Text strong>
-                  {selectedRowKeys.length} {getOrderPlural(selectedRowKeys.length)} selected
+                  {selectedRowKeys.length}{' '}
+                  {getOrderPlural(selectedRowKeys.length)} selected
                 </Text>
                 <Popconfirm
-                  title={`Delete ${selectedRowKeys.length} ${getOrderPlural(selectedRowKeys.length)}?`}
+                  title={`Delete ${selectedRowKeys.length} ${getOrderPlural(
+                    selectedRowKeys.length
+                  )}?`}
                   description="This action cannot be undone."
                   onConfirm={handleBulkDelete}
                   okText="Yes, Delete"
@@ -455,7 +450,7 @@ function OrdersManagement() {
               title="No orders found"
               description={
                 hasActiveFilters
-                  ? 'Try adjusting your filters to find what you\'re looking for'
+                  ? "Try adjusting your filters to find what you're looking for"
                   : 'No orders have been placed yet'
               }
             />

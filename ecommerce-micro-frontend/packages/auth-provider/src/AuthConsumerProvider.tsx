@@ -150,7 +150,13 @@ export const AuthConsumerProvider: React.FC<AuthConsumerProviderProps> = ({
       debugLog(debugRef.current, 'Host auth changed', { hostAuth });
       setAuthState(createInitialState(hostAuth, debugRef.current));
     }
-  }, [hostAuthUser, hostAuthToken, hostAuthTokenExpiry, hostAuthIsAuthenticated, hostAuth]);
+  }, [
+    hostAuthUser,
+    hostAuthToken,
+    hostAuthTokenExpiry,
+    hostAuthIsAuthenticated,
+    hostAuth,
+  ]);
 
   // Update token from broadcast
   useEffect(() => {
