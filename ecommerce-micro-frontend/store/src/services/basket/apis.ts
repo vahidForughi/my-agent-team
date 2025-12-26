@@ -1,6 +1,6 @@
 import { axiosClient } from '../httpClient';
 import { API_CONFIG } from '../../config';
-import { AuthService } from '../../auth';
+import { getStoredUser } from '@ecommerce-platform/auth-provider';
 import { mapShoppingCartToBasket, createEmptyBasket } from './mappers';
 import { shoppingCartResponseSchema } from './schemas';
 import type {
@@ -14,7 +14,12 @@ import type {
  * Get current basket for a user
  */
 export async function getBasket(request?: GetBasketRequest): Promise<Basket> {
-  const userName = request?.userName || AuthService.getCurrentUsername() || 'guest';
+  let userName = request?.userName;
+  if (!userName) {
+    const storedUser = getStoredUser();
+    userName =
+      storedUser?.email || storedUser?.displayName || storedUser?.id || 'guest';
+  }
   const url = API_CONFIG.BASKET.GET_BASKET(userName);
 
   try {
@@ -22,7 +27,9 @@ export async function getBasket(request?: GetBasketRequest): Promise<Basket> {
 
     // Handle 204 No Content - basket doesn't exist yet
     if (response.status === 204) {
-      console.log('[Basket API] No basket exists yet (204), returning empty basket');
+      console.log(
+        '[Basket API] No basket exists yet (204), returning empty basket'
+      );
       return createEmptyBasket(userName);
     }
 
@@ -41,9 +48,12 @@ export async function getBasket(request?: GetBasketRequest): Promise<Basket> {
 
     return mapShoppingCartToBasket(parseResult.data);
   } catch (error) {
-    const status = (error as { response?: { status?: number } })?.response?.status;
+    const status = (error as { response?: { status?: number } })?.response
+      ?.status;
     if (status === 404 || status === 204) {
-      console.log(`[Basket API] Basket not found (${status}), returning empty basket`);
+      console.log(
+        `[Basket API] Basket not found (${status}), returning empty basket`
+      );
       return createEmptyBasket(userName);
     }
     console.error('[Basket API] Error fetching basket:', error);
@@ -53,30 +63,49 @@ export async function getBasket(request?: GetBasketRequest): Promise<Basket> {
 
 /**
  * Add item to basket (creates basket if not exists, updates quantity if item exists)
+ * @param request - AddToCartRequest with product info
+ * @param currentBasket - Optional current basket to avoid extra API call. If not provided, will fetch from API.
+ * @param userName - Optional username. If not provided, will get from storage (fallback to 'guest')
  */
-export async function addToCart(request: AddToCartRequest): Promise<Basket> {
-  // Ensure userName is never undefined - fallback to 'guest'
-  const userName = AuthService.getCurrentUsername() || 'guest';
+export async function addToCart(
+  request: AddToCartRequest,
+  currentBasket?: Basket,
+  userName?: string
+): Promise<Basket> {
+  // Use provided userName or get from storage - fallback to 'guest'
+  const user =
+    userName ||
+    (() => {
+      const storedUser = getStoredUser();
+      return (
+        storedUser?.email ||
+        storedUser?.displayName ||
+        storedUser?.id ||
+        'guest'
+      );
+    })();
   const url = API_CONFIG.BASKET.CREATE_BASKET;
 
-  console.log('[Basket API] addToCart - userName:', userName);
+  console.log('[Basket API] addToCart - userName:', user);
 
-  // Get current basket first
-  const currentBasket = await getBasket({ userName });
+  // Get current basket first (only if not provided)
+  const basket = currentBasket || (await getBasket({ userName: user }));
 
   // Check if item already exists
-  const existingItemIndex = currentBasket.items.findIndex(
+  const existingItemIndex = basket.items.findIndex(
     (item) => item.productId === request.productId
   );
 
-  const updatedItems = [...currentBasket.items];
+  const updatedItems = [...basket.items];
 
   if (existingItemIndex >= 0) {
     // Update quantity of existing item
     updatedItems[existingItemIndex] = {
       ...updatedItems[existingItemIndex],
       quantity: updatedItems[existingItemIndex].quantity + request.quantity,
-      itemTotal: (updatedItems[existingItemIndex].quantity + request.quantity) * updatedItems[existingItemIndex].price,
+      itemTotal:
+        (updatedItems[existingItemIndex].quantity + request.quantity) *
+        updatedItems[existingItemIndex].price,
     };
   } else {
     // Add new item
@@ -94,7 +123,7 @@ export async function addToCart(request: AddToCartRequest): Promise<Basket> {
 
   // Prepare payload for backend (PascalCase - backend expects this)
   const payload = {
-    UserName: userName,
+    UserName: user,
     Items: updatedItems.map((item) => ({
       ProductId: item.productId,
       ProductName: item.productName,
@@ -107,17 +136,29 @@ export async function addToCart(request: AddToCartRequest): Promise<Basket> {
   };
 
   try {
-    console.log('[Basket API] Sending payload:', JSON.stringify(payload, null, 2));
+    console.log(
+      '[Basket API] Sending payload:',
+      JSON.stringify(payload, null, 2)
+    );
     const response = await axiosClient.post<ShoppingCartResponse>(url, payload);
-    console.log('[Basket API] Response:', JSON.stringify(response.data, null, 2));
+    console.log(
+      '[Basket API] Response:',
+      JSON.stringify(response.data, null, 2)
+    );
 
     const parseResult = shoppingCartResponseSchema.safeParse(response.data);
     if (!parseResult.success) {
-      console.warn('[Basket API] Response validation failed:', parseResult.error);
+      console.warn(
+        '[Basket API] Response validation failed:',
+        parseResult.error
+      );
       // Return the basket we expected to create
-      const totalPrice = updatedItems.reduce((sum, item) => sum + item.itemTotal, 0);
+      const totalPrice = updatedItems.reduce(
+        (sum, item) => sum + item.itemTotal,
+        0
+      );
       return {
-        userName,
+        userName: user,
         items: updatedItems,
         totalPrice,
         itemCount: updatedItems.length,

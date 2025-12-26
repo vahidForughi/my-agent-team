@@ -11,6 +11,7 @@ public class OrderContext : DbContext
     }
 
     public DbSet<Order> Orders { get; set; }
+    public DbSet<Activity> Activities { get; set; }
 
     public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess,
         CancellationToken cancellationToken = default)

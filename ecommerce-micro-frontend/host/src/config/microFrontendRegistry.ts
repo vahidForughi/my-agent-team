@@ -55,6 +55,7 @@ const getRemoteBaseUrl = (remoteName: string, env: 'dev' | 'stg' | 'prd'): strin
       store: 4201,
       checkout: 4202,
       account: 4203,
+      admin: 4204,
     };
     return `http://localhost:${ports[remoteName]}`;
   }
@@ -100,6 +101,18 @@ const registry: MicroFrontendConfig[] = [
       dev: getRemoteBaseUrl('account', 'dev'),
       stg: getRemoteBaseUrl('account', 'stg'),
       prd: getRemoteBaseUrl('account', 'prd'),
+    },
+  },
+  {
+    name: 'admin',
+    displayName: 'Admin',
+    remoteName: 'admin',
+    exposedModule: 'ConsoleMicroApp',
+    basePath: '/admin',
+    urls: {
+      dev: getRemoteBaseUrl('admin', 'dev'),
+      stg: getRemoteBaseUrl('admin', 'stg'),
+      prd: getRemoteBaseUrl('admin', 'prd'),
     },
   },
 ];

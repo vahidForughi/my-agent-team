@@ -44,6 +44,7 @@ scripts/
 wiki/
 docs/
 images/
+diagrams/
 
 # Docker files
 docker-compose*.yml
