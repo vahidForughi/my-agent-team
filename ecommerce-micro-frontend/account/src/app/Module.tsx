@@ -5,12 +5,14 @@ import {
   createMemoryHistory,
 } from '@tanstack/react-router';
 import { QueryClientProvider } from '@tanstack/react-query';
+import { ConfigProvider, type ThemeConfig } from 'antd';
 import { AppInjectorProps } from '@ecommerce-platform/app-injector';
 import {
   AuthConsumerProvider as AuthConsumerProviderOriginal,
   HostAuthContext,
   DebugOptions,
 } from '@ecommerce-platform/auth-provider';
+import { themeConfig as sharedThemeConfig } from '@ecommerce-platform/shared-layout';
 import { routeTree } from '../routeTree.gen';
 import { queryClient } from '../services/queryClient';
 
@@ -140,12 +142,17 @@ const AccountModule: React.FC<AccountModuleProps> = ({ config }) => {
     return r;
   }, [basePath, initialPath, hostAuth, config, onLogout]);
 
+  // Cast themeConfig to avoid type conflicts between different antd versions
+  const themeConfig = sharedThemeConfig as ThemeConfig;
+
   return (
-    <AuthConsumerProvider hostAuth={hostAuth} debug={debug}>
-      <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router} />
-      </QueryClientProvider>
-    </AuthConsumerProvider>
+    <ConfigProvider theme={themeConfig}>
+      <AuthConsumerProvider hostAuth={hostAuth} debug={debug}>
+        <QueryClientProvider client={queryClient}>
+          <RouterProvider router={router} />
+        </QueryClientProvider>
+      </AuthConsumerProvider>
+    </ConfigProvider>
   );
 };
 
