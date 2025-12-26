@@ -4,13 +4,26 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@ecommerce-platform/auth-provider';
 import {
   mapShoppingCartItemToBackend,
   type ShoppingCartItem,
   type ShoppingCartItemFrontend,
 } from '../../types';
-import { getBasket, createBasket, deleteBasket, checkoutBasket, type CheckoutRequest } from './apis';
-import { AuthService } from '../../auth';
+import {
+  getBasket,
+  createBasket,
+  deleteBasket,
+  checkoutBasket,
+  type CheckoutRequest,
+} from './apis';
+
+/**
+ * Get current username from auth hook
+ */
+function getUserName(user: ReturnType<typeof useAuth>['user']): string {
+  return user?.email || user?.displayName || user?.id || 'guest';
+}
 
 // Query keys for React Query caching
 export const basketKeys = {
@@ -29,8 +42,8 @@ export const basketKeys = {
  * @returns React Query result with basket data
  */
 export function useBasket() {
-  const username = AuthService.getCurrentUsername();
-  const isAuthenticated = AuthService.isAuthenticated();
+  const { user, isAuthenticated } = useAuth();
+  const username = getUserName(user);
 
   return useQuery({
     queryKey: basketKeys.byUser(username),
@@ -53,10 +66,11 @@ export function useBasket() {
  */
 export function useCreateBasket() {
   const queryClient = useQueryClient();
-  const username = AuthService.getCurrentUsername();
+  const { user } = useAuth();
+  const username = getUserName(user);
 
   return useMutation({
-    mutationFn: (items: ShoppingCartItem[]) => createBasket(items),
+    mutationFn: (items: ShoppingCartItem[]) => createBasket(items, username),
     onSuccess: (data) => {
       // Update cache with new basket data
       queryClient.setQueryData(basketKeys.byUser(username), data);
@@ -80,7 +94,8 @@ export function useCreateBasket() {
  */
 export function useDeleteBasket() {
   const queryClient = useQueryClient();
-  const username = AuthService.getCurrentUsername();
+  const { user } = useAuth();
+  const username = getUserName(user);
 
   return useMutation({
     mutationFn: deleteBasket,
@@ -107,7 +122,8 @@ export function useDeleteBasket() {
  */
 export function useCheckoutBasket() {
   const queryClient = useQueryClient();
-  const username = AuthService.getCurrentUsername();
+  const { user } = useAuth();
+  const username = getUserName(user);
 
   return useMutation({
     mutationFn: (request: CheckoutRequest) => checkoutBasket(request),

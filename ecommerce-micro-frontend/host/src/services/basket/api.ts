@@ -5,7 +5,7 @@
 
 import { axiosClient } from '../httpClient';
 import { API_CONFIG } from '../../config';
-import { AuthService } from '../../auth';
+import { getStoredUser } from '@ecommerce-platform/auth-provider';
 import { mapBasket } from './mappers';
 import { shoppingCartResponseSchema } from './schemas';
 import type { ShoppingCartResponse, Basket } from './types';
@@ -28,7 +28,11 @@ function createEmptyBasket(userName: string): Basket {
  */
 export async function getBasket(userName?: string): Promise<Basket | null> {
   // Ensure user is never undefined - fallback to 'guest'
-  const user = userName || AuthService.getCurrentUsername() || 'guest';
+  let user = userName;
+  if (!user) {
+    const storedUser = getStoredUser();
+    user = storedUser?.email || storedUser?.displayName || storedUser?.id || 'guest';
+  }
   const url = API_CONFIG.BASKET.GET_BASKET(user);
 
   console.log('[Basket API] getBasket - user:', user);

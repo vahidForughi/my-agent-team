@@ -8,7 +8,7 @@
     "build:app-injector": "cd packages/app-injector && npm install && npm run build",
     "build:auth-provider": "cd packages/auth-provider && npm install && npm run build",
     "setup": "npm install && npm run build:packages",
-    "start": "nx run-many --target=serve --projects=host,store,checkout,account --parallel=4",
+    "start": "nx run-many --target=serve --projects=host,store,checkout,account,admin --parallel=5",
     "start:host": "nx serve host",
     "start:store": "nx serve store",
     "start:checkout": "nx serve checkout",
@@ -64,6 +64,7 @@
     "@types/jest": "^30.0.0",
     "@types/lodash": "^4.17.17",
     "@types/node": "^20.19.9",
+    "@types/papaparse": "^5.5.2",
     "@types/react": "19.0.0",
     "@types/react-dom": "19.0.0",
     "antd-zod": "^6.1.0",
@@ -92,7 +93,7 @@
     "@ant-design/icons": "^5.5.2",
     "@azure/msal-browser": "^3.27.0",
     "@azure/msal-react": "^2.1.1",
-    "@ecommerce-platform/auth-provider": "^1.1.2",
+    "@ecommerce-platform/auth-provider": "^1.1.4",
     "@module-federation/enhanced": "^0.18.0",
     "@tanstack/react-query": "^5.75.2",
     "@tanstack/react-query-devtools": "^5.75.2",
@@ -104,11 +105,16 @@
     "dayjs": "^1.11.13",
     "i18next": "^25.7.1",
     "lodash": "^4.17.21",
+    "papaparse": "^5.5.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-i18next": "^16.4.0",
     "react-router-dom": "^6.25.1",
+    "xlsx": "^0.18.5",
     "zod": "^3.24.4",
     "zustand": "^5.0.4"
+  },
+    "overrides": {
+    "koa": "3.0.3"
   }
 }
