@@ -28,6 +28,7 @@ import {
 } from '@ant-design/icons';
 import { useNavigate } from '@tanstack/react-router';
 import { useAuth } from '@ecommerce-platform/auth-provider';
+import { AppInjectorProps } from '@ecommerce-platform/app-injector';
 import {
   useGetCart,
   useCheckout,
@@ -39,6 +40,10 @@ import type { CartItem } from '../services/cart/types';
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
+interface CheckoutProps {
+  config?: AppInjectorProps['config'];
+}
+
 /**
  * Checkout Page Component
  *
@@ -48,7 +53,9 @@ const { TextArea } = Input;
  * - Payment method selection
  * - Order total calculation
  */
-export default function Checkout() {
+export default function Checkout(props: CheckoutProps) {
+  // Props destructuring
+  const { config } = props;
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
   const { data: cart, isLoading } = useGetCart();
