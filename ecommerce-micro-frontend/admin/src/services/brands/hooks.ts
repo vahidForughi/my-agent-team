@@ -155,13 +155,13 @@ export const useCreateType = (options?: ReactMutationOptions<Type | null, Error,
       const result = await brandsApi.createType({ payload });
       return result?.data ?? null;
     },
-    onSuccess: (data, variables, context) => {
+    onSuccess: (data, variables, context, mutation) => {
       // Invalidate relevant queries
       brandsKeys.types.invalidateQueries(queryClient);
-      options?.onSuccess?.(data, variables, context);
+      options?.onSuccess?.(data, variables, context, mutation);
     },
-    onError: (error, variables, context) => {
-      options?.onError?.(error, variables, context);
+    onError: (error, variables, context, mutation) => {
+      options?.onError?.(error, variables, context, mutation);
     },
   });
 };
