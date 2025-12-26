@@ -10,7 +10,7 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 data:
-  ElasticConfiguration__Uri: http://elasticsearch:9200
+  ElasticConfiguration__Uri: http://eshopping-elasticsearch:9200
   ocelot.k8s.json: |
     {
       "Routes": [
@@ -152,7 +152,7 @@ data:
           "DownstreamScheme": "http",
           "DownstreamHostAndPorts": [
             {
-              "Host": "eshopping-discount-discount-grpc",
+              "Host": "eshopping-discount",
               "Port": "8080"
             }
           ],

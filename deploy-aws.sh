@@ -8,11 +8,11 @@ export AWS_PAGER=""
 # This script deploys the entire e-commerce platform to AWS EKS with self-managed databases
 # Mirrors the local deploy.sh functionality but for AWS
 # Usage: ./deploy-aws.sh [env] [region]
-# Example: ./deploy-aws.sh dev ap-southeast-1
+# Example: ./deploy-aws.sh dev us-east-1
 
 # ==================== Configuration ====================
 ENV_NAME="${1:-dev}"
-REGION="${2:-${AWS_DEFAULT_REGION:-ap-southeast-1}}"
+REGION="${2:-${AWS_DEFAULT_REGION:-us-east-1}}"
 AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 ECR_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com"
 
@@ -216,21 +216,90 @@ deploy_vpc() {
     log_success "VPC deployed: ${VPC_ID}"
 }
 
+# ==================== S3 Bucket Deployment ====================
+deploy_s3_bucket() {
+    log_info "[3.5/10] Deploying S3 bucket for product images..."
+
+    STACK_S3="${ENV_NAME}-s3-bucket"
+    S3_BUCKET="ecommerce-product-images-${AWS_ACCOUNT_ID}"
+    S3_BUCKET_ARN="arn:aws:s3:::${S3_BUCKET}"
+
+    # Check if bucket already exists
+    if aws_cmd s3 ls "s3://${S3_BUCKET}" 2>/dev/null; then
+        log_success "S3 bucket already exists: ${S3_BUCKET}"
+        return 0
+    fi
+
+    # Bucket doesn't exist, create it via CloudFormation
+    log_info "Creating S3 bucket via CloudFormation..."
+    aws_cmd cloudformation deploy \
+        --region "$REGION" \
+        --stack-name "$STACK_S3" \
+        --template-file Infrastructure/aws/cloudformation/s3-bucket.yaml \
+        --capabilities CAPABILITY_NAMED_IAM \
+        --parameter-overrides EnvName="$ENV_NAME"
+
+    # Retrieve S3 bucket outputs from CloudFormation
+    log_info "Retrieving S3 bucket outputs..."
+    S3_BUCKET=$(aws_cmd cloudformation describe-stacks \
+        --region "$REGION" \
+        --stack-name "$STACK_S3" \
+        --query "Stacks[0].Outputs[?OutputKey=='BucketName'].OutputValue" \
+        --output text)
+    S3_BUCKET_ARN=$(aws_cmd cloudformation describe-stacks \
+        --region "$REGION" \
+        --stack-name "$STACK_S3" \
+        --query "Stacks[0].Outputs[?OutputKey=='BucketArn'].OutputValue" \
+        --output text)
+
+    log_success "S3 bucket deployed: ${S3_BUCKET}"
+}
+
 # ==================== EKS Deployment ====================
 deploy_eks() {
     log_info "[4/10] Deploying EKS stack: $STACK_EKS"
 
-    aws_cmd cloudformation deploy \
+    # Check if EKS stack already exists
+    EKS_STACK_STATUS=$(aws_cmd cloudformation describe-stacks \
         --region "$REGION" \
         --stack-name "$STACK_EKS" \
-        --template-file Infrastructure/aws/cloudformation/eks-cluster.yaml \
-        --capabilities CAPABILITY_NAMED_IAM \
-        --parameter-overrides \
-            EnvName="$ENV_NAME" \
-            ClusterName="$CLUSTER_NAME" \
-            KubernetesVersion="$K8S_VERSION" \
-            PrivateSubnetIds="$PRIV_SUBNETS" \
-            NodeDiskSize="$NODE_DISK_SIZE"
+        --query "Stacks[0].StackStatus" \
+        --output text 2>/dev/null || echo "DOES_NOT_EXIST")
+
+    if [ "$EKS_STACK_STATUS" != "DOES_NOT_EXIST" ]; then
+        # Stack exists - check if it's in a usable state
+        if [ "$EKS_STACK_STATUS" = "CREATE_COMPLETE" ] || [ "$EKS_STACK_STATUS" = "UPDATE_COMPLETE" ] || [ "$EKS_STACK_STATUS" = "UPDATE_ROLLBACK_COMPLETE" ]; then
+            log_warning "EKS cluster already exists (status: $EKS_STACK_STATUS)"
+            log_info "Skipping CloudFormation update to avoid NodeGroup modification issues"
+        else
+            log_error "EKS cluster is in an unexpected state: $EKS_STACK_STATUS"
+            log_info "Attempting deployment..."
+            aws_cmd cloudformation deploy \
+                --region "$REGION" \
+                --stack-name "$STACK_EKS" \
+                --template-file Infrastructure/aws/cloudformation/eks-cluster.yaml \
+                --capabilities CAPABILITY_NAMED_IAM \
+                --parameter-overrides \
+                    EnvName="$ENV_NAME" \
+                    ClusterName="$CLUSTER_NAME" \
+                    KubernetesVersion="$K8S_VERSION" \
+                    PrivateSubnetIds="$PRIV_SUBNETS" \
+                    NodeDiskSize="$NODE_DISK_SIZE"
+        fi
+    else
+        # Stack doesn't exist or is in a different state, deploy it
+        aws_cmd cloudformation deploy \
+            --region "$REGION" \
+            --stack-name "$STACK_EKS" \
+            --template-file Infrastructure/aws/cloudformation/eks-cluster.yaml \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --parameter-overrides \
+                EnvName="$ENV_NAME" \
+                ClusterName="$CLUSTER_NAME" \
+                KubernetesVersion="$K8S_VERSION" \
+                PrivateSubnetIds="$PRIV_SUBNETS" \
+                NodeDiskSize="$NODE_DISK_SIZE"
+    fi
 
     log_info "Updating kubeconfig..."
     aws_cmd eks update-kubeconfig --region "$REGION" --name "$CLUSTER_NAME"
@@ -426,11 +495,18 @@ deploy_databases() {
     
     # Phase 2: Optional monitoring/admin tools (only if elasticsearch is ready)
     OPTIONAL_CHARTS=(kibana pgadmin portainer)
-    
+
     log_info "Phase 2: Deploying optional monitoring/admin tools..."
     for chart in "${OPTIONAL_CHARTS[@]}"; do
         if [[ -d "$chart" ]]; then
-            log_info "Deploying ${chart}..."
+            log_info "Deploying eshopping-${chart}..."
+
+            # Clean up any orphaned resources from manual deployments without prefix
+            if kubectl get serviceaccount "${chart}" -n "$NAMESPACE" 2>/dev/null; then
+                log_warning "Removing orphaned ServiceAccount (legacy naming): ${chart}"
+                kubectl delete serviceaccount "${chart}" -n "$NAMESPACE" --ignore-not-found=true
+            fi
+
             helm upgrade --install "eshopping-${chart}" "./${chart}" \
                 --namespace "$NAMESPACE" \
                 --wait --timeout 300s || log_warning "${chart} deployment may need more time (optional service)"
@@ -458,24 +534,24 @@ setup_irsa_for_catalog() {
     # Create IAM policy for S3 access
     log_info "Creating IAM policy for S3 access..."
     POLICY_NAME="${ENV_NAME}-catalog-s3-policy"
-    POLICY_DOC='{
-        "Version": "2012-10-17",
-        "Statement": [
+    POLICY_DOC="{
+        \"Version\": \"2012-10-17\",
+        \"Statement\": [
             {
-                "Effect": "Allow",
-                "Action": [
-                    "s3:GetObject",
-                    "s3:PutObject",
-                    "s3:DeleteObject",
-                    "s3:ListBucket"
+                \"Effect\": \"Allow\",
+                \"Action\": [
+                    \"s3:GetObject\",
+                    \"s3:PutObject\",
+                    \"s3:DeleteObject\",
+                    \"s3:ListBucket\"
                 ],
-                "Resource": [
-                    "arn:aws:s3:::ecommerce-product-images-471112812838",
-                    "arn:aws:s3:::ecommerce-product-images-471112812838/*"
+                \"Resource\": [
+                    \"${S3_BUCKET_ARN}\",
+                    \"${S3_BUCKET_ARN}/*\"
                 ]
             }
         ]
-    }'
+    }"
 
     # Create or update policy
     aws_cmd iam create-policy --policy-name "$POLICY_NAME" \
@@ -519,10 +595,16 @@ setup_irsa_for_catalog() {
 
     # Update service account annotation
     log_info "Creating/updating service account with IRSA annotation..."
-    kubectl create serviceaccount catalog -n "$NAMESPACE" --dry-run=client -o yaml | \
-        kubectl annotate -f - --overwrite \
-        eks.amazonaws.com/role-arn="arn:aws:iam::${AWS_ACCOUNT_ID}:role/${ROLE_NAME}" | \
-        kubectl apply -f -
+    
+    # Create service account if it doesn't exist
+    if ! kubectl get serviceaccount catalog -n "$NAMESPACE" &>/dev/null; then
+        kubectl create serviceaccount catalog -n "$NAMESPACE"
+    fi
+    
+    # Annotate the service account with the IAM role ARN
+    kubectl annotate serviceaccount catalog -n "$NAMESPACE" \
+        eks.amazonaws.com/role-arn="arn:aws:iam::${AWS_ACCOUNT_ID}:role/${ROLE_NAME}" \
+        --overwrite
 
     log_success "IRSA configured for Catalog Service"
 }
@@ -552,9 +634,9 @@ deploy_api_services() {
                     ;;
             esac
 
-            # Special handling for catalog service to set service account
+            # Special handling for specific services
             if [[ "$chart" == "catalog" ]]; then
-                log_info "Deploying catalog service with IRSA-enabled service account..."
+                log_info "Deploying catalog service with IRSA-enabled service account and AWS S3 configuration..."
                 helm upgrade --install "eshopping-${chart}" "./${chart}" \
                     --namespace "$NAMESPACE" \
                     --set image.registry="$ECR_REGISTRY" \
@@ -564,9 +646,25 @@ deploy_api_services() {
                     --set service.type=ClusterIP \
                     --set serviceAccount.create=false \
                     --set serviceAccount.name=catalog \
+                    --set configmap.AWS__S3__BucketName="$S3_BUCKET" \
+                    --set configmap.AWS__S3__Region="$REGION" \
+                    --set configmap.AWS__S3__ImagePrefix="products/" \
+                    --set configmap.AWS__S3__ServiceUrl="" \
+                    --set configmap.USE_LOCALSTACK="false" \
+                    --force \
+                    --wait --timeout 600s
+            elif [[ "$chart" == "ocelotapigw" ]]; then
+                log_info "Deploying API Gateway with LoadBalancer service type for ELB exposure..."
+                helm upgrade --install "eshopping-${chart}" "./${chart}" \
+                    --namespace "$NAMESPACE" \
+                    --set image.registry="$ECR_REGISTRY" \
+                    --set image.repository="$IMAGE_NAME" \
+                    --set image.tag="latest" \
+                    --set imagePullSecrets=null \
+                    --set service.type=LoadBalancer \
                     --wait --timeout 600s
             else
-                # Deploy other services normally
+                # Deploy other services normally with ClusterIP
                 helm upgrade --install "eshopping-${chart}" "./${chart}" \
                     --namespace "$NAMESPACE" \
                     --set image.registry="$ECR_REGISTRY" \
@@ -744,18 +842,30 @@ display_access_info() {
     echo ""
     echo "📈 LOGGING:"
     echo "   Kibana:"
-    echo "     kubectl port-forward -n default svc/kibana 5601:5601"
+    echo "     kubectl port-forward -n default svc/eshopping-kibana 5601:5601"
     echo "     Then open: http://localhost:5601"
     echo ""
     echo "🐰 RABBITMQ:"
-    echo "   kubectl port-forward -n default svc/rabbitmq 15672:15672"
+    echo "   kubectl port-forward -n default svc/eshopping-rabbitmq 15672:15672"
     echo "   Then open: http://localhost:15672 (guest/guest)"
+    echo ""
+    echo "☁️  AWS S3 STORAGE:"
+    echo "   S3 Bucket: ${S3_BUCKET}"
+    echo "   Region: ${REGION}"
+    echo "   Image Prefix: products/"
+    echo ""
+    echo "📸 PRODUCT IMAGE MIGRATION:"
+    echo "   Catalog service is now configured to use AWS S3 instead of LocalStack"
+    echo "   To migrate existing product images from database to S3:"
+    echo "     kubectl port-forward -n ${NAMESPACE} svc/eshopping-catalog 8000:80"
+    echo "     curl -X POST http://localhost:8000/Admin/MigrateImagesToS3"
     echo ""
     echo "🔍 USEFUL COMMANDS:"
     echo "   Check all pods: kubectl get pods --all-namespaces"
     echo "   Check services: kubectl get svc --all-namespaces"
     echo "   View logs: kubectl logs <pod-name> -n <namespace>"
     echo "   Scale deployment: kubectl scale deployment/<name> --replicas=3"
+    echo "   Check S3 bucket: aws s3 ls s3://${S3_BUCKET}/ --recursive"
     echo ""
     echo "🗑️  CLEANUP:"
     echo "   Run: ./cleanup-aws.sh ${ENV_NAME}"
@@ -863,12 +973,14 @@ main() {
         log_info "[2/10] Skipping image build (using existing images in ECR)"
     fi
 
-    # Step 3-4: Infrastructure
+    # Step 3-4-5: Infrastructure
     if [ "$SKIP_INFRA" = false ]; then
         deploy_vpc
+        deploy_s3_bucket
         deploy_eks
     else
         log_info "[3/10] Skipping VPC deployment (using existing)"
+        log_info "[3.5/10] Skipping S3 bucket deployment (using existing)"
         log_info "[4/10] Skipping EKS deployment (using existing)"
 
         # Still need to update kubeconfig
@@ -885,6 +997,19 @@ main() {
             --region "$REGION" \
             --stack-name "$STACK_VPC" \
             --query "Stacks[0].Outputs[?ExportName=='${ENV_NAME}-public-subnet-ids'].OutputValue" \
+            --output text)
+
+        # Get S3 bucket outputs for catalog IRSA
+        STACK_S3="${ENV_NAME}-s3-bucket"
+        S3_BUCKET=$(aws_cmd cloudformation describe-stacks \
+            --region "$REGION" \
+            --stack-name "$STACK_S3" \
+            --query "Stacks[0].Outputs[?OutputKey=='BucketName'].OutputValue" \
+            --output text)
+        S3_BUCKET_ARN=$(aws_cmd cloudformation describe-stacks \
+            --region "$REGION" \
+            --stack-name "$STACK_S3" \
+            --query "Stacks[0].Outputs[?OutputKey=='BucketArn'].OutputValue" \
             --output text)
     fi
 

@@ -61,11 +61,11 @@ ingress:
 
 resources:
   limits:
-    cpu: 100m
-    memory: 128Mi
+    cpu: 500m
+    memory: 512Mi
   requests:
-    cpu: 100m
-    memory: 128Mi
+    cpu: 50m
+    memory: 64Mi
 
 autoscaling:
   enabled: true
@@ -85,11 +85,11 @@ env:
   - name: ASPNETCORE_ENVIRONMENT
     value: Development
   - name: AWS_ACCESS_KEY_ID
-    value: test
+    value: ""  # IRSA will provide credentials on AWS; set to "test" for LocalStack
   - name: AWS_SECRET_ACCESS_KEY
-    value: test
+    value: ""  # IRSA will provide credentials on AWS; set to "test" for LocalStack
   - name: AWS_ENDPOINT_URL
-    value: http://localstack:4566
+    value: ""  # Empty for AWS S3; set to "http://localstack:4566" for local dev
   urls:
   # configmap declares variables which value is taken from the config map defined in template configmap.yaml (name is name of var and key the key in configmap).
   configmap:
@@ -105,6 +105,8 @@ env:
       key: DatabaseSettings__TypesCollection
     - name: ElasticConfiguration__Uri
       key: ElasticConfiguration__Uri
+    - name: EventBusSettings__HostAddress
+      key: EventBusSettings__HostAddress
     - name: AWS__S3__BucketName
       key: AWS__S3__BucketName
     - name: AWS__S3__Region
@@ -119,14 +121,15 @@ env:
 # ConfigMap data values (used by templates/configmap.yaml)
 # Override these for different environments
 configmap:
-  DatabaseSettings__ConnectionString: "mongodb://admin:admin1234@catalogdb:27017/CatalogDb?authSource=admin"
+  DatabaseSettings__ConnectionString: "mongodb://admin:admin1234@eshopping-catalogdb:27017/CatalogDb?authSource=admin&serverSelectionTimeoutMS=60000&connectTimeoutMS=60000"
   DatabaseSettings__DatabaseName: "CatalogDb"
   DatabaseSettings__CollectionName: "Products"
   DatabaseSettings__BrandsCollection: "Brands"
   DatabaseSettings__TypesCollection: "Types"
-  ElasticConfiguration__Uri: "http://elasticsearch:9200"
+  ElasticConfiguration__Uri: "http://eshopping-elasticsearch:9200"
+  EventBusSettings__HostAddress: "eshopping-rabbitmq:5672"
   AWS__S3__BucketName: "ecommerce-product-images"
   AWS__S3__Region: "us-east-1"
   AWS__S3__ImagePrefix: "products/"
-  AWS__S3__ServiceUrl: "http://localstack:4566"  # Leave empty for AWS S3
-  USE_LOCALSTACK: "true"
+  AWS__S3__ServiceUrl: ""  # Empty for AWS S3; set to "http://localstack:4566" for local dev
+  USE_LOCALSTACK: "false"  # false for AWS; set to "true" for local dev with LocalStack
