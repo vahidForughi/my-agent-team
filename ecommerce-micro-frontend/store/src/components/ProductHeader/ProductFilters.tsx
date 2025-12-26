@@ -1,20 +1,19 @@
 import React, { useMemo } from 'react';
-import { Typography, Button, Space, Flex } from 'antd';
+import { Typography, Button, Space, Flex, Select } from 'antd';
 import { ClearOutlined } from '@ant-design/icons';
-import FilterTag from './FilterTag';
-import { ProductType } from '../../services/products/types';
-import {
-  ProductFilterType,
-  SpecialFilterConfig,
-} from './types';
+import { ProductType, Brand } from '../../services/products/types';
+import { ProductFilterType, SpecialFilterConfig } from './types';
 
 const { Text } = Typography;
 
 type ProductFiltersProps = {
   specialFilters: SpecialFilterConfig[];
-  productTypes: ProductType[];
+  brands?: Brand[];
+  productTypes?: ProductType[];
+  selectedBrandId?: string;
   selectedTypeId?: string;
   selectedFilter: ProductFilterType;
+  onBrandChange?: (brandId: string | undefined) => void;
   onTypeChange?: (typeId: string | undefined) => void;
   onFilterChange?: (filter: ProductFilterType) => void;
   onClearFilters?: () => void;
@@ -23,30 +22,43 @@ type ProductFiltersProps = {
 /**
  * ProductFilters Component
  *
- * Single Responsibility: Render filter tags and handle filter interactions
- * Open/Closed Principle: Accepts specialFilters and productTypes as props
+ * Single Responsibility: Render filter tags and dropdowns for filtering products
+ * Open/Closed Principle: Accepts brands and productTypes as props
  * Interface Segregation: Only receives props needed for filtering
  */
 function ProductFilters(props: ProductFiltersProps) {
   const {
     specialFilters,
-    productTypes,
+    brands = [],
+    productTypes = [],
+    selectedBrandId,
     selectedTypeId,
     selectedFilter,
+    onBrandChange,
     onTypeChange,
     onFilterChange,
     onClearFilters,
   } = props;
 
   const hasActiveFilters = useMemo(
-    () => selectedTypeId !== undefined || selectedFilter !== 'all',
-    [selectedTypeId, selectedFilter]
+    () => selectedBrandId !== undefined || selectedTypeId !== undefined,
+    [selectedBrandId, selectedTypeId]
+  );
+
+  const brandOptions = useMemo(
+    () => brands.map((brand) => ({ label: brand.name, value: brand.id })),
+    [brands]
+  );
+
+  const typeOptions = useMemo(
+    () => productTypes.map((type) => ({ label: type.name, value: type.id })),
+    [productTypes]
   );
 
   return (
     <Space direction="vertical" size="middle" style={{ width: '100%' }}>
       <Flex justify="space-between" align="center" wrap="wrap" gap="small">
-        <Text strong>Filter by Category</Text>
+        <Text strong>Filters</Text>
         {hasActiveFilters && (
           <Button
             type="text"
@@ -59,35 +71,28 @@ function ProductFilters(props: ProductFiltersProps) {
         )}
       </Flex>
 
-      <Space size={[8, 8]} wrap>
-        {specialFilters.map((filter) => (
-          <FilterTag
-            key={filter.value}
-            label={filter.label}
-            checked={
-              filter.value === 'all'
-                ? selectedFilter === filter.value && !selectedTypeId
-                : selectedFilter === filter.value
-            }
-            icon={filter.icon}
-            onChange={() => onFilterChange?.(filter.value)}
-          />
-        ))}
-        {productTypes.map((type) => (
-          <FilterTag
-            key={type.id}
-            label={type.name}
-            checked={selectedTypeId === type.id}
-            onChange={() => {
-              const newTypeId = selectedTypeId === type.id ? undefined : type.id;
-              onTypeChange?.(newTypeId);
-            }}
-          />
-        ))}
+      <Space size="middle" wrap style={{ width: '100%' }}>
+        <Select
+          placeholder="Filter by Brand"
+          allowClear
+          style={{ minWidth: 200 }}
+          value={selectedBrandId}
+          onChange={(value) => onBrandChange?.(value)}
+          options={brandOptions}
+          notFoundContent={<Text type="secondary">No brands available</Text>}
+        />
+        <Select
+          placeholder="Filter by Type"
+          allowClear
+          style={{ minWidth: 200 }}
+          value={selectedTypeId}
+          onChange={(value) => onTypeChange?.(value)}
+          options={typeOptions}
+          notFoundContent={<Text type="secondary">No types available</Text>}
+        />
       </Space>
     </Space>
   );
 }
 
 export default React.memo(ProductFilters);
-
