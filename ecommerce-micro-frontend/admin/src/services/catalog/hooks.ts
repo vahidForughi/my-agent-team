@@ -40,11 +40,11 @@ export const useUploadProductImage = (options?: ReactMutationOptions<UploadImage
       });
       return result?.data ?? null;
     },
-    onSuccess: (data, variables, context) => {
-      options?.onSuccess?.(data, variables, context);
+    onSuccess: (data, variables, context, mutation) => {
+      options?.onSuccess?.(data, variables, context, mutation);
     },
-    onError: (error, variables, context) => {
-      options?.onError?.(error, variables, context);
+    onError: (error, variables, context, mutation) => {
+      options?.onError?.(error, variables, context, mutation);
     },
   });
 };

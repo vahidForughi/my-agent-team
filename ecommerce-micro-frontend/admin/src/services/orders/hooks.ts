@@ -84,13 +84,13 @@ export const useUpdateOrder = (options?: ReactMutationOptions<Order | null, Erro
       const result = await ordersApi.updateOrder({ payload });
       return result?.data ?? null;
     },
-    onSuccess: (data, variables, context) => {
+    onSuccess: (data, variables, context, mutation) => {
       // Invalidate relevant queries
       ordersKeys.all.invalidateQueries(queryClient);
-      options?.onSuccess?.(data, variables, context);
+      options?.onSuccess?.(data, variables, context, mutation);
     },
-    onError: (error, variables, context) => {
-      options?.onError?.(error, variables, context);
+    onError: (error, variables, context, mutation) => {
+      options?.onError?.(error, variables, context, mutation);
     },
   });
 };
@@ -120,13 +120,13 @@ export const useDeleteOrder = (options?: ReactMutationOptions<boolean, Error, nu
       const result = await ordersApi.deleteOrder({ params: { id } });
       return result?.data ?? true;
     },
-    onSuccess: (data, variables, context) => {
+    onSuccess: (data, variables, context, mutation) => {
       // Invalidate relevant queries
       ordersKeys.all.invalidateQueries(queryClient);
-      options?.onSuccess?.(data, variables, context);
+      options?.onSuccess?.(data, variables, context, mutation);
     },
-    onError: (error, variables, context) => {
-      options?.onError?.(error, variables, context);
+    onError: (error, variables, context, mutation) => {
+      options?.onError?.(error, variables, context, mutation);
     },
   });
 };

@@ -85,13 +85,13 @@ export const useUpdateUserProfile = (options?: ReactMutationOptions<{ data: User
       const result = await userApi.updateUserProfile({ payload });
       return result;
     },
-    onSuccess: (data, variables, context) => {
+    onSuccess: (data, variables, context, mutation) => {
       // Invalidate relevant queries
       userKeys.all.invalidateQueries(queryClient);
-      options?.onSuccess?.(data, variables, context);
+      options?.onSuccess?.(data, variables, context, mutation);
     },
-    onError: (error, variables, context) => {
-      options?.onError?.(error, variables, context);
+    onError: (error, variables, context, mutation) => {
+      options?.onError?.(error, variables, context, mutation);
     },
   });
 };
