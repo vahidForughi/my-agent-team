@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { ReactQueryOptions } from '../types';
 import { activitiesKeys } from './keys';
-import { ActivitiesParamsInput } from './input';
 import { env } from '../../config';
 import * as activitiesApi from './apis';
 import type { Activity } from './types';

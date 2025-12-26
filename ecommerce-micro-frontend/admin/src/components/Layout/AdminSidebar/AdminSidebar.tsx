@@ -1,12 +1,6 @@
 import React from 'react';
 import { Layout, Menu, Space, Typography, theme } from 'antd';
-import {
-  DashboardOutlined,
-  SettingOutlined,
-  ShoppingOutlined,
-  ShoppingCartOutlined,
-} from '@ant-design/icons';
-import { useLocation, useNavigate } from '@tanstack/react-router';
+import { useLocation } from '@tanstack/react-router';
 import { layout } from '../../../config/theme';
 import { MENU_ITEMS } from './constants';
 
@@ -30,7 +24,6 @@ function AdminSidebar(props: AdminSidebarProps) {
   const { collapsed, onMenuClick } = props;
 
   // 2. Other hooks
-  const navigate = useNavigate();
   const location = useLocation();
   const { token } = theme.useToken();
 

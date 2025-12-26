@@ -207,7 +207,6 @@ function ExportModal({
   // Export to JSON
   const exportToJSON = () => {
     try {
-      const data = prepareExportData();
       const jsonData = {
         exportedAt: dayjs().toISOString(),
         filters: filters

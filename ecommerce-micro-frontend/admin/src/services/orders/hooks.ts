@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ReactQueryOptions, ReactMutationOptions } from '../types';
 import { ordersKeys } from './keys';
-import { OrdersParamsInput, OrderByIdInput, UpdateOrderInput } from './input';
+import { UpdateOrderInput } from './input';
 import { env } from '../../config';
 import * as ordersApi from './apis';
 import type { Order } from './types';

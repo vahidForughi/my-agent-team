@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ReactQueryOptions, ReactMutationOptions } from '../types';
 import { productsKeys } from './keys';
-import { ProductsParamsInput, ProductByIdInput, CreateProductInput, UpdateProductInput } from './input';
+import { ProductsParamsInput, CreateProductInput, UpdateProductInput } from './input';
 import { env } from '../../config';
 import * as productsApi from './apis';
 import type { Product, PaginatedProducts } from './types';

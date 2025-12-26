@@ -1,5 +1,5 @@
 import React from 'react';
-import { Skeleton, Card, Space, theme } from 'antd';
+import { Skeleton, Card, Space } from 'antd';
 
 interface SkeletonLoaderProps {
   rows?: number;
@@ -13,8 +13,6 @@ interface SkeletonLoaderProps {
  * Skeleton loaders (not spinners) following UX requirements
  */
 function SkeletonLoader({ rows = 5, showAvatar = false, showTitle = true }: SkeletonLoaderProps) {
-  const { token } = theme.useToken();
-
   return (
     <Card>
       <Space direction="vertical" size="large" style={{ width: '100%' }}>

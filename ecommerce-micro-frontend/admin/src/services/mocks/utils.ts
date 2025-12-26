@@ -29,7 +29,7 @@ export function findItemByUri<T extends Record<string, any>>(options: {
   property: keyof T;
   index: number;
 }): [number, ApiResponse<T> | { error: string }] {
-  const { pattern, config, data, property, index } = options;
+  const { config, data, property, index } = options;
 
   // Extract the parameter from URL
   const urlParts = config.url?.split('/') || [];

@@ -13,8 +13,6 @@ import {
 } from 'antd';
 import {
   UserOutlined,
-  LogoutOutlined,
-  SettingOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   SearchOutlined,

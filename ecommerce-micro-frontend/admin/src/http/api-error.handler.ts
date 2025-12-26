@@ -27,7 +27,7 @@ export class ApiErrorHandler {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const responseData = error.response?.data as any;
 
-    let message = 'An unexpected error occurred';
+    let message: string;
     let errors: Record<string, string> | undefined;
 
     if (responseData) {

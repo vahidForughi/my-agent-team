@@ -1,21 +1,15 @@
 import { createApiFactory } from '../factory/createApiFactory';
-import { Request, RequestParamsRequired, RequestPayloadRequired } from '../types';
+import { Request, RequestPayloadRequired } from '../types';
 import {
-  getUserProfileInput,
   GetUserProfileInput,
-  updateUserProfileInput,
   UpdateUserProfileInput,
 } from './input';
 import {
   userMapper,
 } from './mappers';
 import {
-  User,
   UserResponse,
 } from './types';
-import {
-  userResponseSchema,
-} from './schemas';
 import { getStoredUser } from '@ecommerce-platform/auth-provider';
 
 export const apiFactory = createApiFactory('/user', { version: 'v1' });

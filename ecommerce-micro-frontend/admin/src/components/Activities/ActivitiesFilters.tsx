@@ -61,7 +61,6 @@ function ActivitiesFilters(props: ActivitiesFiltersProps) {
     activityType,
     dateRange,
     actor,
-    presetRanges,
     onToggleExpanded,
     onPresetFilter,
     onSearchChange,
