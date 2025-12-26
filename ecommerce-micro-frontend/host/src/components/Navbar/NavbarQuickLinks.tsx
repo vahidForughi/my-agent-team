@@ -10,9 +10,6 @@ interface QuickLink {
 const QUICK_LINKS: QuickLink[] = [
   { path: '/', label: 'Home' },
   { path: '/store', label: 'Store' },
-  { path: '/deals', label: 'Flash Sale' },
-  { path: '/deals', label: "Today's Deals" },
-  { path: '/new-arrivals', label: 'New Arrivals' },
 ];
 
 function NavbarQuickLinks() {

@@ -2,11 +2,9 @@ import React, { useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { Flex, Typography, Button } from 'antd';
-import NavbarSearch from './NavbarSearch';
 import NavbarActions from './NavbarActions';
 import NavbarCategories from './NavbarCategories';
 import NavbarQuickLinks from './NavbarQuickLinks';
-import LanguageSwitcher from '../LanguageSwitcher/LanguageSwitcher';
 import { CartItem } from '../CartPreview/CartPreview';
 import { brandGradient } from '../../config/theme';
 import { useBasket, BasketItem, basketCacheKeys } from '../../services/basket';
@@ -32,8 +30,12 @@ function Navbar() {
   useEffect(() => {
     function handleCartUpdated() {
       // Get current username from auth to ensure we use the latest user info
-      const currentUserName = user?.email || user?.displayName || user?.id || 'guest';
-      console.log('[Navbar] Cart updated event received, invalidating and refetching basket for user:', currentUserName);
+      const currentUserName =
+        user?.email || user?.displayName || user?.id || 'guest';
+      console.log(
+        '[Navbar] Cart updated event received, invalidating and refetching basket for user:',
+        currentUserName
+      );
       // Invalidate cache to force refetch, even if data is still fresh
       queryClient.invalidateQueries({
         queryKey: basketCacheKeys.byUser(currentUserName),
@@ -100,6 +102,7 @@ function Navbar() {
               padding: '0 32px',
               width: '100%',
               alignItems: 'center',
+              justifyContent: 'space-between',
               gap: 40,
             }}
           >
@@ -139,12 +142,6 @@ function Navbar() {
                 Tech Store
               </Typography.Text>
             </Button>
-
-            <div style={{ flex: 1, maxWidth: 700 }}>
-              <NavbarSearch />
-            </div>
-
-            <LanguageSwitcher />
 
             <NavbarActions
               basketCount={itemCount}

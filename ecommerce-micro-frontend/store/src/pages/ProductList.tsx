@@ -2,7 +2,11 @@ import React, { useMemo, useCallback } from 'react';
 import { message, Pagination } from 'antd';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { AppInjectorProps } from '@ecommerce-platform/app-injector';
-import { useGetProducts, useGetTypes } from '../services/products/hooks';
+import {
+  useGetProducts,
+  useGetTypes,
+  useGetBrands,
+} from '../services/products/hooks';
 import { StoreParamsInput, Product, ProductType } from '../services/products';
 import { useAddToCart } from '../services/basket';
 import {
@@ -27,11 +31,13 @@ const ProductList: React.FC<ProductListProps> = ({ config }) => {
   const { onError } = config || {};
 
   const { data: productTypes } = useGetTypes();
+  const { data: brands } = useGetBrands();
 
   // Derive filter values directly from URL (single source of truth)
   const selectedFilter = (searchParams?.filter ?? 'all') as ProductFilterType;
   const sortOption = (searchParams?.sort ?? 'default') as SortOption;
   const currentPage = searchParams?.page ?? 1;
+  const selectedBrandId = searchParams?.brandId;
 
   // Resolve typeId: use typeId directly, or lookup from cat name
   const selectedTypeId = useMemo(() => {
@@ -54,6 +60,10 @@ const ProductList: React.FC<ProductListProps> = ({ config }) => {
       limit: PAGE_SIZE,
     };
 
+    if (selectedBrandId) {
+      baseParams.BrandId = selectedBrandId;
+    }
+
     if (selectedTypeId) {
       baseParams.TypeId = selectedTypeId;
     }
@@ -63,7 +73,7 @@ const ProductList: React.FC<ProductListProps> = ({ config }) => {
     }
 
     return baseParams;
-  }, [selectedTypeId, sortOption, currentPage]);
+  }, [selectedBrandId, selectedTypeId, sortOption, currentPage]);
 
   const { data: paginatedProducts, isLoading, error } = useGetProducts(params);
 
@@ -117,13 +127,28 @@ const ProductList: React.FC<ProductListProps> = ({ config }) => {
   }
 
   // Navigate with search params - URL is the source of truth
+  function handleBrandChange(brandId: string | undefined) {
+    navigate({
+      to: '/',
+      search: {
+        brandId,
+        typeId: searchParams?.typeId,
+        cat: searchParams?.cat,
+        filter: searchParams?.filter,
+        sort: searchParams?.sort,
+        page: undefined,
+      },
+    });
+  }
+
   function handleTypeChange(typeId: string | undefined) {
     navigate({
       to: '/',
       search: {
+        brandId: searchParams?.brandId,
         typeId,
         cat: undefined,
-        filter: undefined,
+        filter: searchParams?.filter,
         sort: searchParams?.sort,
         page: undefined,
       },
@@ -131,12 +156,12 @@ const ProductList: React.FC<ProductListProps> = ({ config }) => {
   }
 
   function handleFilterChange(filter: ProductFilterType) {
-    // When selecting 'all', clear all filters (including typeId/cat)
-    // When selecting a special filter (new-arrivals, best-seller), clear typeId/cat
+    // When selecting 'all', clear all filters (including brandId, typeId/cat)
     navigate({
       to: '/',
       search: {
         filter: filter === 'all' ? undefined : filter,
+        brandId: undefined, // Always clear brandId when changing filter
         typeId: undefined, // Always clear typeId when changing filter
         cat: undefined, // Always clear cat when changing filter
         sort: searchParams?.sort,
@@ -181,10 +206,13 @@ const ProductList: React.FC<ProductListProps> = ({ config }) => {
         <ProductHeader
           productCount={0}
           totalCount={0}
+          brands={brands || undefined}
           productTypes={productTypes || undefined}
+          selectedBrandId={selectedBrandId}
           selectedTypeId={selectedTypeId}
           selectedFilter={selectedFilter}
           sortOption={sortOption}
+          onBrandChange={handleBrandChange}
           onTypeChange={handleTypeChange}
           onFilterChange={handleFilterChange}
           onSortChange={handleSortChange}
@@ -198,10 +226,13 @@ const ProductList: React.FC<ProductListProps> = ({ config }) => {
       <ProductHeader
         productCount={productCount}
         totalCount={totalCount}
+        brands={brands || undefined}
         productTypes={productTypes || undefined}
+        selectedBrandId={selectedBrandId}
         selectedTypeId={selectedTypeId}
         selectedFilter={selectedFilter}
         sortOption={sortOption}
+        onBrandChange={handleBrandChange}
         onTypeChange={handleTypeChange}
         onFilterChange={handleFilterChange}
         onSortChange={handleSortChange}
@@ -213,7 +244,11 @@ const ProductList: React.FC<ProductListProps> = ({ config }) => {
       />
       {totalCount > PAGE_SIZE && (
         <div
-          style={{ marginTop: '32px', display: 'flex', justifyContent: 'center' }}
+          style={{
+            marginTop: '32px',
+            display: 'flex',
+            justifyContent: 'center',
+          }}
         >
           <Pagination
             current={currentPage}

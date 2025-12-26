@@ -3,11 +3,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Flex, Typography, Button } from 'antd';
 import { useAuth } from '@ecommerce-platform/auth-provider';
 import { useNavigate } from '../../utils/navigation-handler';
-import NavbarSearch from './NavbarSearch';
 import NavbarActions from './NavbarActions';
 import NavbarCategories from './NavbarCategories';
 import NavbarQuickLinks from './NavbarQuickLinks';
-import LanguageSwitcher from '../LanguageSwitcher/LanguageSwitcher';
 import { CartItem } from '../CartPreview/CartPreview';
 import { brandGradient } from '../../constants/theme';
 
@@ -153,12 +151,6 @@ function Navbar({
                 Tech Store
               </Typography.Text>
             </Button>
-
-            <div style={{ flex: 1, maxWidth: 700 }}>
-              <NavbarSearch appName={appName} />
-            </div>
-
-            <LanguageSwitcher />
 
             <NavbarActions
               basketCount={basketCount}

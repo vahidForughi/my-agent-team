@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { Flex, Space, Divider } from 'antd';
-import { ProductType } from '../../services/products/types';
+import { ProductType, Brand } from '../../services/products/types';
 import ProductStats from './ProductStats';
 import ProductSort from './ProductSort';
 import ProductFilters from './ProductFilters';
@@ -13,10 +13,13 @@ export type { ProductFilterType, SortOption };
 type ProductHeaderProps = {
   productCount: number;
   totalCount: number;
+  brands?: Brand[];
   productTypes?: ProductType[];
+  selectedBrandId?: string;
   selectedTypeId?: string;
   selectedFilter?: ProductFilterType;
   sortOption?: SortOption;
+  onBrandChange?: (brandId: string | undefined) => void;
   onTypeChange?: (typeId: string | undefined) => void;
   onFilterChange?: (filter: ProductFilterType) => void;
   onSortChange?: (sort: SortOption) => void;
@@ -47,19 +50,22 @@ function ProductHeader(props: ProductHeaderProps) {
   const {
     productCount,
     totalCount,
+    brands = [],
     productTypes = [],
+    selectedBrandId,
     selectedTypeId,
     selectedFilter = 'all',
     sortOption = 'default',
+    onBrandChange,
     onTypeChange,
     onFilterChange,
     onSortChange,
   } = props;
 
   const handleClearFilters = useCallback(() => {
+    onBrandChange?.(undefined);
     onTypeChange?.(undefined);
-    onFilterChange?.('all');
-  }, [onTypeChange, onFilterChange]);
+  }, [onBrandChange, onTypeChange]);
 
   return (
     <Space
@@ -82,9 +88,12 @@ function ProductHeader(props: ProductHeaderProps) {
       {/* Filter Section */}
       <ProductFilters
         specialFilters={SPECIAL_FILTERS}
+        brands={brands}
         productTypes={productTypes}
+        selectedBrandId={selectedBrandId}
         selectedTypeId={selectedTypeId}
         selectedFilter={selectedFilter}
+        onBrandChange={onBrandChange}
         onTypeChange={onTypeChange}
         onFilterChange={onFilterChange}
         onClearFilters={handleClearFilters}
