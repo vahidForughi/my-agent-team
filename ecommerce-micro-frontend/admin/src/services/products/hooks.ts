@@ -133,13 +133,13 @@ export const useCreateProduct = (options?: ReactMutationOptions<Product | null, 
       console.log('[useCreateProduct] API result:', result);
       return result?.data ?? null;
     },
-    onSuccess: (data, variables, context) => {
+    onSuccess: (data, variables, context, mutation) => {
       // Invalidate relevant queries
       productsKeys.all.invalidateQueries(queryClient);
-      options?.onSuccess?.(data, variables, context);
+      options?.onSuccess?.(data, variables, context, mutation);
     },
-    onError: (error, variables, context) => {
-      options?.onError?.(error, variables, context);
+    onError: (error, variables, context, mutation) => {
+      options?.onError?.(error, variables, context, mutation);
     },
   });
 };
@@ -177,16 +177,16 @@ export const useUpdateProduct = (options?: ReactMutationOptions<boolean, Error, 
       console.log('[useUpdateProduct] API result:', result);
       return result?.data ?? false;
     },
-    onSuccess: (data, variables, context) => {
+    onSuccess: (data, variables, context, mutation) => {
       // Invalidate relevant queries
       productsKeys.all.invalidateQueries(queryClient);
       if (variables.id) {
         productsKeys.detail.invalidateQueries(queryClient, variables.id);
       }
-      options?.onSuccess?.(data, variables, context);
+      options?.onSuccess?.(data, variables, context, mutation);
     },
-    onError: (error, variables, context) => {
-      options?.onError?.(error, variables, context);
+    onError: (error, variables, context, mutation) => {
+      options?.onError?.(error, variables, context, mutation);
     },
   });
 };
@@ -218,13 +218,13 @@ export const useDeleteProduct = (options?: ReactMutationOptions<boolean, Error, 
       console.log('[useDeleteProduct] API result:', result);
       return result?.data ?? true;
     },
-    onSuccess: (data, variables, context) => {
+    onSuccess: (data, variables, context, mutation) => {
       // Invalidate relevant queries
       productsKeys.all.invalidateQueries(queryClient);
-      options?.onSuccess?.(data, variables, context);
+      options?.onSuccess?.(data, variables, context, mutation);
     },
-    onError: (error, variables, context) => {
-      options?.onError?.(error, variables, context);
+    onError: (error, variables, context, mutation) => {
+      options?.onError?.(error, variables, context, mutation);
     },
   });
 };

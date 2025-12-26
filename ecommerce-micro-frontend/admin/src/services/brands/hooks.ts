@@ -75,13 +75,13 @@ export const useCreateBrand = (options?: ReactMutationOptions<Brand | null, Erro
       const result = await brandsApi.createBrand({ payload });
       return result?.data ?? null;
     },
-    onSuccess: (data, variables, context) => {
+    onSuccess: (data, variables, context, mutation) => {
       // Invalidate relevant queries
       brandsKeys.all.invalidateQueries(queryClient);
-      options?.onSuccess?.(data, variables, context);
+      options?.onSuccess?.(data, variables, context, mutation);
     },
-    onError: (error, variables, context) => {
-      options?.onError?.(error, variables, context);
+    onError: (error, variables, context, mutation) => {
+      options?.onError?.(error, variables, context, mutation);
     },
   });
 };
