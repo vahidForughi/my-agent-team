@@ -6,7 +6,6 @@ import {
   Spin,
   Typography,
   Flex,
-  Space,
 } from 'antd';
 import {
   DeleteOutlined,
@@ -330,34 +329,19 @@ const CartPreview: React.FC<CartPreviewProps> = ({
               </Text>
             </Flex>
 
-            <Space direction="vertical" style={{ width: '100%' }} size={8}>
-              <Button
-                type="primary"
-                size="middle"
-                block
-                onClick={() => navigate('/checkout')}
-                style={{
-                  height: 42,
-                  fontWeight: 600,
-                  borderRadius: 10,
-                }}
-              >
-                Checkout
-              </Button>
-              <Button
-                size="middle"
-                block
-                onClick={() => navigate('/checkout')}
-                style={{
-                  height: 38,
-                  borderRadius: 10,
-                  border: '1px solid #e2e8f0',
-                  color: '#64748b',
-                }}
-              >
-                View Cart
-              </Button>
-            </Space>
+            <Button
+              type="primary"
+              size="middle"
+              block
+              onClick={() => navigate('/checkout')}
+              style={{
+                height: 42,
+                fontWeight: 600,
+                borderRadius: 10,
+              }}
+            >
+              Checkout
+            </Button>
           </div>
         </>
       )}

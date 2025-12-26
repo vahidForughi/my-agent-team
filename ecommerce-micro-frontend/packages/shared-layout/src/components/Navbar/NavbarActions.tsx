@@ -1,8 +1,6 @@
 import React from 'react';
 import { Space } from 'antd';
-import { useAuth } from '@ecommerce-platform/auth-provider';
 import {
-  NotificationButton,
   CartButton,
   UserMenuButton,
   CartItem,
@@ -39,13 +37,8 @@ function NavbarActions({
   onRemoveCartItem,
   appName,
 }: NavbarActionsProps) {
-  const { isAuthenticated } = useAuth();
-
   return (
     <Space size="large">
-      {/* Notifications - only shown when authenticated */}
-      {isAuthenticated && <NotificationButton appName={appName} />}
-
       {/* Cart with preview */}
       <CartButton
         count={basketCount}

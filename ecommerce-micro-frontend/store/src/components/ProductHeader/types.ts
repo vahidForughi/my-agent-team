@@ -1,4 +1,4 @@
-export type ProductFilterType = 'all' | 'new-arrivals' | 'best-seller';
+export type ProductFilterType = 'all';
 
 export type SortOption =
   | 'default'
