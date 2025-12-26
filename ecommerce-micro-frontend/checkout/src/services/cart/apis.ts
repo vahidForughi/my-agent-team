@@ -20,6 +20,39 @@ import type {
 } from './types';
 
 /**
+ * Resolve basket username from auth-provider storage
+ * Matches legacy Angular logic: email → localStorage basket_username → guest-{timestamp}
+ */
+function resolveBasketUsername(): string {
+  // 1. Try to get user email from auth-provider (Azure AD B2C)
+  try {
+    const authUserJson = localStorage.getItem('ecommerce-auth-user');
+    if (authUserJson) {
+      const authUser = JSON.parse(authUserJson);
+      const email = authUser.email || authUser.username;
+      if (email) {
+        const lowerEmail = email.toLowerCase();
+        localStorage.setItem('basket_username', lowerEmail);
+        return lowerEmail;
+      }
+    }
+  } catch (error) {
+    console.error('[Cart API] Failed to parse auth-provider user:', error);
+  }
+
+  // 2. Try existing basket_username from localStorage
+  const existing = localStorage.getItem('basket_username');
+  if (existing) {
+    return existing;
+  }
+
+  // 3. Generate new guest username
+  const guestUsername = `guest-${Date.now()}`;
+  localStorage.setItem('basket_username', guestUsername);
+  return guestUsername;
+}
+
+/**
  * Backend item format (PascalCase) - backend accepts PascalCase in requests
  */
 interface BackendCartItem {
@@ -319,28 +352,17 @@ export async function clearCart(request?: {
 export async function checkout(request: {
   payload: CheckoutRequest & { userName?: string };
 }): Promise<{ success: boolean; orderId?: number }> {
-  // userName should be passed from the hook using useAuth()
-  const userName = request.payload.userName || 'guest';
+  // Get userName from auth-provider or resolve from basket username logic
+  const userName = request.payload.userName || resolveBasketUsername();
   const url = API_CONFIG.BASKET.CHECKOUT;
 
-  // Transform to backend PascalCase format
+  // V2 API - only requires UserName and TotalPrice (PascalCase)
   const payload = {
     UserName: userName,
     TotalPrice: request.payload.totalPrice,
-    FirstName: request.payload.firstName,
-    LastName: request.payload.lastName,
-    EmailAddress: request.payload.emailAddress,
-    AddressLine: request.payload.addressLine,
-    Country: request.payload.country,
-    State: request.payload.state,
-    ZipCode: request.payload.zipCode,
-    CardName: request.payload.cardName,
-    CardNumber: request.payload.cardNumber,
-    Expiration: request.payload.expiration,
-    CVV: request.payload.cvv,
-    PaymentMethod: request.payload.paymentMethod,
   };
 
+  console.log('[Checkout API] V2 Checkout payload:', payload);
   const response = await axiosClient.post(url, payload);
 
   return {

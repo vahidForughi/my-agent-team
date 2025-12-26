@@ -47,6 +47,7 @@ applications:
             - cp -r dist/store dist/deploy/remotes/
             - cp -r dist/checkout dist/deploy/remotes/
             - cp -r dist/account dist/deploy/remotes/
+            - cp -r dist/admin dist/deploy/remotes/
       artifacts:
         # Output directory with all apps
         baseDirectory: dist/deploy
