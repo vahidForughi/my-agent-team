@@ -13,9 +13,10 @@ import {
   Col,
   Tooltip,
   theme,
-  Checkbox,
   message,
+  Flex,
 } from 'antd';
+import type { TableColumnsType } from 'antd';
 import {
   PlusOutlined,
   EditOutlined,
@@ -25,6 +26,7 @@ import {
   EyeOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from '@tanstack/react-router';
+import { AppInjectorProps } from '@ecommerce-platform/app-injector';
 import {
   useGetAllProducts,
   useDeleteProduct,
@@ -32,21 +34,23 @@ import {
   useGetAllTypes,
 } from '../../services';
 import type { Product } from '../../services/products';
-import { DataTable, FilterBar, EmptyState, SkeletonLoader } from '../../components/shared';
-import type { TableColumnsType } from 'antd';
+import {
+  DataTable,
+  FilterBar,
+  EmptyState,
+  SkeletonLoader,
+} from '../../components/shared';
 
 const { Title, Text } = Typography;
-const { Search } = Input;
 
-/**
- * ProductsManagement Component
- *
- * SOLID Principles Applied:
- * - SRP: Single responsibility for products list and management
- * - OCP: Open for extension via filters and actions
- */
-function ProductsManagement() {
-  // State hooks
+type ProductsManagementProps = {
+  config?: AppInjectorProps['config'];
+};
+
+function ProductsManagement(props: ProductsManagementProps) {
+  const { config } = props;
+  const { onError } = config || {};
+
   const [pageIndex, setPageIndex] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState('');
@@ -54,10 +58,13 @@ function ProductsManagement() {
   const [typeFilter, setTypeFilter] = useState<string | undefined>();
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
-  // Other hooks
   const navigate = useNavigate();
   const { token } = theme.useToken();
-  const { data: productsData, isLoading, refetch } = useGetAllProducts({
+  const {
+    data: productsData,
+    isLoading,
+    refetch,
+  } = useGetAllProducts({
     pageIndex,
     pageSize,
     search: search || undefined,
@@ -67,13 +74,16 @@ function ProductsManagement() {
   const { data: brands } = useGetAllBrands();
   const { data: types } = useGetAllTypes();
   const { mutate: deleteProduct, isPending: isDeleting } = useDeleteProduct();
+  const products = useMemo(
+    () => productsData?.data || [],
+    [productsData?.data]
+  );
+  const total = useMemo(() => productsData?.count || 0, [productsData?.count]);
+  const hasActiveFilters = useMemo(
+    () => !!(brandFilter || typeFilter || search),
+    [brandFilter, typeFilter, search]
+  );
 
-  // Derived state
-  const products = productsData?.data || [];
-  const total = productsData?.count || 0;
-  const hasActiveFilters = brandFilter || typeFilter || search;
-
-  // Helper functions
   function getProductPlural(count: number): string {
     if (count > 1) {
       return 'products';
@@ -81,28 +91,37 @@ function ProductsManagement() {
     return 'product';
   }
 
-  // Event handlers
   function handleCreate() {
     navigate({ to: '/products/new' });
   }
 
-  const handleEdit = useCallback((product: Product) => {
-    navigate({ to: `/products/${product.id}/edit` });
-  }, [navigate]);
+  const handleEdit = useCallback(
+    (product: Product) => {
+      navigate({ to: `/products/${product.id}/edit` });
+    },
+    [navigate]
+  );
 
-  const handleDelete = useCallback((id: string) => {
-    console.log('[ProductsManagement] Deleting product:', id);
-    deleteProduct(id, {
-      onSuccess: () => {
-        message.success('Product deleted successfully');
-        refetch();
-      },
-      onError: (error) => {
-        console.error('[ProductsManagement] Delete product error:', error);
-        message.error(error?.message || 'Failed to delete product. Please try again.');
-      },
-    });
-  }, [deleteProduct, refetch]);
+  const handleDelete = useCallback(
+    (id: string) => {
+      deleteProduct(id, {
+        onSuccess: () => {
+          message.success('Product deleted successfully');
+          refetch();
+        },
+        onError: (error) => {
+          if (onError) {
+            onError(error as Error);
+          } else {
+            message.error(
+              error?.message || 'Failed to delete product. Please try again.'
+            );
+          }
+        },
+      });
+    },
+    [deleteProduct, refetch, onError]
+  );
 
   function handleRefresh() {
     refetch();
@@ -116,7 +135,6 @@ function ProductsManagement() {
   }
 
   function handleBulkDelete() {
-    console.log('[ProductsManagement] Bulk deleting products:', selectedRowKeys);
     const count = selectedRowKeys.length;
     let successCount = 0;
     let errorCount = 0;
@@ -126,11 +144,16 @@ function ProductsManagement() {
         onSuccess: () => {
           successCount++;
           if (index === count - 1) {
-            // Last item processed
             if (errorCount === 0) {
-              message.success(`Successfully deleted ${count} ${getProductPlural(count)}`);
+              message.success(
+                `Successfully deleted ${count} ${getProductPlural(count)}`
+              );
             } else {
-              message.warning(`Deleted ${successCount} ${getProductPlural(successCount)}, ${errorCount} failed`);
+              message.warning(
+                `Deleted ${successCount} ${getProductPlural(
+                  successCount
+                )}, ${errorCount} failed`
+              );
             }
             refetch();
             setSelectedRowKeys([]);
@@ -138,13 +161,20 @@ function ProductsManagement() {
         },
         onError: (error) => {
           errorCount++;
-          console.error('[ProductsManagement] Bulk delete error:', error);
+          if (onError && index === count - 1) {
+            onError(error as Error);
+          }
           if (index === count - 1) {
-            // Last item processed
             if (successCount === 0) {
-              message.error(`Failed to delete ${getProductPlural(count)}`);
+              if (!onError) {
+                message.error(`Failed to delete ${getProductPlural(count)}`);
+              }
             } else {
-              message.warning(`Deleted ${successCount} ${getProductPlural(successCount)}, ${errorCount} failed`);
+              message.warning(
+                `Deleted ${successCount} ${getProductPlural(
+                  successCount
+                )}, ${errorCount} failed`
+              );
             }
             refetch();
             setSelectedRowKeys([]);
@@ -191,7 +221,6 @@ function ProductsManagement() {
     return chips;
   }, [search, brandFilter, typeFilter, brands, types]);
 
-  // Memoized values
   const columns = useMemo<TableColumnsType<Product>>(
     () => [
       {
@@ -244,11 +273,7 @@ function ProductsManagement() {
         width: '35%',
         sorter: true,
         ellipsis: true,
-        render: (name: string) => (
-          <Text strong>
-            {name}
-          </Text>
-        ),
+        render: (name: string) => <Text strong>{name}</Text>,
       },
       {
         title: 'Brand',
@@ -257,14 +282,10 @@ function ProductsManagement() {
         width: '15%',
         ellipsis: true,
         render: (brand: string) => {
-          if (brand) {
-            return (
-              <Tag color="blue">
-                {brand}
-              </Tag>
-            );
+          if (!brand) {
+            return <Tag>N/A</Tag>;
           }
-          return <Tag>N/A</Tag>;
+          return <Tag color="blue">{brand}</Tag>;
         },
       },
       {
@@ -274,14 +295,10 @@ function ProductsManagement() {
         width: '15%',
         ellipsis: true,
         render: (type: string) => {
-          if (type) {
-            return (
-              <Tag color="purple">
-                {type}
-              </Tag>
-            );
+          if (!type) {
+            return <Tag>N/A</Tag>;
           }
-          return <Tag>N/A</Tag>;
+          return <Tag color="purple">{type}</Tag>;
         },
       },
       {
@@ -346,7 +363,6 @@ function ProductsManagement() {
 
   return (
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
-      {/* Header Section */}
       <Row justify="space-between" align="middle">
         <Col>
           <Space direction="vertical" size={2}>
@@ -370,7 +386,6 @@ function ProductsManagement() {
         </Col>
       </Row>
 
-      {/* Filters Section */}
       <Card bodyStyle={{ padding: token.sizeUnit * 3 }}>
         <Space direction="vertical" size="middle" style={{ width: '100%' }}>
           <Row gutter={[token.sizeUnit * 2, token.sizeUnit * 2]}>
@@ -429,15 +444,10 @@ function ProductsManagement() {
             </Col>
           </Row>
 
-          {/* Filter Chips */}
           {filterChips.length > 0 && (
-            <FilterBar
-              chips={filterChips}
-              onClearAll={handleClearFilters}
-            />
+            <FilterBar chips={filterChips} onClearAll={handleClearFilters} />
           )}
 
-          {/* Bulk Actions */}
           {selectedRowKeys.length > 0 && (
             <Card
               bodyStyle={{
@@ -448,10 +458,13 @@ function ProductsManagement() {
             >
               <Space>
                 <Text strong>
-                  {selectedRowKeys.length} {getProductPlural(selectedRowKeys.length)} selected
+                  {selectedRowKeys.length}{' '}
+                  {getProductPlural(selectedRowKeys.length)} selected
                 </Text>
                 <Popconfirm
-                  title={`Delete ${selectedRowKeys.length} ${getProductPlural(selectedRowKeys.length)}?`}
+                  title={`Delete ${selectedRowKeys.length} ${getProductPlural(
+                    selectedRowKeys.length
+                  )}?`}
                   description="This action cannot be undone."
                   onConfirm={handleBulkDelete}
                   okText="Yes, Delete"
@@ -471,17 +484,15 @@ function ProductsManagement() {
         </Space>
       </Card>
 
-      {/* Products Table */}
       <Card bodyStyle={{ padding: 0 }}>
-        {isLoading ? (
-          <SkeletonLoader rows={5} />
-        ) : products.length === 0 ? (
-          <div style={{ padding: token.sizeUnit * 8 }}>
+        {isLoading && <SkeletonLoader rows={5} />}
+        {!isLoading && products.length === 0 && (
+          <Flex justify="center" style={{ padding: token.sizeUnit * 8 }}>
             <EmptyState
               title="No products found"
               description={
                 hasActiveFilters
-                  ? 'Try adjusting your filters to find what you\'re looking for'
+                  ? "Try adjusting your filters to find what you're looking for"
                   : 'Get started by creating your first product'
               }
               action={
@@ -494,8 +505,9 @@ function ProductsManagement() {
                   : undefined
               }
             />
-          </div>
-        ) : (
+          </Flex>
+        )}
+        {!isLoading && products.length > 0 && (
           <DataTable
             columns={columns}
             dataSource={products}

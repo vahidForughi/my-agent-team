@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Typography, Card, Descriptions, Button, Space, Avatar, Tag } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
 import { AppInjectorProps } from '@ecommerce-platform/app-injector';
@@ -10,29 +10,26 @@ type ProfilePageProps = {
   config?: AppInjectorProps['config'];
 };
 
-/**
- * ProfilePage Component
- *
- * SOLID Principles Applied:
- * - SRP: Single responsibility for displaying user profile
- */
 function ProfilePage(props: ProfilePageProps) {
-  // Props destructuring
   const { config } = props;
   const { appContext, onNavigate, onError } = config || {};
   const { user: contextUser } = appContext || {};
 
-  // Other hooks
   const { data: profileData, isLoading } = useGetUserProfile(
     undefined,
     { enabled: !!contextUser }
   );
 
-  // Derived state
-  const apiUser = profileData?.data;
-  const user = apiUser || contextUser;
+  const apiUser = useMemo(() => profileData?.data, [profileData?.data]);
+  const user = useMemo(() => apiUser || contextUser, [apiUser, contextUser]);
 
-  // Helper functions
+  const roleColor = useMemo(() => {
+    if (user?.role === 'admin') {
+      return 'red';
+    }
+    return 'blue';
+  }, [user?.role]);
+
   function getDisplayName(): string {
     if (apiUser) {
       const fullName = `${apiUser.firstName || ''} ${apiUser.lastName || ''}`.trim();
@@ -52,7 +49,6 @@ function ProfilePage(props: ProfilePageProps) {
     return 'Guest User';
   }
 
-  // Event handlers
   function handleEditProfile() {
     try {
       if (onNavigate) {
@@ -65,12 +61,11 @@ function ProfilePage(props: ProfilePageProps) {
     }
   }
 
-  // Early returns
   if (isLoading) {
     return (
       <Card loading>
-          <Title level={2}>My Profile</Title>
-        </Card>
+        <Title level={2}>My Profile</Title>
+      </Card>
     );
   }
 
@@ -106,7 +101,7 @@ function ProfilePage(props: ProfilePageProps) {
               {user?.phone || 'Not provided'}
             </Descriptions.Item>
             <Descriptions.Item label="Role">
-              <Tag color={user?.role === 'admin' ? 'red' : 'blue'}>
+              <Tag color={roleColor}>
                 {user?.role || 'guest'}
               </Tag>
             </Descriptions.Item>

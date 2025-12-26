@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Upload,
   Button,
@@ -21,29 +21,36 @@ import {
   FileImageOutlined,
   ReloadOutlined,
 } from '@ant-design/icons';
+import { AppInjectorProps } from '@ecommerce-platform/app-injector';
 import { useUploadProductImage } from '../../services';
 
 const { Title, Text, Paragraph } = Typography;
 const { Dragger } = Upload;
 
-/**
- * ProductUpload Component
- *
- * SOLID Principles Applied:
- * - SRP: Single responsibility for product image upload functionality
- * - OCP: Open for extension via additional upload options
- */
-function ProductUpload() {
-  // State hooks
+type ProductUploadProps = {
+  config?: AppInjectorProps['config'];
+};
+
+function ProductUpload(props: ProductUploadProps) {
+  const { config } = props;
+  const { onError } = config || {};
+
   const [fileList, setFileList] = useState<File[]>([]);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
 
-  // Other hooks
   const { token } = theme.useToken();
   const { mutate: uploadImage, isPending, isSuccess } = useUploadProductImage();
 
-  // Event handlers
+  const fileListForUpload = useMemo(
+    () =>
+      fileList.map((file) => ({
+        uid: file.name,
+        name: file.name,
+        status: 'done' as const,
+      })),
+    [fileList]
+  );
   function handleFileSelect(file: File) {
     setFileList([file]);
     const reader = new FileReader();
@@ -71,34 +78,42 @@ function ProductUpload() {
           setUploadedUrl(data.imageUrl);
         }
       },
+      onError: (error) => {
+        if (onError) {
+          onError(error as Error);
+        }
+      },
     });
   }
 
-  const handleCustomRequest = useCallback(
-    (options: UploadRequestOption) => {
-      const { file, onSuccess, onError } = options;
-      const fileObj = file as File;
-      
-      uploadImage(fileObj, {
-        onSuccess: (data) => {
-          if (data?.success) {
-            onSuccess?.('ok');
-            if (data.imageUrl) {
-              setUploadedUrl(data.imageUrl);
-            }
-          } else {
-            onError?.(new Error(data?.message || 'Upload failed'));
-          }
-        },
-        onError: (error) => {
-          onError?.(error as Error);
-        },
-      });
-    },
-    [uploadImage]
-  );
+  function handleCustomRequest(options: UploadRequestOption) {
+    const { file, onSuccess, onError: onUploadError } = options;
+    const fileObj = file as File;
 
-  // Early returns
+    uploadImage(fileObj, {
+      onSuccess: (data) => {
+        if (data?.success) {
+          onSuccess?.('ok');
+          if (data.imageUrl) {
+            setUploadedUrl(data.imageUrl);
+          }
+        } else {
+          const error = new Error(data?.message || 'Upload failed');
+          onUploadError?.(error);
+          if (onError) {
+            onError(error);
+          }
+        }
+      },
+      onError: (error) => {
+        onUploadError?.(error as Error);
+        if (onError) {
+          onError(error as Error);
+        }
+      },
+    });
+  }
+
   if (isSuccess && uploadedUrl) {
     return (
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
@@ -110,7 +125,7 @@ function ProductUpload() {
           showIcon
           closable
         />
-        
+
         <Card>
           <Space direction="vertical" size="large" style={{ width: '100%' }}>
             <Flex justify="space-between" align="center">
@@ -121,28 +136,36 @@ function ProductUpload() {
                 Ready
               </Tag>
             </Flex>
-            
+
             <Card
               hoverable
               cover={
                 <Image
                   src={uploadedUrl}
                   alt="Uploaded product image"
-                  style={{ width: '100%', maxHeight: 400, objectFit: 'contain' }}
+                  style={{
+                    width: '100%',
+                    maxHeight: 400,
+                    objectFit: 'contain',
+                  }}
                   preview
                 />
               }
             />
-            
+
             <Divider />
-            
+
             <Space direction="vertical" size="small" style={{ width: '100%' }}>
               <Text strong>Image URL</Text>
-              <Text copyable={{ text: uploadedUrl }} code style={{ display: 'block', wordBreak: 'break-all' }}>
+              <Text
+                copyable={{ text: uploadedUrl }}
+                code
+                style={{ display: 'block', wordBreak: 'break-all' }}
+              >
                 {uploadedUrl}
               </Text>
             </Space>
-            
+
             <Button
               type="primary"
               size="large"
@@ -166,7 +189,8 @@ function ProductUpload() {
             Upload Product Image
           </Title>
           <Paragraph type="secondary" style={{ margin: 0 }}>
-            Upload product images to S3 storage. Supported formats: JPG, PNG, JPEG, WebP, GIF. Maximum file size: 10MB.
+            Upload product images to S3 storage. Supported formats: JPG, PNG,
+            JPEG, WebP, GIF. Maximum file size: 10MB.
           </Paragraph>
         </Space>
       </Card>
@@ -184,11 +208,7 @@ function ProductUpload() {
             <Space direction="vertical" size="large" style={{ width: '100%' }}>
               <Dragger
                 customRequest={handleCustomRequest}
-                fileList={fileList.map((file) => ({
-                  uid: file.name,
-                  name: file.name,
-                  status: 'done' as const,
-                }))}
+                fileList={fileListForUpload}
                 beforeUpload={(file) => {
                   handleFileSelect(file);
                   return false;
@@ -198,8 +218,15 @@ function ProductUpload() {
                 accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
                 disabled={isPending}
               >
-                <Space direction="vertical" align="center" size="large" style={{ padding: '48px 0' }}>
-                  <UploadOutlined style={{ fontSize: 64, color: token.colorPrimary }} />
+                <Space
+                  direction="vertical"
+                  align="center"
+                  size="large"
+                  style={{ padding: '48px 0' }}
+                >
+                  <UploadOutlined
+                    style={{ fontSize: 64, color: token.colorPrimary }}
+                  />
                   <Space direction="vertical" size="small" align="center">
                     <Text strong style={{ fontSize: 16 }}>
                       Click or drag file to this area to upload
@@ -210,7 +237,7 @@ function ProductUpload() {
                   </Space>
                 </Space>
               </Dragger>
-              
+
               {fileList.length > 0 && (
                 <Button
                   type="primary"
@@ -220,13 +247,13 @@ function ProductUpload() {
                   onClick={handleUpload}
                   icon={<UploadOutlined />}
                 >
-                  {isPending ? 'Uploading to S3...' : 'Upload to S3'}
+                  Upload to S3
                 </Button>
               )}
             </Space>
           </Card>
         </Col>
-        
+
         <Col xs={24} lg={12}>
           <Card
             title={
@@ -237,29 +264,43 @@ function ProductUpload() {
             }
           >
             {previewUrl && (
-              <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+              <Space
+                direction="vertical"
+                size="middle"
+                style={{ width: '100%' }}
+              >
                 <Card
                   hoverable
                   cover={
                     <Image
                       src={previewUrl}
                       alt="Preview"
-                      style={{ width: '100%', maxHeight: 300, objectFit: 'contain' }}
+                      style={{
+                        width: '100%',
+                        maxHeight: 300,
+                        objectFit: 'contain',
+                      }}
                       preview
                     />
                   }
                 />
-                
+
                 <Divider style={{ margin: '16px 0' }} />
-                
-                <Space direction="vertical" size="small" style={{ width: '100%' }}>
+
+                <Space
+                  direction="vertical"
+                  size="small"
+                  style={{ width: '100%' }}
+                >
                   <Flex justify="space-between" align="center">
                     <Text type="secondary">File name:</Text>
                     <Text strong>{fileList[0]?.name}</Text>
                   </Flex>
                   <Flex justify="space-between" align="center">
                     <Text type="secondary">File size:</Text>
-                    <Text strong>{(fileList[0]?.size / 1024 / 1024).toFixed(2)} MB</Text>
+                    <Text strong>
+                      {(fileList[0]?.size / 1024 / 1024).toFixed(2)} MB
+                    </Text>
                   </Flex>
                   <Flex justify="space-between" align="center">
                     <Text type="secondary">File type:</Text>
@@ -276,14 +317,14 @@ function ProductUpload() {
                 size="middle"
                 style={{ width: '100%', padding: '64px 0', minHeight: 300 }}
               >
-                <FileImageOutlined style={{ fontSize: 64, color: token.colorTextQuaternary }} />
+                <FileImageOutlined
+                  style={{ fontSize: 64, color: token.colorTextQuaternary }}
+                />
                 <Space direction="vertical" size="small" align="center">
                   <Text type="secondary" strong>
                     No image selected
                   </Text>
-                  <Text type="secondary">
-                    Select an image to see preview
-                  </Text>
+                  <Text type="secondary">Select an image to see preview</Text>
                 </Space>
               </Space>
             )}

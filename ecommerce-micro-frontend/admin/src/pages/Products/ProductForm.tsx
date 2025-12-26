@@ -26,6 +26,7 @@ import {
   DeleteOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from '@tanstack/react-router';
+import { AppInjectorProps } from '@ecommerce-platform/app-injector';
 import {
   useCreateProduct,
   useUpdateProduct,
@@ -34,7 +35,10 @@ import {
   useGetAllTypes,
   useUploadProductImage,
 } from '../../services';
-import type { CreateProductInput, UpdateProductInput } from '../../services/products';
+import type {
+  CreateProductInput,
+  UpdateProductInput,
+} from '../../services/products';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -42,31 +46,25 @@ const { Dragger } = Upload;
 
 type ProductFormProps = {
   productId?: string;
+  config?: AppInjectorProps['config'];
 };
 
-/**
- * ProductForm Component
- *
- * SOLID Principles Applied:
- * - SRP: Single responsibility for product form (create/edit)
- * - OCP: Open for extension via additional fields
- */
 function ProductForm(props: ProductFormProps) {
-  // Props destructuring
-  const { productId } = props;
+  const { productId, config } = props;
+  const { onError, onNavigate } = config || {};
 
-  // State hooks
   const [form] = Form.useForm();
   const [imageUrl, setImageUrl] = useState<string>('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadError, setUploadError] = useState<string>('');
-  const [pendingSubmit, setPendingSubmit] = useState<boolean>(false);
-  const [pendingFormValues, setPendingFormValues] = useState<CreateProductInput & { brandId?: string; typeId?: string } | null>(null);
+  const [pendingFormValues, setPendingFormValues] = useState<
+    (CreateProductInput & { brandId?: string; typeId?: string }) | null
+  >(null);
 
-  // Other hooks
+  const isEditMode = !!productId;
+
   const navigate = useNavigate();
   const { token } = theme.useToken();
-  const isEditMode = !!productId;
   const { data: product, isLoading: isLoadingProduct } = useGetProductById(
     productId || '',
     { enabled: isEditMode }
@@ -75,20 +73,9 @@ function ProductForm(props: ProductFormProps) {
   const { data: types } = useGetAllTypes();
   const { mutate: createProduct, isPending: isCreating } = useCreateProduct();
   const { mutate: updateProduct, isPending: isUpdating } = useUpdateProduct();
-  const { mutate: uploadImage, isPending: isUploading } = useUploadProductImage();
+  const { mutate: uploadImage, isPending: isUploading } =
+    useUploadProductImage();
 
-  // Memoized values
-  const brandOptions = useMemo(
-    () => brands?.map((brand) => ({ label: brand.name, value: brand.id })) || [],
-    [brands]
-  );
-
-  const typeOptions = useMemo(
-    () => types?.map((type) => ({ label: type.name, value: type.id })) || [],
-    [types]
-  );
-
-  // Effects
   useEffect(() => {
     if (product && isEditMode) {
       form.setFieldsValue({
@@ -105,28 +92,46 @@ function ProductForm(props: ProductFormProps) {
     }
   }, [product, isEditMode, form]);
 
-  // Event handlers
+  const brandOptions = useMemo(
+    () =>
+      brands?.map((brand) => ({ label: brand.name, value: brand.id })) || [],
+    [brands]
+  );
+
+  const typeOptions = useMemo(
+    () => types?.map((type) => ({ label: type.name, value: type.id })) || [],
+    [types]
+  );
+
   function handleBack() {
-    navigate({ to: '/products' });
+    if (onNavigate) {
+      onNavigate('/products');
+    } else {
+      navigate({ to: '/products' });
+    }
   }
 
   function handleFileSelect(file: File) {
-    // Prevent selecting a new file while upload is in progress
     if (isUploading) {
       message.warning('Please wait for the current upload to complete');
       return false;
     }
 
-    // Validate file type
-    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
+    const allowedTypes = [
+      'image/png',
+      'image/jpeg',
+      'image/jpg',
+      'image/webp',
+      'image/gif',
+    ];
     if (!allowedTypes.includes(file.type)) {
-      const errorMsg = 'Invalid file type. Allowed types: PNG, JPG, JPEG, WebP, GIF';
+      const errorMsg =
+        'Invalid file type. Allowed types: PNG, JPG, JPEG, WebP, GIF';
       message.error(errorMsg);
       setUploadError(errorMsg);
       return false;
     }
 
-    // Validate file size (max 10MB)
     const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
       const errorMsg = 'File size exceeds 10MB limit';
@@ -135,14 +140,10 @@ function ProductForm(props: ProductFormProps) {
       return false;
     }
 
-    // Set selected file and immediately upload to S3
     setSelectedFile(file);
     setUploadError('');
-    
-    // Automatically upload the image to S3
     handleImageUpload(file);
-    
-    return false; // Prevent default upload
+    return false;
   }
 
   function handleImageUpload(file: File, shouldSubmitAfterUpload = false) {
@@ -153,29 +154,34 @@ function ProductForm(props: ProductFormProps) {
           setImageUrl(data.imageUrl);
           setSelectedFile(null);
           form.setFieldValue('imageFile', data.imageUrl);
-          
-          // If we were waiting to submit after upload, do it now
+
           if (shouldSubmitAfterUpload && pendingFormValues) {
-            setPendingSubmit(false);
             submitFormWithValues(pendingFormValues, data.imageUrl);
             setPendingFormValues(null);
           }
         } else {
           const errorMsg = data?.message || 'Failed to upload image';
+          const error = new Error(errorMsg);
           setUploadError(errorMsg);
-          message.error(errorMsg);
+          if (onError) {
+            onError(error);
+          } else {
+            message.error(errorMsg);
+          }
           if (shouldSubmitAfterUpload) {
-            setPendingSubmit(false);
             setPendingFormValues(null);
           }
         }
       },
-      onError: () => {
+      onError: (error) => {
         const errorMsg = 'An error occurred during upload. Please try again.';
         setUploadError(errorMsg);
-        message.error(errorMsg);
+        if (onError) {
+          onError(error as Error);
+        } else {
+          message.error(errorMsg);
+        }
         if (shouldSubmitAfterUpload) {
-          setPendingSubmit(false);
           setPendingFormValues(null);
         }
       },
@@ -189,9 +195,10 @@ function ProductForm(props: ProductFormProps) {
     form.setFieldValue('imageFile', undefined);
   }
 
-  function submitFormWithValues(formValues: CreateProductInput & { brandId?: string; typeId?: string }, imageUrlToUse: string) {
-    console.log('[ProductForm] submitFormWithValues called', { formValues, imageUrlToUse, isEditMode });
-
+  function submitFormWithValues(
+    formValues: CreateProductInput & { brandId?: string; typeId?: string },
+    imageUrlToUse: string
+  ) {
     const selectedBrand = brands?.find((b) => b.id === formValues.brandId);
     const selectedType = types?.find((t) => t.id === formValues.typeId);
 
@@ -217,16 +224,23 @@ function ProductForm(props: ProductFormProps) {
         types: { id: selectedType.id, name: selectedType.name },
       };
 
-      console.log('[ProductForm] Calling updateProduct with data:', updateData);
-
       updateProduct(updateData, {
         onSuccess: () => {
           message.success('Product updated successfully');
-          navigate({ to: '/products' });
+          if (onNavigate) {
+            onNavigate('/products');
+          } else {
+            navigate({ to: '/products' });
+          }
         },
         onError: (error) => {
-          console.error('[ProductForm] Update product error:', error);
-          message.error(error?.message || 'Failed to update product. Please try again.');
+          if (onError) {
+            onError(error as Error);
+          } else {
+            message.error(
+              error?.message || 'Failed to update product. Please try again.'
+            );
+          }
         },
       });
     } else {
@@ -240,67 +254,70 @@ function ProductForm(props: ProductFormProps) {
         types: { id: selectedType.id, name: selectedType.name },
       };
 
-      console.log('[ProductForm] Calling createProduct with data:', createData);
-
       createProduct(createData, {
         onSuccess: () => {
           message.success('Product created successfully');
-          navigate({ to: '/products' });
+          if (onNavigate) {
+            onNavigate('/products');
+          } else {
+            navigate({ to: '/products' });
+          }
         },
         onError: (error) => {
-          console.error('[ProductForm] Create product error:', error);
-          message.error(error?.message || 'Failed to create product. Please try again.');
+          if (onError) {
+            onError(error as Error);
+          } else {
+            message.error(
+              error?.message || 'Failed to create product. Please try again.'
+            );
+          }
         },
       });
     }
   }
 
   function handleSubmit(values: unknown) {
-    const formValues = values as CreateProductInput & { brandId?: string; typeId?: string };
+    const formValues = values as CreateProductInput & {
+      brandId?: string;
+      typeId?: string;
+    };
 
-    // Validate image for create mode
     if (!isEditMode && !imageUrl && !selectedFile) {
       message.error('Please upload a product image');
       setUploadError('Product image is required');
       return;
     }
 
-    // If upload is already in progress, wait
     if (isUploading) {
       message.warning('Please wait for image upload to complete');
       return;
     }
 
-    // If file is selected but not uploaded yet, upload it first then submit
     if (selectedFile && !imageUrl) {
-      setPendingSubmit(true);
       setPendingFormValues(formValues);
       handleImageUpload(selectedFile, true);
       return;
     }
 
-    // Submit with existing image URL
     submitFormWithValues(formValues, imageUrl);
   }
 
-  // Early returns
   if (isLoadingProduct && isEditMode) {
     return <Card loading style={{ minHeight: 400 }} />;
   }
 
   return (
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
-      {/* Header */}
       <Row justify="space-between" align="middle">
         <Col>
           <Space direction="vertical" size={2}>
             <Title level={3} style={{ marginBottom: 0, fontWeight: 600 }}>
-              {isEditMode ? 'Edit Product' : 'Create New Product'}
+              {isEditMode && 'Edit Product'}
+              {!isEditMode && 'Create New Product'}
             </Title>
             <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
-              {isEditMode
-                ? 'Update product information and details'
-                : 'Add a new product to your catalog'}
+              {isEditMode && 'Update product information and details'}
+              {!isEditMode && 'Add a new product to your catalog'}
             </Text>
           </Space>
         </Col>
@@ -311,7 +328,6 @@ function ProductForm(props: ProductFormProps) {
         </Col>
       </Row>
 
-      {/* Form */}
       <Form
         form={form}
         layout="vertical"
@@ -323,10 +339,8 @@ function ProductForm(props: ProductFormProps) {
         scrollToFirstError
       >
         <Row gutter={[token.sizeUnit * 4, token.sizeUnit * 4]}>
-          {/* Left Column - Form Fields */}
           <Col xs={24} lg={16}>
             <Space direction="vertical" size="large" style={{ width: '100%' }}>
-              {/* Basic Information Section */}
               <Card
                 title={
                   <Text strong style={{ fontSize: token.fontSizeLG }}>
@@ -335,7 +349,11 @@ function ProductForm(props: ProductFormProps) {
                 }
                 bodyStyle={{ padding: token.sizeUnit * 4 }}
               >
-                <Space direction="vertical" size="large" style={{ width: '100%' }}>
+                <Space
+                  direction="vertical"
+                  size="large"
+                  style={{ width: '100%' }}
+                >
                   <Form.Item
                     name="name"
                     label={
@@ -345,8 +363,14 @@ function ProductForm(props: ProductFormProps) {
                     }
                     rules={[
                       { required: true, message: 'Please enter product name' },
-                      { min: 3, message: 'Product name must be at least 3 characters' },
-                      { max: 200, message: 'Product name must not exceed 200 characters' },
+                      {
+                        min: 3,
+                        message: 'Product name must be at least 3 characters',
+                      },
+                      {
+                        max: 200,
+                        message: 'Product name must not exceed 200 characters',
+                      },
                     ]}
                     hasFeedback
                   >
@@ -354,7 +378,7 @@ function ProductForm(props: ProductFormProps) {
                   </Form.Item>
 
                   <Form.Item
-                  required
+                    required
                     name="summary"
                     label={
                       <Text strong>
@@ -363,9 +387,15 @@ function ProductForm(props: ProductFormProps) {
                     }
                     help="A brief description that appears in product listings (max 200 characters)"
                     rules={[
-                      { required: true, message: 'Please enter product summary' },
+                      {
+                        required: true,
+                        message: 'Please enter product summary',
+                      },
                       { min: 1, message: 'Summary is required' },
-                      { max: 200, message: 'Summary must not exceed 200 characters' },
+                      {
+                        max: 200,
+                        message: 'Summary must not exceed 200 characters',
+                      },
                     ]}
                     hasFeedback
                   >
@@ -385,9 +415,15 @@ function ProductForm(props: ProductFormProps) {
                     }
                     help="Detailed product description for customers (max 2000 characters)"
                     rules={[
-                      { required: true, message: 'Please enter product description' },
+                      {
+                        required: true,
+                        message: 'Please enter product description',
+                      },
                       { min: 1, message: 'Description is required' },
-                      { max: 2000, message: 'Description must not exceed 2000 characters' },
+                      {
+                        max: 2000,
+                        message: 'Description must not exceed 2000 characters',
+                      },
                     ]}
                     hasFeedback
                   >
@@ -401,7 +437,6 @@ function ProductForm(props: ProductFormProps) {
                 </Space>
               </Card>
 
-              {/* Pricing & Classification Section */}
               <Card
                 title={
                   <Text strong style={{ fontSize: token.fontSizeLG }}>
@@ -410,7 +445,11 @@ function ProductForm(props: ProductFormProps) {
                 }
                 bodyStyle={{ padding: token.sizeUnit * 4 }}
               >
-                <Space direction="vertical" size="large" style={{ width: '100%' }}>
+                <Space
+                  direction="vertical"
+                  size="large"
+                  style={{ width: '100%' }}
+                >
                   <Row gutter={token.sizeUnit * 2}>
                     <Col xs={24} sm={12}>
                       <Form.Item
@@ -422,7 +461,11 @@ function ProductForm(props: ProductFormProps) {
                         }
                         rules={[
                           { required: true, message: 'Please enter price' },
-                          { type: 'number', min: 0, message: 'Price must be positive' },
+                          {
+                            type: 'number',
+                            min: 0,
+                            message: 'Price must be positive',
+                          },
                         ]}
                         hasFeedback
                       >
@@ -452,7 +495,9 @@ function ProductForm(props: ProductFormProps) {
                         <Select
                           placeholder="Select brand"
                           options={brandOptions}
-                          notFoundContent={<Text type="secondary">No brands available</Text>}
+                          notFoundContent={
+                            <Text type="secondary">No brands available</Text>
+                          }
                         />
                       </Form.Item>
                     </Col>
@@ -466,14 +511,19 @@ function ProductForm(props: ProductFormProps) {
                       </Text>
                     }
                     rules={[
-                      { required: true, message: 'Please select a product type' },
+                      {
+                        required: true,
+                        message: 'Please select a product type',
+                      },
                     ]}
                     hasFeedback
                   >
                     <Select
                       placeholder="Select product type"
                       options={typeOptions}
-                      notFoundContent={<Text type="secondary">No types available</Text>}
+                      notFoundContent={
+                        <Text type="secondary">No types available</Text>
+                      }
                     />
                   </Form.Item>
                 </Space>
@@ -481,7 +531,6 @@ function ProductForm(props: ProductFormProps) {
             </Space>
           </Col>
 
-          {/* Right Column - Image Upload */}
           <Col xs={24} lg={8}>
             <Card
               title={
@@ -494,9 +543,17 @@ function ProductForm(props: ProductFormProps) {
                 </Flex>
               }
             >
-              <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+              <Space
+                direction="vertical"
+                size="middle"
+                style={{ width: '100%' }}
+              >
                 {imageUrl && (
-                  <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                  <Space
+                    direction="vertical"
+                    size="middle"
+                    style={{ width: '100%' }}
+                  >
                     <Card
                       hoverable
                       cover={
@@ -512,7 +569,7 @@ function ProductForm(props: ProductFormProps) {
                         />
                       }
                     />
-                    
+
                     <Flex justify="space-between" align="center">
                       <Tag color="success" icon={<FileImageOutlined />}>
                         Image Uploaded
@@ -529,7 +586,11 @@ function ProductForm(props: ProductFormProps) {
                 )}
 
                 {!imageUrl && (
-                  <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                  <Space
+                    direction="vertical"
+                    size="middle"
+                    style={{ width: '100%' }}
+                  >
                     <Dragger
                       beforeUpload={handleFileSelect}
                       showUploadList={false}
@@ -542,7 +603,9 @@ function ProductForm(props: ProductFormProps) {
                         size="large"
                         style={{ padding: '48px 0' }}
                       >
-                        <InboxOutlined style={{ fontSize: 56, color: token.colorPrimary }} />
+                        <InboxOutlined
+                          style={{ fontSize: 56, color: token.colorPrimary }}
+                        />
                         <Space direction="vertical" size="small" align="center">
                           <Text strong style={{ fontSize: 15 }}>
                             Click or drag image to upload
@@ -577,7 +640,11 @@ function ProductForm(props: ProductFormProps) {
                     {selectedFile && !isUploading && !uploadError && (
                       <Alert
                         message="Ready to Upload"
-                        description={`Selected: ${selectedFile.name} (${(selectedFile.size / 1024 / 1024).toFixed(2)} MB)`}
+                        description={`Selected: ${selectedFile.name} (${(
+                          selectedFile.size /
+                          1024 /
+                          1024
+                        ).toFixed(2)} MB)`}
                         type="success"
                         showIcon
                       />
@@ -589,8 +656,12 @@ function ProductForm(props: ProductFormProps) {
           </Col>
         </Row>
 
-        {/* Form Actions */}
-        <Card bodyStyle={{ padding: token.sizeUnit * 4, background: token.colorFillTertiary }}>
+        <Card
+          bodyStyle={{
+            padding: token.sizeUnit * 4,
+            background: token.colorFillTertiary,
+          }}
+        >
           <Form.Item style={{ marginBottom: 0 }}>
             <Space>
               <Button
@@ -600,15 +671,11 @@ function ProductForm(props: ProductFormProps) {
                 loading={isCreating || isUpdating || isUploading}
                 disabled={isUploading}
               >
-                {isUploading
-                  ? 'Uploading Image...'
-                  : isEditMode
-                    ? 'Update Product'
-                    : 'Create Product'}
+                {isUploading && 'Uploading Image...'}
+                {!isUploading && isEditMode && 'Update Product'}
+                {!isUploading && !isEditMode && 'Create Product'}
               </Button>
-              <Button onClick={handleBack}>
-                Cancel
-              </Button>
+              <Button onClick={handleBack}>Cancel</Button>
             </Space>
           </Form.Item>
         </Card>

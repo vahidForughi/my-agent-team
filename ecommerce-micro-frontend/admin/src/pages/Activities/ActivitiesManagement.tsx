@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Space } from 'antd';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import { AppInjectorProps } from '@ecommerce-platform/app-injector';
 import { useGetRecentActivities } from '../../services/activities';
 import type { Activity } from '../../services/activities';
 import ExportModal from '../../components/Activities/ExportModal';
@@ -18,7 +19,11 @@ import { useActivitiesHandlers } from '../../components/Activities/useActivities
 
 dayjs.extend(relativeTime);
 
-function ActivitiesManagement() {
+type ActivitiesManagementProps = {
+  config?: AppInjectorProps['config'];
+};
+
+function ActivitiesManagement(props: ActivitiesManagementProps) {
   const [viewMode, setViewMode] = useState<'table' | 'statistics'>('table');
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(
     null
@@ -26,7 +31,6 @@ function ActivitiesManagement() {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
-
   const filters = useActivitiesFilters();
   const {
     pageIndex,
@@ -77,33 +81,22 @@ function ActivitiesManagement() {
     resetPageIndex,
     selectedActivity,
   });
-
-  const {
-    handleActivityClick,
-    handleViewEntity,
-    handlePresetFilter: handlePresetFilterBase,
-    handleResetFilters,
-    handleEntityTypeChange,
-    handleActivityTypeChange,
-    handleDateRangeChange,
-    handleActorChange,
-    handleSearchChange,
-    handlePaginationChange,
-    handleRowSelectionChange,
-    handleSelectAll,
-    handleRowClick,
-    handleViewAllRelatedActivities,
-    handleViewAllEntityTypeActivities,
-    handleRelatedActivityClick,
-  } = handlers;
-
   const activities = useMemo(
     () => activitiesData?.items || [],
     [activitiesData?.items]
   );
-  const totalCount = activitiesData?.totalCount || 0;
-  const totalPages = activitiesData?.totalPages || 0;
-  const isRefreshDisabled = isLoading || refreshCooldownRemaining > 0;
+  const totalCount = useMemo(
+    () => activitiesData?.totalCount || 0,
+    [activitiesData?.totalCount]
+  );
+  const totalPages = useMemo(
+    () => activitiesData?.totalPages || 0,
+    [activitiesData?.totalPages]
+  );
+  const isRefreshDisabled = useMemo(
+    () => isLoading || refreshCooldownRemaining > 0,
+    [isLoading, refreshCooldownRemaining]
+  );
 
   const filteredActivities = useMemo(() => {
     if (!searchQuery.trim()) return activities;
@@ -153,6 +146,25 @@ function ActivitiesManagement() {
       )
       .slice(0, 5);
   }, [selectedActivity, activities]);
+
+  const {
+    handleActivityClick,
+    handleViewEntity,
+    handlePresetFilter: handlePresetFilterBase,
+    handleResetFilters,
+    handleEntityTypeChange,
+    handleActivityTypeChange,
+    handleDateRangeChange,
+    handleActorChange,
+    handleSearchChange,
+    handlePaginationChange,
+    handleRowSelectionChange,
+    handleSelectAll,
+    handleRowClick,
+    handleViewAllRelatedActivities,
+    handleViewAllEntityTypeActivities,
+    handleRelatedActivityClick,
+  } = handlers;
 
   const columns = useActivitiesColumns({
     onActivityClick: handleActivityClick,

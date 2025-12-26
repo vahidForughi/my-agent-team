@@ -8,22 +8,13 @@ type SettingsPageProps = {
   config?: AppInjectorProps['config'];
 };
 
-/**
- * SettingsPage Component
- *
- * SOLID Principles Applied:
- * - SRP: Single responsibility for account settings management
- */
 function SettingsPage(props: SettingsPageProps) {
-  // Props destructuring
   const { config } = props;
   const { onNavigate, onLogout, onError } = config || {};
 
-  // State hooks
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [emailUpdates, setEmailUpdates] = useState(true);
 
-  // Event handlers
   function handleEditProfile() {
     try {
       if (onNavigate) {
@@ -52,22 +43,26 @@ function SettingsPage(props: SettingsPageProps) {
 
   function handleToggleNotifications(checked: boolean) {
     setNotificationsEnabled(checked);
-    const status = checked ? 'enabled' : 'disabled';
+    let status = 'disabled';
+    if (checked) {
+      status = 'enabled';
+    }
     message.success(`Notifications ${status}`);
   }
 
   function handleToggleEmailUpdates(checked: boolean) {
     setEmailUpdates(checked);
-    const status = checked ? 'enabled' : 'disabled';
+    let status = 'disabled';
+    if (checked) {
+      status = 'enabled';
+    }
     message.success(`Email updates ${status}`);
   }
 
   return (
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
       <Title level={2}>Account Settings</Title>
-      <Text type="secondary">
-        Manage your account preferences and settings
-      </Text>
+      <Text type="secondary">Manage your account preferences and settings</Text>
 
       <Card>
         <Space direction="vertical" size="large" style={{ width: '100%' }}>

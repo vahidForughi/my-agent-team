@@ -19,6 +19,9 @@ import {
   DeleteOutlined,
   UserOutlined,
 } from '@ant-design/icons';
+import { useRouteContext } from '@tanstack/react-router';
+import { AppInjectorProps } from '@ecommerce-platform/app-injector';
+import { useAuth } from '@ecommerce-platform/auth-provider';
 import { useGetAllOrders, useDeleteOrder } from '../../services';
 import type { Order } from '../../services/orders';
 import {
@@ -29,10 +32,12 @@ import {
   StatusBadge,
   StatsCards,
 } from '../../components/shared';
-import { useAuth } from '@ecommerce-platform/auth-provider';
-import { useRouteContext } from '@tanstack/react-router';
 
 const { Title, Text } = Typography;
+
+type OrdersManagementProps = {
+  config?: AppInjectorProps['config'];
+};
 
 /**
  * OrdersManagement Component
@@ -40,41 +45,25 @@ const { Title, Text } = Typography;
  * SOLID Principles Applied:
  * - SRP: Single responsibility for orders list and management
  */
-function OrdersManagement() {
-  // State hooks
+function OrdersManagement(props: OrdersManagementProps) {
+  const { config } = props;
+  const { onError } = config || {};
+
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | undefined>();
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
-  // Other hooks
   const { token } = theme.useToken();
   const routeContext = useRouteContext({ from: '__root__' });
-  // Get current user's username - backend requires userName parameter
-  // Note: Backend doesn't support "all orders" - it filters by specific userName
-  // For admin views showing all orders, backend would need to be modified
-  // Try router context auth first (from host app), then fall back to auth-provider
-  const routerUser = routeContext?.auth?.user as
-    | { username?: string }
-    | undefined;
+  const routerUser = routeContext?.auth?.user as { username?: string } | undefined;
   const { user } = useAuth();
   const currentUserName =
     routerUser?.username || user?.username || user?.email || user?.id || '';
-  const {
-    data: orders = [],
-    isLoading,
-    refetch,
-  } = useGetAllOrders(currentUserName || '', { enabled: !!currentUserName });
+  const { data: orders = [], isLoading, refetch } = useGetAllOrders(
+    currentUserName || '',
+    { enabled: !!currentUserName }
+  );
   const { mutate: deleteOrder } = useDeleteOrder();
-
-  // Helper functions
-  function getOrderPlural(count: number): string {
-    if (count > 1) {
-      return 'orders';
-    }
-    return 'order';
-  }
-
-  // Derived state
   const filteredOrders = useMemo(() => {
     if (!orders) return [];
     let filtered = orders;
@@ -115,12 +104,24 @@ function OrdersManagement() {
     return totalRevenue / filteredOrders.length;
   }, [filteredOrders, totalRevenue]);
 
-  // Event handlers
+  function getOrderPlural(count: number): string {
+    if (count > 1) {
+      return 'orders';
+    }
+    return 'order';
+  }
+
   const handleDelete = useCallback(
     (id: number) => {
-      deleteOrder(id);
+      deleteOrder(id, {
+        onError: (error) => {
+          if (onError) {
+            onError(error as Error);
+          }
+        },
+      });
     },
-    [deleteOrder]
+    [deleteOrder, onError]
   );
 
   function handleRefresh() {
