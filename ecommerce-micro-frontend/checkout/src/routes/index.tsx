@@ -1,12 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router';
-import Cart from '../pages/Cart';
+import Checkout from '../pages/Checkout';
 
 export const Route = createFileRoute('/')({
-  component: CartRoute,
+  component: CheckoutRoute,
 });
 
-function CartRoute() {
+function CheckoutRoute() {
   const { config } = Route.useRouteContext();
 
-  return <Cart config={config} />;
+  return <Checkout config={config} />;
 }
