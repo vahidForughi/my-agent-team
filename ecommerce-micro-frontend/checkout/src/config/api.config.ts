@@ -8,7 +8,7 @@ export const API_CONFIG = {
     GET_BASKET: (userName: string) => `/Basket/GetBasket/${userName}`,
     CREATE_BASKET: '/Basket/CreateBasket',
     DELETE_BASKET: (userName: string) => `/Basket/DeleteBasket/${userName}`,
-    CHECKOUT: '/Basket/Checkout',
+    CHECKOUT: '/Basket/CheckoutV2', // V2 API - only requires userName and totalPrice
   },
   DISCOUNT: {
     BASE: '/Discount',

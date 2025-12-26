@@ -69,7 +69,7 @@ export class BasketService {
 
     return this.http
       .post<any>(
-        `${this.baseUrl}/api/v2/Basket/Checkout`,
+        `${this.baseUrl}/Basket/CheckoutV2`,
         checkoutData,
         httpOptions
       )
