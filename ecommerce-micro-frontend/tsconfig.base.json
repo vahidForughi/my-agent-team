@@ -22,6 +22,9 @@
       "@ecommerce-platform/app-injector": [
         "packages/app-injector/src/index.ts"
       ],
+      "@ecommerce-platform/shared-layout": [
+        "packages/shared-layout/src/index.ts"
+      ],
       "store/Module": [
         "store/src/remote-entry.ts"
       ],

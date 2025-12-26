@@ -1,0 +1,101 @@
+{
+  "name": "@ecommerce-platform/shared-layout",
+  "version": "1.0.1",
+  "description": "Shared layout components for ecommerce micro-frontends - provides Navbar, Footer, and Layout with intelligent navigation for standalone and MFE modes",
+  "author": "Ecommerce Platform Team",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "keywords": [
+    "micro-frontend",
+    "microfrontend",
+    "react",
+    "layout",
+    "navbar",
+    "footer",
+    "ecommerce",
+    "shared-components"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/ecommerce-platform.git",
+    "directory": "packages/shared-layout"
+  },
+  "bugs": {
+    "url": "https://github.com/your-org/ecommerce-platform/issues"
+  },
+  "homepage": "https://github.com/your-org/ecommerce-platform/tree/main/packages/shared-layout#readme",
+  "peerDependencies": {
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0",
+    "react-router-dom": ">=6.0.0",
+    "antd": ">=5.0.0",
+    "@tanstack/react-query": ">=5.0.0",
+    "@ecommerce-platform/auth-provider": "*"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": false
+    },
+    "react-dom": {
+      "optional": false
+    },
+    "react-router-dom": {
+      "optional": false
+    },
+    "antd": {
+      "optional": false
+    },
+    "@tanstack/react-query": {
+      "optional": false
+    },
+    "@ecommerce-platform/auth-provider": {
+      "optional": false
+    }
+  },
+  "devDependencies": {
+    "@types/react": "19.0.0",
+    "@types/react-dom": "19.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.0",
+    "antd": "^5.21.0",
+    "@tanstack/react-query": "^5.56.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.0"
+  },
+  "scripts": {
+    "build": "tsup",
+    "build:watch": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run clean && npm run build",
+    "release": "npm publish --access public"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}
