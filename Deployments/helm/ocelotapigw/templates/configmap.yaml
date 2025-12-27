@@ -287,7 +287,7 @@ data:
     			"DownstreamHostAndPorts": [
     				{
     					"Host": "eshopping-ordering",
-    					"Port": 8080
+    					"Port": 80
     				}
     			],
     			"UpstreamPathTemplate": "/Order/{userName}",
@@ -299,7 +299,7 @@ data:
     			"DownstreamHostAndPorts": [
     				{
     					"Host": "eshopping-ordering",
-    					"Port": 8080
+    					"Port": 80
     				}
     			],
     			"UpstreamPathTemplate": "/Order",
@@ -311,7 +311,7 @@ data:
     			"DownstreamHostAndPorts": [
     				{
     					"Host": "eshopping-ordering",
-    					"Port": 8080
+    					"Port": 80
     				}
     			],
     			"UpstreamPathTemplate": "/Order/{id}",
@@ -323,7 +323,7 @@ data:
     			"DownstreamHostAndPorts": [
     				{
     					"Host": "eshopping-ordering",
-    					"Port": 8080
+    					"Port": 80
     				}
     			],
     			"UpstreamPathTemplate": "/Activity",

@@ -12,5 +12,5 @@ metadata:
 data:
   EventBusSettings__HostAddress: amqp://guest:guest@eshopping-rabbitmq:5672
   CacheSettings__ConnectionString: eshopping-basketdb:6379
-  GrpcSettings__DiscountUrl: http://eshopping-discount:80
+  GrpcSettings__DiscountUrl: http://eshopping-discount-discount-grpc:8080
   ElasticConfiguration__Uri: http://eshopping-elasticsearch:9200
