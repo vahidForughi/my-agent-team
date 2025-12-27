@@ -324,13 +324,9 @@ deploy_apis() {
     fi
     
     # Install microservices with increased timeout
-    # Catalog API - override AWS defaults to use LocalStack for local development
+    # Catalog API - use local values file to override AWS defaults for LocalStack
     helm $HELM_CMD eshopping-catalog ./catalog --namespace default --timeout 600s \
-        --set configmap.AWS__S3__ServiceUrl="http://localstack:4566" \
-        --set configmap.USE_LOCALSTACK="true" \
-        --set 'env.values[1].value=test' \
-        --set 'env.values[2].value=test' \
-        --set 'env.values[3].value=http://localstack:4566'
+        -f ./catalog/local-values.yaml
 
     helm $HELM_CMD eshopping-basket ./basket --namespace default --timeout 600s
     helm $HELM_CMD eshopping-discount ./discount --namespace default --timeout 600s
