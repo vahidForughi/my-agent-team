@@ -10,7 +10,7 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 data:
-  EventBusSettings__HostAddress: amqp://guest:guest@rabbitmq:5672
-  CacheSettings__ConnectionString: basketdb:6379
-  GrpcSettings__DiscountUrl: http://discountapi:80
-  ElasticConfiguration__Uri: http://elasticsearch:9200
+  EventBusSettings__HostAddress: amqp://guest:guest@eshopping-rabbitmq:5672
+  CacheSettings__ConnectionString: eshopping-basketdb:6379
+  GrpcSettings__DiscountUrl: http://eshopping-discount-discount-grpc:8080
+  ElasticConfiguration__Uri: http://eshopping-elasticsearch:9200

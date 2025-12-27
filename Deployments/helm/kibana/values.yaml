@@ -12,7 +12,7 @@ image:
 
 imagePullSecrets: []
 nameOverride: ""
-fullnameOverride: "kibana"
+fullnameOverride: ""
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -83,5 +83,13 @@ affinity: {}
 
 env:
   values:
-    - name: ELASTICSEARCH_URL
-      value: http://elasticsearch:9200
+    - name: ELASTICSEARCH_HOSTS
+      value: '["http://eshopping-elasticsearch:9200"]'
+
+# Custom kibana.yml configuration
+kibanaConfig:
+  enabled: true
+  config: |
+    server.name: kibana
+    server.host: "0"
+    elasticsearch.hosts: ["http://eshopping-elasticsearch:9200"]
