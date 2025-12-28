@@ -10,16 +10,15 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 data:
-  DatabaseSettings__ConnectionString: {{ .Values.configmap.DatabaseSettings__ConnectionString | default "mongodb://admin:admin1234@catalogdb:27017/CatalogDb?authSource=admin" }}
+  DatabaseSettings__ConnectionString: {{ .Values.configmap.DatabaseSettings__ConnectionString | default "mongodb://admin:admin1234@eshopping-catalogdb:27017/CatalogDb?authSource=admin" }}
   DatabaseSettings__DatabaseName: {{ .Values.configmap.DatabaseSettings__DatabaseName | default "CatalogDb" }}
   DatabaseSettings__CollectionName: {{ .Values.configmap.DatabaseSettings__CollectionName | default "Products" }}
   DatabaseSettings__BrandsCollection: {{ .Values.configmap.DatabaseSettings__BrandsCollection | default "Brands" }}
   DatabaseSettings__TypesCollection: {{ .Values.configmap.DatabaseSettings__TypesCollection | default "Types" }}
-  ElasticConfiguration__Uri: {{ .Values.configmap.ElasticConfiguration__Uri | default "http://elasticsearch:9200" }}
+  ElasticConfiguration__Uri: {{ .Values.configmap.ElasticConfiguration__Uri | default "http://eshopping-elasticsearch:9200" }}
+  EventBusSettings__HostAddress: {{ .Values.configmap.EventBusSettings__HostAddress | default "eshopping-rabbitmq:5672" }}
   AWS__S3__BucketName: {{ .Values.configmap.AWS__S3__BucketName | default "ecommerce-product-images" }}
   AWS__S3__Region: {{ .Values.configmap.AWS__S3__Region | default "us-east-1" }}
   AWS__S3__ImagePrefix: {{ .Values.configmap.AWS__S3__ImagePrefix | default "products/" }}
-  {{- if .Values.configmap.AWS__S3__ServiceUrl }}
-  AWS__S3__ServiceUrl: {{ .Values.configmap.AWS__S3__ServiceUrl }}
-  {{- end }}
-  USE_LOCALSTACK: {{ .Values.configmap.USE_LOCALSTACK | default "true" | quote }}
+  AWS__S3__ServiceUrl: {{ .Values.configmap.AWS__S3__ServiceUrl | default "" | quote }}
+  USE_LOCALSTACK: {{ .Values.configmap.USE_LOCALSTACK | default "false" | quote }}

@@ -39,8 +39,8 @@ Parameters:
 
   NodeInstanceType:
     Type: String
-    Default: t3.small
-    Description: EC2 instance type for worker nodes
+    Default: m7i-flex.large
+    Description: EC2 instance type for worker nodes (Free Tier eligible, 2 vCPU, 8GB RAM)
 
   NodeDesiredCapacity:
     Type: Number
@@ -62,9 +62,9 @@ Parameters:
 
 Mappings:
   RegionMap:
-    ap-southeast-1:
-      AZ1: ap-southeast-1a
-      AZ2: ap-southeast-1b
+    us-east-1:
+      AZ1: us-east-1a
+      AZ2: us-east-1b
 
 Resources:
   # ============================================================================

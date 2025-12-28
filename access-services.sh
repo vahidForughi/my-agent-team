@@ -64,18 +64,18 @@ get_service_description() {
 # Function to get port forward command
 get_port_forward_cmd() {
     case $1 in
-        "api-gateway") echo "kubectl port-forward svc/eshopping-gateway-ocelotapigw 8010:80 -n default" ;;
-        "localstack") echo "kubectl port-forward svc/localstack 4566:4566 -n default" ;;
+        "api-gateway") echo "kubectl port-forward svc/eshopping-ocelotapigw 8010:80 -n default" ;;
+        "localstack") echo "kubectl port-forward svc/eshopping-localstack 4566:4566 -n default" ;;
         "prometheus") echo "kubectl port-forward svc/prometheus-server 9090:80 -n monitoring" ;;
         "grafana") echo "kubectl port-forward svc/grafana 3000:3000 -n istio-system" ;;
         "jaeger") echo "kubectl port-forward svc/tracing 16686:80 -n istio-system" ;;
         "kiali") echo "kubectl port-forward svc/kiali 20001:20001 -n istio-system" ;;
-        "rabbitmq") echo "kubectl port-forward svc/rabbitmq 15672:15672 -n default" ;;
-        "kibana") echo "kubectl port-forward svc/kibana 5601:5601 -n default" ;;
-        "elasticsearch") echo "kubectl port-forward svc/elasticsearch 9200:9200 -n default" ;;
-        "portainer") echo "kubectl port-forward svc/portainer 9000:9000 -n default" ;;
-        "portainer-edge") echo "kubectl port-forward svc/portainer 9080:8000 -n default" ;;
-        "pgadmin") echo "kubectl port-forward svc/pgadmin 5050:80 -n default" ;;
+        "rabbitmq") echo "kubectl port-forward svc/eshopping-rabbitmq 15672:15672 -n default" ;;
+        "kibana") echo "kubectl port-forward svc/eshopping-kibana 5601:5601 -n default" ;;
+        "elasticsearch") echo "kubectl port-forward svc/eshopping-elasticsearch 9200:9200 -n default" ;;
+        "portainer") echo "kubectl port-forward svc/eshopping-portainer 9000:9000 -n default" ;;
+        "portainer-edge") echo "kubectl port-forward svc/eshopping-portainer 9080:8000 -n default" ;;
+        "pgadmin") echo "kubectl port-forward svc/eshopping-pgadmin 5050:80 -n default" ;;
         *) echo "" ;;
     esac
 }

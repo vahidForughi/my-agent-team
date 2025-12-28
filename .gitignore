@@ -408,7 +408,7 @@ client/.env.local
 client/.env.production
 
 /.cursor
-/istio-1.26.2
+
 
 # Backup files
 *-backup-*.yaml
@@ -435,12 +435,11 @@ backups/
 *.zip.backup
 *.backup-*
 *.bak-*
-/istio-1.27.2
 /.claude
-/istio-1.28.1
 
 # Stakpak session files
 .stakpak/session*
 /certs
-thesis.md
 repomix-output.md
+/.agent
+/istio-1.28.1
