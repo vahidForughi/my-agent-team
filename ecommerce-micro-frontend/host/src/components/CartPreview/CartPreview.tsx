@@ -14,6 +14,7 @@ import {
 } from '@ant-design/icons';
 import { brandGradient } from '../../config/theme';
 import { env } from '../../config';
+import { formatCurrency } from '../../helpers/formatUtils';
 
 const { Text } = Typography;
 
@@ -29,18 +30,6 @@ interface CartPreviewProps {
   visible: boolean;
   items?: CartItem[];
   isLoading?: boolean;
-}
-
-/**
- * Format currency for display
- */
-function formatPrice(price: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(price);
 }
 
 /**
@@ -136,7 +125,7 @@ function CartItemRow({
               color: '#64748b',
             }}
           >
-            {formatPrice(item.price)} × {item.quantity}
+            {formatCurrency(item.price, 'USD', 'en-US')} × {item.quantity}
           </Text>
         </Flex>
       </Flex>
@@ -151,7 +140,7 @@ function CartItemRow({
             whiteSpace: 'nowrap',
           }}
         >
-          {formatPrice(itemTotal)}
+          {formatCurrency(itemTotal, 'USD', 'en-US')}
         </Text>
       </Flex>
     </Flex>
@@ -300,7 +289,7 @@ const CartPreview: React.FC<CartPreviewProps> = ({
                   color: brandGradient.start,
                 }}
               >
-                {formatPrice(totalAmount)}
+                {formatCurrency(totalAmount, 'USD', 'en-US')}
               </Text>
             </Flex>
 
