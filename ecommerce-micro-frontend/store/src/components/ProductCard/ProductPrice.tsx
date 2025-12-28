@@ -16,8 +16,6 @@ type ProductPriceProps = {
 function ProductPrice(props: ProductPriceProps) {
   const { product } = props;
 
-  const hasDiscount = product.hasDiscount && product.originalPrice;
-
   return (
     <Space
       direction="vertical"
@@ -36,18 +34,6 @@ function ProductPrice(props: ProductPriceProps) {
         >
           {formatCurrency(product.price)}
         </Text>
-        {hasDiscount && product.originalPrice && (
-          <Text
-            delete
-            type="secondary"
-            style={{
-              fontSize: PRODUCT_CARD.FONT_SIZE.ORIGINAL_PRICE,
-              color: PRODUCT_CARD_COLORS.ORIGINAL_PRICE,
-            }}
-          >
-            {formatCurrency(product.originalPrice)}
-          </Text>
-        )}
       </Space>
     </Space>
   );

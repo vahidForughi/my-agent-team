@@ -1,5 +1,5 @@
 import React from 'react';
-import { Row, Col, Flex, Typography } from 'antd';
+import { Col, Flex, Typography } from 'antd';
 import { themeConfig } from '../../../../config/theme';
 import ProductCard from './ProductCard';
 import type { Product } from '../../../../services/products';

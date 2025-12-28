@@ -85,37 +85,9 @@ export const productSchema = z.object({
   summary: z.string().optional(),
   description: z.string(),
   imageFile: z.string(),
+  brands: brandResponseSchema,
+  types: productTypeResponseSchema,
   price: z.number().nonnegative(),
-  productType: z.string(),
-  productBrand: z.string(),
-
-  originalPrice: z.number().nonnegative().optional(),
-  discountAmount: z.number().nonnegative().optional(),
-  hasDiscount: z.boolean().default(false),
-
-  images: z.array(z.string()).default([]),
-  features: z.array(z.string()).default([]),
-  specifications: z.record(z.string()).default({}),
-
-  stockQuantity: z.number().nonnegative().optional(),
-  stockInStock: z.boolean().optional(),
-  stockLowStockThreshold: z.number().nonnegative().optional(),
-  stockStatus: stockStatusEnum.optional(),
-
-  ratingAverage: z.number().min(0).max(5).optional(),
-  ratingCount: z.number().nonnegative().optional(),
-  ratingDistribution: z.record(z.number()).optional(),
-
-  shippingFreeShipping: z.boolean().default(false),
-  shippingEstimatedDeliveryDays: z.number().positive().optional(),
-  shippingCost: z.number().nonnegative().optional(),
-
-  metaTitle: z.string().optional(),
-  metaDescription: z.string().optional(),
-  metaKeywords: z.array(z.string()).default([]),
-
-  relatedProductIds: z.array(z.string()).default([]),
-  reviews: z.array(reviewSchema).default([]),
 });
 
 export const productArraySchema = z.array(productSchema);

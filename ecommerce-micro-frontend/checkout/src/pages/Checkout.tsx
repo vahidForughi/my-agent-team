@@ -14,6 +14,7 @@ import {
   InputNumber,
   message,
   Spin,
+  Flex,
 } from 'antd';
 import {
   ShoppingCartOutlined,
@@ -167,7 +168,11 @@ export default function Checkout(props: CheckoutProps) {
         <Button
           type="primary"
           onClick={() => {
-            window.location.href = '/store';
+            if (config?.onNavigate) {
+              config.onNavigate('/store');
+            } else {
+              window.location.href = '/store';
+            }
           }}
         >
           Back to Shopping
@@ -201,7 +206,13 @@ export default function Checkout(props: CheckoutProps) {
         <Button
           type="link"
           icon={<ArrowLeftOutlined />}
-          onClick={() => navigate({ to: '/' })}
+          onClick={() => {
+            if (config?.onNavigate) {
+              config.onNavigate('/store');
+            } else {
+              window.location.href = '/store';
+            }
+          }}
           style={{ padding: 0 }}
         >
           Back to Shopping
@@ -217,9 +228,11 @@ export default function Checkout(props: CheckoutProps) {
           <Card title="Order Summary" style={{ marginBottom: 24 }}>
             <Space direction="vertical" size="middle" style={{ width: '100%' }}>
               {cartData.items.map((item: CartItem) => (
-                <Space
+                <Flex
                   key={item.productId}
-                  size="middle"
+                  gap="middle"
+                  justify="space-between"
+                  align="center"
                   style={{
                     width: '100%',
                     padding: '16px 0',
@@ -281,7 +294,7 @@ export default function Checkout(props: CheckoutProps) {
                       ${(item.price * item.quantity).toFixed(2)}
                     </Text>
                   </Space>
-                </Space>
+                </Flex>
               ))}
             </Space>
           </Card>
@@ -437,27 +450,27 @@ export default function Checkout(props: CheckoutProps) {
         <Col xs={24} lg={8}>
           <Card title="Order Total" style={{ position: 'sticky', top: 24 }}>
             <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-              <Space style={{ width: '100%', justifyContent: 'space-between' }}>
+              <Flex justify="space-between" style={{ width: '100%' }}>
                 <Text>Subtotal</Text>
                 <Text>${subtotal.toFixed(2)}</Text>
-              </Space>
-              <Space style={{ width: '100%', justifyContent: 'space-between' }}>
+              </Flex>
+              <Flex justify="space-between" style={{ width: '100%' }}>
                 <Text>Shipping</Text>
                 <Text>${shipping.toFixed(2)}</Text>
-              </Space>
-              <Space style={{ width: '100%', justifyContent: 'space-between' }}>
+              </Flex>
+              <Flex justify="space-between" style={{ width: '100%' }}>
                 <Text>Tax</Text>
                 <Text>${tax.toFixed(2)}</Text>
-              </Space>
+              </Flex>
               <Divider style={{ margin: '8px 0' }} />
-              <Space style={{ width: '100%', justifyContent: 'space-between' }}>
+              <Flex justify="space-between" style={{ width: '100%' }}>
                 <Text strong style={{ fontSize: 18 }}>
                   Total
                 </Text>
                 <Text strong type="success" style={{ fontSize: 18 }}>
                   ${total.toFixed(2)}
                 </Text>
-              </Space>
+              </Flex>
               <Button
                 type="primary"
                 size="large"

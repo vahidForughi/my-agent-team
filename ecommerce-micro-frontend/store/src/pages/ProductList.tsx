@@ -105,7 +105,7 @@ const ProductList: React.FC<ProductListProps> = ({ config }) => {
           productId: product.id,
           productName: product.name,
           price: product.price,
-          originalPrice: product.originalPrice ?? product.price,
+          originalPrice: product.price,
           quantity: 1,
           imageFile: product.imageFile ?? null,
         });

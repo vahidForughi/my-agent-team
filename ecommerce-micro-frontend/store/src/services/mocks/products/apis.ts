@@ -49,7 +49,7 @@ function normalizeParams(params: Record<string, any>) {
  * @returns API-compatible product response with nested Brand and Type objects
  */
 function transformProductToResponse(
-  product: (typeof mockProducts)[0]
+  product: { productBrand: string; productType: string; id: string; name: string; description: string; imageFile: string; price: number }
 ): ProductResponse {
   const brand = mockBrands.find((b) => b.name === product.productBrand);
   const type = mockTypes.find((t) => t.name === product.productType);
@@ -97,7 +97,7 @@ function transformProductToResponse(
  * @returns API-compatible detailed product response
  */
 function transformProductDetailToResponse(
-  product: (typeof mockProducts)[0]
+  product: { productBrand: string; productType: string; id: string; name: string; description: string; imageFile: string; price: number }
 ): ProductDetailResponse {
   return transformProductToResponse(product);
 }
@@ -112,7 +112,7 @@ function transformProductDetailToResponse(
  * @returns API-compatible product response with details and reviews
  */
 function transformProductDetailWithReviewsToResponse(
-  product: (typeof mockProducts)[0]
+  product: { productBrand: string; productType: string; id: string; name: string; description: string; imageFile: string; price: number; reviews?: Array<{ reviewId: string; userId: string; userName: string; rating: number; date: string; comment: string; helpfulCount?: number }> }
 ): ProductDetailWithReviewsResponse {
   const baseResponse = transformProductDetailToResponse(product);
 

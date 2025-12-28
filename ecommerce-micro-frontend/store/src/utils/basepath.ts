@@ -21,30 +21,15 @@ function isMicroFrontendApp(): boolean {
   return false;
 }
 
-/**
- * Gets the basepath for the application based on the mode
- * 
- * Best Practice for Micro Frontends:
- * - Standalone mode: Use '/' (empty string) as basepath so routes are accessible at root
- * - Micro frontend mode: Use '/store' because the host app routes to '/store/*' 
- *   and the micro frontend needs to match that basepath
- * 
- * @param appContextBasePath - Optional basepath from appContext (when running as micro frontend)
- * @returns The basepath string
- */
 export function getBasepath(appContextBasePath?: string): string {
-  // If basePath is explicitly provided from appContext (micro frontend mode), use it
   if (appContextBasePath) {
     return appContextBasePath;
   }
 
-  // Detect mode and return appropriate basepath
   if (isMicroFrontendApp()) {
-    // When embedded as micro frontend, use '/store' to match host routing
     return '/store';
   }
 
-  // Standalone mode: use '/' (empty string) so routes are at root
   return '';
 }
 

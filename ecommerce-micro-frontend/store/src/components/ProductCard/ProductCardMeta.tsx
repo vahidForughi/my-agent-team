@@ -47,12 +47,6 @@ function ProductCardMeta(props: ProductCardMetaProps) {
         {product.name}
       </Title>
 
-      {hasRating(product) && (
-        <ProductRating
-          rating={product.ratingAverage!}
-          reviewCount={product.ratingCount!}
-        />
-      )}
 
       <ProductDescription description={product.description} />
     </Space>

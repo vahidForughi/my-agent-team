@@ -10,6 +10,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { AppInjectorProps } from '@ecommerce-platform/app-injector';
 import { useGetProductById } from '../services/products/hooks';
 import { useProductActions } from '../hooks/useProductActions';
+import { isProductInStock } from '../helpers/productUtils';
 import {
   ProductImageGallery,
   ProductTitle,
@@ -52,6 +53,8 @@ function ProductDetail(props: ProductDetailProps) {
     config,
   });
 
+  const isInStock = product ? isProductInStock(product) : false;
+
   function handleBack() {
     navigate({ to: '/', search: {} });
   }
@@ -68,7 +71,11 @@ function ProductDetail(props: ProductDetailProps) {
     try {
       const success = await handleAddToCart();
       if (success) {
-        window.location.href = '/checkout';
+        if (config?.onNavigate) {
+          config.onNavigate('/checkout');
+        } else {
+          navigate({ to: '/checkout' });
+        }
       }
     } catch (error) {
       console.error('Failed to proceed to checkout:', error);
@@ -137,7 +144,7 @@ function ProductDetail(props: ProductDetailProps) {
               onBuyNow={handleBuyNow}
               canAddToCart={canAddToCart}
               maxQuantity={maxQuantity}
-              isInStock={true}
+              isInStock={isInStock}
               isLoading={isAddingToCart}
             />
           </Space>
@@ -149,7 +156,7 @@ function ProductDetail(props: ProductDetailProps) {
         price={product.price}
         onAddToCart={handleAddToCart}
         canAddToCart={canAddToCart}
-        isInStock={true}
+        isInStock={isInStock}
       />
     </Space>
   );

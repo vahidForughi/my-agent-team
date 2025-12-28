@@ -33,11 +33,12 @@ export function useProductActions({
   const isAddingToCart = addToCartMutation.isPending;
 
   const stockQuantity = product ? getProductQuantity(product) : 0;
-  // If no stock info available (stockQuantity === 0), allow unlimited quantity
-  // Otherwise use the stock quantity as max
+  const hasStockInfo = product && (product as { stock?: { quantity?: number } }).stock !== undefined;
+  
   const maxQuantity = stockQuantity > 0 ? stockQuantity : undefined;
   const canAddToCart = product
-    ? quantity > 0 &&
+    ? (!hasStockInfo || isProductInStock(product)) &&
+      quantity > 0 &&
       (maxQuantity === undefined || quantity <= maxQuantity) &&
       !isAddingToCart
     : false;
@@ -59,7 +60,7 @@ export function useProductActions({
         productId: product.id,
         productName: product.name,
         price: product.price,
-        originalPrice: product.originalPrice ?? product.price,
+        originalPrice: product.price,
         quantity,
         imageFile: product.imageFile ?? null,
       });

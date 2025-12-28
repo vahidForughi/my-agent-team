@@ -33,18 +33,9 @@ export const productMapper = createMapper<ProductResponse, Product>(
       summary: response.summary,
       description: response.description,
       imageFile: response.imageFile,
+      brands: response.brands,
+      types: response.types,
       price: response.price,
-      productType: response.types?.id ?? '',
-      productBrand: response.brands?.id ?? '',
-      // Default values for optional fields (schema will handle these)
-      images: [],
-      features: [],
-      specifications: {},
-      hasDiscount: false,
-      shippingFreeShipping: false,
-      metaKeywords: [],
-      relatedProductIds: [],
-      reviews: [],
     };
   },
   productResponseSchema
@@ -125,18 +116,9 @@ export const productDetailMapper = createMapper<ProductDetailResponse, Product>(
       summary: response.summary,
       description: response.description,
       imageFile: response.imageFile,
+      brands: response.brands,
+      types: response.types,
       price: response.price,
-      productType: response.types?.id ?? '',
-      productBrand: response.brands?.id ?? '',
-      // Default values for optional fields (schema will handle these)
-      images: [],
-      features: [],
-      specifications: {},
-      hasDiscount: false,
-      shippingFreeShipping: false,
-      metaKeywords: [],
-      relatedProductIds: [],
-      reviews: [],
     };
   },
   productDetailResponseSchema
