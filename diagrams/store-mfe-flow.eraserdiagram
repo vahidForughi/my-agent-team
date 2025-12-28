@@ -1,0 +1,68 @@
+// Figure 6.1: Store Micro-Frontend Flow
+// Host routing → Module Federation → Store MFE → API Gateway → Catalog Service → MongoDB
+
+// ==================== ACTORS ====================
+Browser [icon: chrome, color: blue]
+Host Shell [icon: home, color: green]
+Router [icon: git-branch, color: orange]
+Registry [icon: list, color: purple]
+Module Federation [icon: package, color: cyan]
+Store MFE [icon: shopping-bag, color: teal]
+API Gateway [icon: aws-api-gateway, color: red]
+Catalog Service [icon: database, color: yellow]
+MongoDB [icon: mongodb, color: green]
+
+// ==================== PHASE 1: ROUTE DELEGATION ====================
+// 1. Host Application determines route ownership
+Browser > Host Shell : Navigate to /store
+Host Shell > Router : Route analysis: /store
+Router > Router : Match pattern /:appName/*
+Router > Registry : Lookup config for 'store'
+Registry > Router : Return Store config
+// Config: { basePath: '/store', remoteName: 'store', exposedModule: 'ConsoleMicroApp' }
+
+// ==================== PHASE 2: REMOTE MODULE LOADING ====================
+// 2. Dynamic remote module loading
+Router > Module Federation : Initialize for Store remote
+Module Federation > Module Federation : Resolve remote URL
+// Dev: http://localhost:4201/remoteEntry.js
+// Prod: /remotes/store/remoteEntry.js
+Module Federation > Store MFE : GET /remoteEntry.js
+Store MFE > Module Federation : HTTP 200 (remoteEntry.js bundle)
+
+// ==================== PHASE 3: MODULE FEDERATION RUNTIME ====================
+// 3. Webpack Module Federation injection
+Module Federation > Module Federation : Parse remote module manifest
+Module Federation > Module Federation : Load shared dependencies
+// Shared: React, React Router, Auth Context from Host
+Module Federation > Host Shell : Inject Store module into DOM container
+Host Shell > Store MFE : Mount Store application
+// Pass appContext: { user, token, theme, apiBaseUrl }
+
+// ==================== PHASE 4: STORE MFE INITIALIZATION ====================
+// 4. Store application renders product listings
+Store MFE > Store MFE : Initialize Store MFE
+Store MFE > Store MFE : Setup internal routing
+// Handle: /store/products/:id (product detail pages)
+Store MFE > Browser : Render product listing UI
+
+// ==================== PHASE 5: API COMMUNICATION ====================
+// 5. Product data requests flow
+Store MFE > API Gateway : GET /Catalog/products
+API Gateway > API Gateway : Route to Catalog Service
+API Gateway > Catalog Service : Forward to /api/v1/Catalog/GetAllProducts
+Catalog Service > MongoDB : Query products collection
+MongoDB > Catalog Service : Return product documents (JSON)
+Catalog Service > API Gateway : Product data response
+API Gateway > Store MFE : Product list (JSON array)
+Store MFE > Store MFE : Process and render products
+Store MFE > Browser : Display product catalog
+
+// ==================== KEY COMPONENTS ====================
+// Host: microFrontendRegistry.ts (route → remote mapping)
+// Host: MicroFrontendApp.tsx (dynamic loader)
+// Store: Module.tsx (exposed ConsoleMicroApp)
+// Store: ProductList.tsx (product rendering)
+// Backend: Ocelot Gateway (routing)
+// Backend: Catalog.API (MongoDB queries)
+

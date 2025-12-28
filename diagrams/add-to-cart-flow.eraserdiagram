@@ -1,0 +1,90 @@
+// Figure 6.2: Add to Cart Flow - Cross-MFE State Sharing
+// Store MFE → API Gateway → Basket Service → Redis → Discount gRPC → Checkout MFE
+
+// ==================== ACTORS ====================
+Browser [icon: chrome, color: blue]
+Store MFE [icon: shopping-bag, color: teal]
+Host Shell [icon: home, color: green]
+Router [icon: git-branch, color: orange]
+API Gateway [icon: aws-api-gateway, color: red]
+Basket Service [icon: shopping-cart, color: green]
+Redis [icon: redis, color: red]
+Discount Service [icon: tag, color: orange]
+Checkout MFE [icon: shopping-cart, color: purple]
+
+// ==================== PHASE 1: ADD TO CART ACTION ====================
+// 1. User clicks "Add to Cart" from Store micro-frontend
+Browser > Store MFE : Click "Add to Cart" button
+Store MFE > Store MFE : Prepare addToCart request
+// Payload: { productId, productName, price, quantity, imageFile }
+Store MFE > API Gateway : POST /Basket/CreateBasket
+// Request includes: UserName, Items array
+
+// ==================== PHASE 2: SYNCHRONOUS API CHAIN ====================
+// 2. Ocelot Gateway routes to Basket Service
+API Gateway > API Gateway : Route to Basket Service
+API Gateway > Basket Service : Forward to /api/v1/Basket/CreateBasket
+
+// 2a. Basket Service queries Redis for existing cart
+Basket Service > Redis : GET basket:{userName}
+Redis > Basket Service : Return existing cart (or null)
+
+// 2b. Basket Service calls Discount Service via gRPC
+Basket Service > Discount Service : gRPC GetDiscount(productName)
+// Low-latency call: <5ms
+Discount Service > Basket Service : Return discount amount
+// Response: { amount, description }
+
+// 2c. Basket Service updates Redis with discounted prices
+Basket Service > Basket Service : Merge item with discount
+Basket Service > Basket Service : Calculate totals
+Basket Service > Redis : SET basket:{userName}
+// Store cart with: items, discounts, totalPrice
+Redis > Basket Service : Cart saved successfully
+
+// 2d. Response returns to Store micro-frontend
+Basket Service > API Gateway : HTTP 200 OK (Cart response)
+API Gateway > Store MFE : Cart data with discounts
+Store MFE > Store MFE : Update cart icon count
+Store MFE > Browser : Show "Added to cart" confirmation
+
+// ==================== PHASE 3: NAVIGATION TO CART ====================
+// 3. User navigates to /checkout, triggering host to load Checkout MFE
+Browser > Host Shell : Navigate to /checkout
+Host Shell > Router : Route analysis: /checkout
+Router > Router : Match pattern /:appName/*
+Router > Host Shell : Load Checkout MFE remote
+Host Shell > Checkout MFE : Load remoteEntry.js
+Checkout MFE > Host Shell : Module Federation injection
+Host Shell > Checkout MFE : Mount Checkout application
+
+// ==================== PHASE 4: CART DISPLAY ====================
+// 4. Checkout micro-frontend fetches cart data and displays items
+Checkout MFE > API Gateway : GET /Basket/GetBasket/{userName}
+API Gateway > Basket Service : Forward to /api/v1/Basket/GetBasket/{userName}
+Basket Service > Redis : GET basket:{userName}
+Redis > Basket Service : Return cart data
+// Cart includes: items with discounts, totalPrice, itemCount
+Basket Service > API Gateway : HTTP 200 OK (Cart JSON)
+API Gateway > Checkout MFE : Cart data response
+Checkout MFE > Checkout MFE : Process cart items
+Checkout MFE > Checkout MFE : Display items with applied discounts
+Checkout MFE > Browser : Show shopping cart UI
+
+// ==================== KEY COMPONENTS ====================
+// Store: ProductCard.tsx (Add to Cart button)
+// Store: useAddToCart hook (basket/hooks.ts)
+// Store: Basket API (basket/apis.ts)
+// Host: Cart state manager (cross-MFE communication)
+// Backend: Ocelot Gateway (routing)
+// Backend: Basket.API (Redis operations)
+// Backend: Discount.API (gRPC server)
+// Checkout: CartPreview.tsx (cart display)
+// Checkout: useGetBasket hook (basket/hooks.ts)
+
+// ==================== CROSS-MFE STATE SHARING ====================
+// Cart state persists in Redis (Basket Service)
+// Store MFE adds items → Checkout MFE displays items
+// Shared state via backend API, not frontend storage
+// Ensures consistency across independently deployed micro-frontends
+

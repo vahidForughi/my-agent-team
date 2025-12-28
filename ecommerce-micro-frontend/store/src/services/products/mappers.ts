@@ -30,20 +30,12 @@ export const productMapper = createMapper<ProductResponse, Product>(
     return {
       id: response.id,
       name: response.name,
+      summary: response.summary,
       description: response.description,
       imageFile: response.imageFile,
+      brands: response.brands,
+      types: response.types,
       price: response.price,
-      productType: response.types?.id ?? '',
-      productBrand: response.brands?.id ?? '',
-      // Default values for optional fields (schema will handle these)
-      images: [],
-      features: [],
-      specifications: {},
-      hasDiscount: false,
-      shippingFreeShipping: false,
-      metaKeywords: [],
-      relatedProductIds: [],
-      reviews: [],
     };
   },
   productResponseSchema
@@ -118,55 +110,15 @@ export const reviewsMapper = (reviews: ReviewsResponse): Review[] => {
 
 export const productDetailMapper = createMapper<ProductDetailResponse, Product>(
   (response) => {
-    // Compute stock status
-    let stockStatus: 'in-stock' | 'low-stock' | 'out-of-stock' | undefined;
-    if (response.stock) {
-      if (!response.stock.inStock) {
-        stockStatus = 'out-of-stock';
-      } else if (
-        response.stock.lowStockThreshold &&
-        response.stock.quantity <= response.stock.lowStockThreshold
-      ) {
-        stockStatus = 'low-stock';
-      } else {
-        stockStatus = 'in-stock';
-      }
-    }
-
     return {
       id: response.id,
       name: response.name,
+      summary: response.summary,
       description: response.description,
       imageFile: response.imageFile,
+      brands: response.brands,
+      types: response.types,
       price: response.price,
-      productType: response.types?.id ?? '',
-      productBrand: response.brands?.id ?? '',
-      // Detail fields
-      images: response.images ?? [],
-      features: response.features ?? [],
-      specifications: response.specifications ?? {},
-      // Stock fields
-      stockQuantity: response.stock?.quantity,
-      stockInStock: response.stock?.inStock,
-      stockLowStockThreshold: response.stock?.lowStockThreshold,
-      stockStatus,
-      // Rating fields
-      ratingAverage: response.rating?.average,
-      ratingCount: response.rating?.count,
-      ratingDistribution: response.rating?.distribution,
-      // Shipping fields
-      shippingFreeShipping: response.shipping?.freeShipping ?? false,
-      shippingEstimatedDeliveryDays: response.shipping?.estimatedDeliveryDays,
-      shippingCost: response.shipping?.shippingCost,
-      // Meta fields
-      metaTitle: response.meta?.title,
-      metaDescription: response.meta?.description,
-      metaKeywords: response.meta?.keywords ?? [],
-      // Related products
-      relatedProductIds: response.relatedProductIds ?? [],
-      // Defaults for other optional fields
-      hasDiscount: false,
-      reviews: [],
     };
   },
   productDetailResponseSchema
