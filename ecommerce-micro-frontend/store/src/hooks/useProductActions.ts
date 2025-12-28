@@ -17,7 +17,7 @@ type UseProductActionsReturn = {
   handleBuyNow: () => void;
   handleAddToWishlist: () => void;
   canAddToCart: boolean;
-  maxQuantity: number;
+  maxQuantity: number | undefined;
   isAddingToCart: boolean;
 };
 
@@ -32,11 +32,13 @@ export function useProductActions({
   const addToCartMutation = useAddToCart();
   const isAddingToCart = addToCartMutation.isPending;
 
-  const maxQuantity = product ? getProductQuantity(product) : 0;
+  const stockQuantity = product ? getProductQuantity(product) : 0;
+  // If no stock info available (stockQuantity === 0), allow unlimited quantity
+  // Otherwise use the stock quantity as max
+  const maxQuantity = stockQuantity > 0 ? stockQuantity : undefined;
   const canAddToCart = product
-    ? isProductInStock(product) &&
-      quantity > 0 &&
-      quantity <= maxQuantity &&
+    ? quantity > 0 &&
+      (maxQuantity === undefined || quantity <= maxQuantity) &&
       !isAddingToCart
     : false;
 
@@ -129,7 +131,7 @@ export function useProductActions({
         setQuantity(1);
         return;
       }
-      if (maxQuantity > 0 && newQuantity > maxQuantity) {
+      if (maxQuantity !== undefined && newQuantity > maxQuantity) {
         setQuantity(maxQuantity);
         return;
       }

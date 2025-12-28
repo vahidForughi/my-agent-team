@@ -123,6 +123,7 @@ const ProductList: React.FC<ProductListProps> = ({ config }) => {
   );
 
   function handleViewDetails(productId: string) {
+    console.log('Navigating to product:', productId);
     navigate({ to: '/product/$id', params: { id: productId } });
   }
 

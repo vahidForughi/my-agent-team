@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+
 import {
   Card,
   Button,
@@ -27,8 +28,9 @@ import {
   MinusOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from '@tanstack/react-router';
-import { useAuth } from '@ecommerce-platform/auth-provider';
+
 import { AppInjectorProps } from '@ecommerce-platform/app-injector';
+import { useAuth } from '@ecommerce-platform/auth-provider';
 import {
   useGetCart,
   useCheckout,
@@ -40,21 +42,11 @@ import type { CartItem } from '../services/cart/types';
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
-interface CheckoutProps {
+type CheckoutProps = {
   config?: AppInjectorProps['config'];
-}
+};
 
-/**
- * Checkout Page Component
- *
- * Complete checkout flow with:
- * - Order summary with quantity controls
- * - Optional shipping information
- * - Payment method selection
- * - Order total calculation
- */
 export default function Checkout(props: CheckoutProps) {
-  // Props destructuring
   const { config } = props;
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
@@ -63,8 +55,7 @@ export default function Checkout(props: CheckoutProps) {
   const { mutate: updateItem } = useUpdateCartItem();
   const { mutate: removeItem } = useRemoveCartItem();
 
-  // Form state (all optional)
-  const [paymentMethod, setPaymentMethod] = useState<number>(0); // 0=Cash, 1=Card, 2=Bank
+  const [paymentMethod, setPaymentMethod] = useState<number>(0);
   const [shippingInfo, setShippingInfo] = useState({
     fullName: '',
     phone: '',
@@ -93,8 +84,6 @@ export default function Checkout(props: CheckoutProps) {
       return;
     }
 
-    // Get user info from auth if logged in, otherwise use form values or defaults
-    // Priority: user.firstName/lastName > user.displayName > form values > defaults
     const getUserFirstName = () => {
       if (isAuthenticated && user?.firstName) return user.firstName;
       if (isAuthenticated && user?.displayName) {
@@ -122,11 +111,9 @@ export default function Checkout(props: CheckoutProps) {
       return 'guest@example.com';
     };
 
-    // Prepare checkout data - use user info if logged in, otherwise use form values or defaults
     checkout(
       {
         totalPrice: cart.data.totalPrice,
-        // Shipping info (use user info if logged in, otherwise form values or defaults)
         firstName: getUserFirstName(),
         lastName: getUserLastName(),
         emailAddress: getUserEmail(),
@@ -134,7 +121,6 @@ export default function Checkout(props: CheckoutProps) {
         country: shippingInfo.country || 'Vietnam',
         state: shippingInfo.city || 'N/A',
         zipCode: shippingInfo.zipCode || '00000',
-        // Payment info (required by backend, use defaults)
         cardName: 'N/A',
         cardNumber: '0000000000000000',
         expiration: '12/99',
@@ -145,9 +131,7 @@ export default function Checkout(props: CheckoutProps) {
         onSuccess: (response) => {
           console.log('[Checkout] Order placed successfully:', response);
           message.success('Order placed successfully!');
-          // Navigate to cart page
           navigate({ to: '/' });
-          // Clear cart will be handled by checkout API
         },
         onError: (error) => {
           console.error('[Checkout] Order failed:', error);
@@ -159,24 +143,36 @@ export default function Checkout(props: CheckoutProps) {
 
   if (isLoading) {
     return (
-      <div style={{ textAlign: 'center', padding: '100px 0' }}>
+      <Space
+        direction="vertical"
+        align="center"
+        style={{ width: '100%', padding: '100px 0' }}
+      >
         <Spin size="large" />
-      </div>
+      </Space>
     );
   }
 
   if (!cart?.data || cart.data.items.length === 0) {
     return (
-      <div style={{ textAlign: 'center', padding: '100px 20px' }}>
-        <ShoppingCartOutlined
-          style={{ fontSize: 64, color: '#ccc', marginBottom: 16 }}
-        />
+      <Space
+        direction="vertical"
+        align="center"
+        size="large"
+        style={{ width: '100%', padding: '100px 20px' }}
+      >
+        <ShoppingCartOutlined style={{ fontSize: 64 }} />
         <Title level={3}>Your cart is empty</Title>
         <Paragraph>Add some products to continue with checkout.</Paragraph>
-        <Button type="primary" onClick={() => navigate({ to: '/' })}>
-          Back to Cart
+        <Button
+          type="primary"
+          onClick={() => {
+            window.location.href = '/store';
+          }}
+        >
+          Back to Shopping
         </Button>
-      </div>
+      </Space>
     );
   }
 
@@ -190,20 +186,29 @@ export default function Checkout(props: CheckoutProps) {
   const total = subtotal + shipping + tax;
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 16px' }}>
+    <Space
+      direction="vertical"
+      size="large"
+      style={{
+        maxWidth: 1200,
+        margin: '0 auto',
+        padding: '24px 16px',
+        width: '100%',
+      }}
+    >
       {/* Header */}
-      <div style={{ marginBottom: 24 }}>
+      <Space direction="vertical" size="small" style={{ width: '100%' }}>
         <Button
           type="link"
           icon={<ArrowLeftOutlined />}
           onClick={() => navigate({ to: '/' })}
-          style={{ padding: 0, marginBottom: 16 }}
+          style={{ padding: 0 }}
         >
-          Back to Cart
+          Back to Shopping
         </Button>
         <Title level={2}>Checkout</Title>
         <Text type="secondary">Complete your purchase securely</Text>
-      </div>
+      </Space>
 
       <Row gutter={[24, 24]}>
         {/* Left Column - Order Items & Forms */}
@@ -212,11 +217,11 @@ export default function Checkout(props: CheckoutProps) {
           <Card title="Order Summary" style={{ marginBottom: 24 }}>
             <Space direction="vertical" size="middle" style={{ width: '100%' }}>
               {cartData.items.map((item: CartItem) => (
-                <div
+                <Space
                   key={item.productId}
+                  size="middle"
                   style={{
-                    display: 'flex',
-                    gap: 16,
+                    width: '100%',
                     padding: '16px 0',
                     borderBottom: '1px solid #f0f0f0',
                   }}
@@ -231,22 +236,15 @@ export default function Checkout(props: CheckoutProps) {
                       borderRadius: 8,
                     }}
                   />
-                  <div style={{ flex: 1 }}>
-                    <Title level={5} style={{ marginBottom: 4 }}>
+                  <Space direction="vertical" size="small" style={{ flex: 1 }}>
+                    <Title level={5} style={{ margin: 0 }}>
                       {item.productName}
                     </Title>
                     <Text type="secondary" style={{ fontSize: 12 }}>
                       Qty: {item.quantity}
                     </Text>
-                  </div>
-                  <div
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'flex-end',
-                      gap: 8,
-                    }}
-                  >
+                  </Space>
+                  <Space direction="vertical" align="end" size="small">
                     <Space size="small">
                       <Button
                         size="small"
@@ -282,8 +280,8 @@ export default function Checkout(props: CheckoutProps) {
                     <Text strong style={{ fontSize: 16 }}>
                       ${(item.price * item.quantity).toFixed(2)}
                     </Text>
-                  </div>
-                </div>
+                  </Space>
+                </Space>
               ))}
             </Space>
           </Card>
@@ -400,37 +398,34 @@ export default function Checkout(props: CheckoutProps) {
                 <Radio value={0}>
                   <Space>
                     <DollarOutlined style={{ fontSize: 20 }} />
-                    <div>
+                    <Space direction="vertical" size={0}>
                       <Text strong>Cash on Delivery</Text>
-                      <br />
                       <Text type="secondary" style={{ fontSize: 12 }}>
                         Pay when you receive your order
                       </Text>
-                    </div>
+                    </Space>
                   </Space>
                 </Radio>
                 <Radio value={1}>
                   <Space>
                     <CreditCardOutlined style={{ fontSize: 20 }} />
-                    <div>
+                    <Space direction="vertical" size={0}>
                       <Text strong>Credit/Debit Card</Text>
-                      <br />
                       <Text type="secondary" style={{ fontSize: 12 }}>
                         Pay securely with your card
                       </Text>
-                    </div>
+                    </Space>
                   </Space>
                 </Radio>
                 <Radio value={2}>
                   <Space>
                     <BankOutlined style={{ fontSize: 20 }} />
-                    <div>
+                    <Space direction="vertical" size={0}>
                       <Text strong>Bank Transfer</Text>
-                      <br />
                       <Text type="secondary" style={{ fontSize: 12 }}>
                         Pay via direct bank transfer
                       </Text>
-                    </div>
+                    </Space>
                   </Space>
                 </Radio>
               </Space>
@@ -442,27 +437,27 @@ export default function Checkout(props: CheckoutProps) {
         <Col xs={24} lg={8}>
           <Card title="Order Total" style={{ position: 'sticky', top: 24 }}>
             <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <Space style={{ width: '100%', justifyContent: 'space-between' }}>
                 <Text>Subtotal</Text>
                 <Text>${subtotal.toFixed(2)}</Text>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              </Space>
+              <Space style={{ width: '100%', justifyContent: 'space-between' }}>
                 <Text>Shipping</Text>
                 <Text>${shipping.toFixed(2)}</Text>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              </Space>
+              <Space style={{ width: '100%', justifyContent: 'space-between' }}>
                 <Text>Tax</Text>
                 <Text>${tax.toFixed(2)}</Text>
-              </div>
+              </Space>
               <Divider style={{ margin: '8px 0' }} />
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <Space style={{ width: '100%', justifyContent: 'space-between' }}>
                 <Text strong style={{ fontSize: 18 }}>
                   Total
                 </Text>
-                <Text strong style={{ fontSize: 18, color: '#52c41a' }}>
+                <Text strong type="success" style={{ fontSize: 18 }}>
                   ${total.toFixed(2)}
                 </Text>
-              </div>
+              </Space>
               <Button
                 type="primary"
                 size="large"
@@ -473,35 +468,26 @@ export default function Checkout(props: CheckoutProps) {
               >
                 Place Order
               </Button>
-              <Button
-                size="large"
-                block
-                icon={<ShoppingCartOutlined />}
-                onClick={() => navigate({ to: '/' })}
-              >
-                Edit Cart
-              </Button>
               <Card
                 size="small"
                 style={{ background: '#f6ffed', border: '1px solid #b7eb8f' }}
               >
                 <Space>
-                  <LockOutlined style={{ fontSize: 20, color: '#52c41a' }} />
-                  <div>
+                  <LockOutlined style={{ fontSize: 20 }} />
+                  <Space direction="vertical" size={0}>
                     <Text strong style={{ fontSize: 12 }}>
                       Secure Checkout
                     </Text>
-                    <br />
                     <Text type="secondary" style={{ fontSize: 11 }}>
                       Your information is protected with SSL encryption
                     </Text>
-                  </div>
+                  </Space>
                 </Space>
               </Card>
             </Space>
           </Card>
         </Col>
       </Row>
-    </div>
+    </Space>
   );
 }

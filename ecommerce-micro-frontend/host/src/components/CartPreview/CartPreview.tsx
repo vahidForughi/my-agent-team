@@ -9,7 +9,6 @@ import {
   Flex,
 } from 'antd';
 import {
-  DeleteOutlined,
   ShoppingCartOutlined,
   RightOutlined,
 } from '@ant-design/icons';
@@ -30,7 +29,6 @@ interface CartPreviewProps {
   visible: boolean;
   items?: CartItem[];
   isLoading?: boolean;
-  onRemoveItem?: (id: string) => void;
 }
 
 /**
@@ -72,10 +70,8 @@ function getImageUrl(imagePath: string | null | undefined): string {
  */
 function CartItemRow({
   item,
-  onRemove,
 }: {
   item: CartItem;
-  onRemove: () => void;
 }) {
   const itemTotal = item.price * item.quantity;
 
@@ -145,8 +141,8 @@ function CartItemRow({
         </Flex>
       </Flex>
 
-      {/* Price & Remove */}
-      <Flex vertical align="flex-end" gap={4}>
+      {/* Price */}
+      <Flex vertical align="flex-end">
         <Text
           strong
           style={{
@@ -157,18 +153,6 @@ function CartItemRow({
         >
           {formatPrice(itemTotal)}
         </Text>
-        <Button
-          type="text"
-          size="small"
-          icon={<DeleteOutlined />}
-          onClick={onRemove}
-          style={{
-            color: '#94a3b8',
-            padding: '2px 6px',
-            height: 'auto',
-          }}
-          aria-label={`Remove ${item.name}`}
-        />
       </Flex>
     </Flex>
   );
@@ -178,7 +162,6 @@ const CartPreview: React.FC<CartPreviewProps> = ({
   visible,
   items = [],
   isLoading = false,
-  onRemoveItem,
 }) => {
   const navigate = useNavigate();
 
@@ -281,7 +264,6 @@ const CartPreview: React.FC<CartPreviewProps> = ({
               <CartItemRow
                 key={item.id}
                 item={item}
-                onRemove={() => onRemoveItem?.(item.id)}
               />
             ))}
 

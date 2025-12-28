@@ -6,19 +6,20 @@ export const stockStatusEnum = z.enum([
   'out-of-stock',
 ]);
 
-export const brandResponseSchema = z.object({  id: z.string(),
+export const brandResponseSchema = z.object({
   name: z.string(),
+  id: z.string(),
 });
 
 export const productTypeResponseSchema = z.object({
-  id: z.string(),
   name: z.string(),
+  id: z.string(),
 });
 
 export const productResponseSchema = z.object({
   id: z.string(),
   name: z.string(),
-  summary: z.string(),
+  summary: z.string().optional(),
   description: z.string(),
   imageFile: z.string(),
   brands: brandResponseSchema,
@@ -48,95 +49,23 @@ export const reviewsResponseSchema = z.array(reviewResponseSchema);
 export const productDetailResponseSchema = z.object({
   id: z.string(),
   name: z.string(),
-  summary: z.string(),
+  summary: z.string().optional(),
   description: z.string(),
   imageFile: z.string(),
   brands: brandResponseSchema,
   types: productTypeResponseSchema,
   price: z.number().nonnegative(),
-
-  images: z.array(z.string()).optional(),
-  features: z.array(z.string()).optional(),
-  specifications: z.record(z.string()).optional(),
-
-  stock: z
-    .object({
-      quantity: z.number().nonnegative(),
-      inStock: z.boolean(),
-      lowStockThreshold: z.number().nonnegative().optional(),
-    })
-    .optional(),
-
-  rating: z
-    .object({
-      average: z.number().min(0).max(5),
-      count: z.number().nonnegative(),
-      distribution: z.record(z.number()).optional(),
-    })
-    .optional(),
-
-  shipping: z
-    .object({
-      freeShipping: z.boolean().optional(),
-      estimatedDeliveryDays: z.number().positive().optional(),
-      shippingCost: z.number().nonnegative().optional(),
-    })
-    .optional(),
-
-  relatedProductIds: z.array(z.string()).optional(),
-
-  meta: z
-    .object({
-      title: z.string().optional(),
-      description: z.string().optional(),
-      keywords: z.array(z.string()).optional(),
-    })
-    .optional(),
 });
 
 export const productDetailWithReviewsResponseSchema = z.object({
   id: z.string(),
   name: z.string(),
-  summary: z.string(),
+  summary: z.string().optional(),
   description: z.string(),
   imageFile: z.string(),
   brands: brandResponseSchema,
   types: productTypeResponseSchema,
   price: z.number().nonnegative(),
-  images: z.array(z.string()).optional(),
-  features: z.array(z.string()).optional(),
-  specifications: z.record(z.string()).optional(),
-  stock: z
-    .object({
-      quantity: z.number().nonnegative(),
-      inStock: z.boolean(),
-      lowStockThreshold: z.number().nonnegative().optional(),
-    })
-    .optional(),
-  rating: z
-    .object({
-      average: z.number().min(0).max(5),
-      count: z.number().nonnegative(),
-      distribution: z.record(z.number()).optional(),
-    })
-    .optional(),
-  shipping: z
-    .object({
-      freeShipping: z.boolean().optional(),
-      estimatedDeliveryDays: z.number().positive().optional(),
-      shippingCost: z.number().nonnegative().optional(),
-    })
-    .optional(),
-  relatedProductIds: z.array(z.string()).optional(),
-  meta: z
-    .object({
-      title: z.string().optional(),
-      description: z.string().optional(),
-      keywords: z.array(z.string()).optional(),
-    })
-    .optional(),
-
-  // Additional field for reviews
   reviews: z.array(reviewResponseSchema).optional(),
 });
 
@@ -153,6 +82,7 @@ export const reviewSchema = z.object({
 export const productSchema = z.object({
   id: z.string(),
   name: z.string(),
+  summary: z.string().optional(),
   description: z.string(),
   imageFile: z.string(),
   price: z.number().nonnegative(),
