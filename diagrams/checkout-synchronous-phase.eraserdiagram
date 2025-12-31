@@ -1,0 +1,73 @@
+// Figure 6.3: Checkout Flow - Synchronous Phase
+// Checkout MFE → API Gateway → Basket Service → Redis → RabbitMQ → 202 Accepted
+
+// ==================== ACTORS ====================
+Browser [icon: chrome, color: blue]
+Checkout MFE [icon: shopping-cart, color: purple]
+API Gateway [icon: aws-api-gateway, color: red]
+Basket Service [icon: shopping-cart, color: green]
+Redis [icon: redis, color: red]
+RabbitMQ [icon: rabbitmq, color: yellow]
+
+// ==================== PHASE 1: CHECKOUT INITIATION ====================
+// 1. From Checkout micro-frontend, user submits checkout form
+Browser > Checkout MFE : Submit checkout form
+// Form data: shipping address, payment details, contact info
+Checkout MFE > Checkout MFE : Validate form data
+Checkout MFE > Checkout MFE : Prepare checkout request
+// Payload: { userName, shippingAddress, paymentMethod, cardDetails }
+Checkout MFE > API Gateway : POST /Basket/Checkout
+// Request includes cart items and checkout details
+
+// ==================== PHASE 2: BASKET SERVICE PROCESSING ====================
+// 2. Ocelot Gateway routes to Basket Service
+API Gateway > API Gateway : Route to Basket Service
+API Gateway > Basket Service : Forward to /api/v1/Basket/Checkout
+
+// 2a. Basket Service retrieves cart from Redis
+Basket Service > Redis : GET basket:{userName}
+Redis > Basket Service : Return cart data
+// Cart includes: items, totals, discounts
+
+// 2b. Basket Service validates cart contents and totals
+Basket Service > Basket Service : Validate cart not empty
+Basket Service > Basket Service : Validate totals match
+Basket Service > Basket Service : Validate item quantities
+// Validation ensures data integrity before checkout
+
+// 2c. Basket Service publishes BasketCheckoutEvent to RabbitMQ
+Basket Service > Basket Service : Create BasketCheckoutEvent
+// Event: { userName, items, totalPrice, shippingAddress, paymentMethod }
+Basket Service > RabbitMQ : Publish BasketCheckoutEvent
+// Asynchronous, fire-and-forget
+RabbitMQ > RabbitMQ : Queue event for processing
+RabbitMQ > Basket Service : Event queued successfully
+
+// 2d. Basket Service deletes cart from Redis (local transaction)
+Basket Service > Redis : DEL basket:{userName}
+Redis > Basket Service : Cart deleted successfully
+// Local transaction ensures cart removal
+
+// 2e. Returns 202 Accepted to client immediately
+Basket Service > API Gateway : HTTP 202 Accepted
+// Immediate response, order processing continues async
+API Gateway > Checkout MFE : HTTP 202 Accepted
+Checkout MFE > Checkout MFE : Show "Order processing" message
+Checkout MFE > Browser : Display order confirmation
+// User can continue browsing while order processes
+
+// ==================== KEY COMPONENTS ====================
+// Checkout: Checkout.tsx (checkout form)
+// Checkout: useCheckoutBasket hook (basket/hooks.ts)
+// Backend: Ocelot Gateway (routing)
+// Backend: Basket.API/Controllers/BasketController.cs (Checkout endpoint)
+// Backend: Basket.API/EventBus (RabbitMQ publisher)
+// Backend: Redis (cart storage)
+
+// ==================== SYNCHRONOUS PHASE CHARACTERISTICS ====================
+// - User receives immediate feedback (202 Accepted)
+// - Cart deleted synchronously (local Redis transaction)
+// - Event published asynchronously (fire-and-forget)
+// - No waiting for order creation
+// - Improved user experience (non-blocking)
+

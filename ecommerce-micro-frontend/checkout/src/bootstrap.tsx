@@ -1,8 +1,6 @@
 import { StrictMode } from 'react';
 import * as ReactDOM from 'react-dom/client';
-import { QueryClientProvider } from '@tanstack/react-query';
-import Module from './app/Module';
-import { queryClient } from './services/queryClient';
+import App from './App';
 import { setupMocks } from './services/mocks';
 
 setupMocks();
@@ -12,8 +10,6 @@ const root = ReactDOM.createRoot(
 );
 root.render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <Module />
-    </QueryClientProvider>
+    <App />
   </StrictMode>
 );

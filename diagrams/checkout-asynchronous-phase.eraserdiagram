@@ -1,0 +1,91 @@
+// Figure 6.4: Checkout Flow - Asynchronous Phase (Saga Pattern)
+// RabbitMQ → Ordering Consumer → Ordering API → SQL Server → Eventual Consistency
+
+// ==================== ACTORS ====================
+RabbitMQ [icon: rabbitmq, color: yellow]
+BasketOrderingConsumer [icon: message-circle, color: purple]
+Ordering API [icon: clipboard-list, color: purple]
+SQL Server [icon: mssql, color: red]
+Downstream Services [icon: server, color: cyan]
+
+// ==================== PHASE 3: EVENT CONSUMPTION ====================
+// 3. Ordering Service consumer receives BasketCheckoutEvent from RabbitMQ
+RabbitMQ > RabbitMQ : Queue BasketCheckoutEvent
+// Event queued from synchronous phase
+RabbitMQ > BasketOrderingConsumer : Deliver BasketCheckoutEvent
+// At-least-once delivery guarantee
+BasketOrderingConsumer > BasketOrderingConsumer : Receive event message
+// Event: { userName, items, totalPrice, shippingAddress, paymentMethod }
+
+// ==================== PHASE 4: ORDER CREATION ====================
+// 4. Ordering Service processes the event
+
+// 4a. Maps event to CheckoutOrderCommand
+BasketOrderingConsumer > BasketOrderingConsumer : Map BasketCheckoutEvent
+BasketOrderingConsumer > BasketOrderingConsumer : Create CheckoutOrderCommand
+// Command: { userName, orderItems, totalPrice, shippingAddress, paymentDetails }
+
+// 4b. Validates order data
+BasketOrderingConsumer > BasketOrderingConsumer : Validate order data
+// Validation: required fields, price calculations, address format
+BasketOrderingConsumer > BasketOrderingConsumer : Check business rules
+// Rules: minimum order value, valid payment method
+
+// 4c. Inserts order record into SQL Server (local ACID transaction)
+BasketOrderingConsumer > Ordering API : Execute CheckoutOrderCommand
+Ordering API > Ordering API : Prepare order entity
+Ordering API > SQL Server : BEGIN TRANSACTION
+Ordering API > SQL Server : INSERT INTO Orders
+// Columns: Id, UserName, TotalPrice, ShippingAddress, PaymentMethod, CreatedDate
+SQL Server > SQL Server : Generate OrderId (Identity)
+SQL Server > SQL Server : INSERT INTO OrderItems
+// Related order items with OrderId foreign key
+SQL Server > SQL Server : COMMIT TRANSACTION
+SQL Server > Ordering API : Order created successfully
+// OrderId returned
+
+// 4d. Publishes OrderActivityEvent for downstream processing
+Ordering API > Ordering API : Create OrderActivityEvent
+// Event: { orderId, activityType: Created, actor, totalPrice, occurredAt }
+Ordering API > RabbitMQ : Publish OrderActivityEvent
+// Available for: Notification Service, Inventory Service, Analytics Service
+RabbitMQ > Downstream Services : Event available for consumption
+
+// 4e. Acknowledge event consumption
+Ordering API > BasketOrderingConsumer : Order creation success
+BasketOrderingConsumer > RabbitMQ : Acknowledge event consumption
+RabbitMQ > RabbitMQ : Mark event as processed
+// Event removed from queue after successful processing
+
+// ==================== PHASE 5: EVENTUAL CONSISTENCY ====================
+// 5. System achieves eventual consistency without distributed transactions
+
+// State after processing:
+// - Order record exists in Ordering Service database (SQL Server)
+// - Cart has been removed from Basket Service (Redis)
+// - OrderActivityEvent published for downstream services
+// - No distributed ACID transaction required
+
+// ==================== KEY COMPONENTS ====================
+// Backend: Ordering.API/EventBusConsumer/BasketOrderingConsumer.cs
+// Backend: Ordering.API/Commands/CheckoutOrderCommand.cs
+// Backend: Ordering.Application/Handlers/CheckoutOrderCommandHandler.cs
+// Backend: Ordering.Infrastructure/Repositories (SQL Server access)
+// Backend: RabbitMQ (message broker)
+// Backend: MassTransit (event bus abstraction)
+
+// ==================== SAGA PATTERN CHARACTERISTICS ====================
+// - No distributed transaction (2PC avoided)
+// - Eventual consistency via async events
+// - Each service performs local ACID transaction
+// - Reliable event delivery (at-least-once semantics)
+// - Compensation possible if downstream steps fail
+// - Improved availability (services can process independently)
+
+// ==================== FAILURE HANDLING ====================
+// If Ordering Service unavailable:
+// - RabbitMQ retries event delivery
+// - Event remains in queue until service recovers
+// - Order created automatically upon recovery
+// - No data loss, eventual consistency maintained
+

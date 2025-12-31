@@ -13,8 +13,6 @@ interface NavbarActionsProps {
   cartItems?: CartItem[];
   /** Loading state for cart data */
   isLoading?: boolean;
-  /** Callback when removing item from cart */
-  onRemoveCartItem?: (id: string) => void;
 }
 
 /**
@@ -31,7 +29,6 @@ function NavbarActions({
   basketCount = 0,
   cartItems = [],
   isLoading = false,
-  onRemoveCartItem,
 }: NavbarActionsProps) {
   return (
     <Space size="large">
@@ -40,7 +37,6 @@ function NavbarActions({
         count={basketCount}
         items={cartItems}
         isLoading={isLoading}
-        onRemoveItem={onRemoveCartItem}
       />
 
       {/* User menu with login/logout */}

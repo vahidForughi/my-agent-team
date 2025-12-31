@@ -5,6 +5,7 @@ import { Card, Badge, Button, Row, Col, Flex, Space, Typography, Statistic } fro
 import { FireOutlined } from '@ant-design/icons';
 import { flashSaleProducts } from '../../data/flashSaleProducts';
 import { useFlashSaleTimer } from '../../hooks/useFlashSaleTimer';
+import { formatCurrency } from '../../../../helpers/formatUtils';
 
 const { Title, Text } = Typography;
 const { Countdown } = Statistic;
@@ -25,12 +26,6 @@ function FlashSale() {
     navigate('/store');
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-    }).format(price);
-  };
 
   const getProductName = (product: typeof flashSaleProducts[0]) => {
     return i18n.language === 'vi' ? product.nameVi : product.name;
@@ -277,10 +272,10 @@ function FlashSale() {
                     strong
                     style={{ fontSize: '1.1em', fontWeight: 700, color: '#ff4d4f' }}
                   >
-                    {formatPrice(product.salePrice)}
+                    {formatCurrency(product.salePrice)}
                   </Text>
                   <Text delete style={{ fontSize: '0.9em', color: '#94a3b8' }}>
-                    {formatPrice(product.originalPrice)}
+                    {formatCurrency(product.originalPrice)}
                   </Text>
                 </Space>
               </Space>

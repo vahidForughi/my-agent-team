@@ -17,7 +17,7 @@ type UseProductActionsReturn = {
   handleBuyNow: () => void;
   handleAddToWishlist: () => void;
   canAddToCart: boolean;
-  maxQuantity: number;
+  maxQuantity: number | undefined;
   isAddingToCart: boolean;
 };
 
@@ -32,11 +32,14 @@ export function useProductActions({
   const addToCartMutation = useAddToCart();
   const isAddingToCart = addToCartMutation.isPending;
 
-  const maxQuantity = product ? getProductQuantity(product) : 0;
+  const stockQuantity = product ? getProductQuantity(product) : 0;
+  const hasStockInfo = product && (product as { stock?: { quantity?: number } }).stock !== undefined;
+  
+  const maxQuantity = stockQuantity > 0 ? stockQuantity : undefined;
   const canAddToCart = product
-    ? isProductInStock(product) &&
+    ? (!hasStockInfo || isProductInStock(product)) &&
       quantity > 0 &&
-      quantity <= maxQuantity &&
+      (maxQuantity === undefined || quantity <= maxQuantity) &&
       !isAddingToCart
     : false;
 
@@ -57,7 +60,7 @@ export function useProductActions({
         productId: product.id,
         productName: product.name,
         price: product.price,
-        originalPrice: product.originalPrice ?? product.price,
+        originalPrice: product.price,
         quantity,
         imageFile: product.imageFile ?? null,
       });
@@ -129,7 +132,7 @@ export function useProductActions({
         setQuantity(1);
         return;
       }
-      if (maxQuantity > 0 && newQuantity > maxQuantity) {
+      if (maxQuantity !== undefined && newQuantity > maxQuantity) {
         setQuantity(maxQuantity);
         return;
       }

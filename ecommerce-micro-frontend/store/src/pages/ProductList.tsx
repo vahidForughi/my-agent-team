@@ -105,7 +105,7 @@ const ProductList: React.FC<ProductListProps> = ({ config }) => {
           productId: product.id,
           productName: product.name,
           price: product.price,
-          originalPrice: product.originalPrice ?? product.price,
+          originalPrice: product.price,
           quantity: 1,
           imageFile: product.imageFile ?? null,
         });
@@ -123,6 +123,7 @@ const ProductList: React.FC<ProductListProps> = ({ config }) => {
   );
 
   function handleViewDetails(productId: string) {
+    console.log('Navigating to product:', productId);
     navigate({ to: '/product/$id', params: { id: productId } });
   }
 

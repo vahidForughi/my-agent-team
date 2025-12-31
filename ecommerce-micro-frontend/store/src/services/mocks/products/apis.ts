@@ -49,7 +49,7 @@ function normalizeParams(params: Record<string, any>) {
  * @returns API-compatible product response with nested Brand and Type objects
  */
 function transformProductToResponse(
-  product: (typeof mockProducts)[0]
+  product: { productBrand: string; productType: string; id: string; name: string; description: string; imageFile: string; price: number }
 ): ProductResponse {
   const brand = mockBrands.find((b) => b.name === product.productBrand);
   const type = mockTypes.find((t) => t.name === product.productType);
@@ -90,72 +90,16 @@ function transformProductToResponse(
 /**
  * Transform internal Product format to API ProductDetailResponse format
  *
- * Builds detailed product response including Stock, Rating, Shipping, and Meta objects
- * from the flattened frontend structure. Used for product detail endpoints.
+ * ProductDetailResponse now matches ProductResponse structure (simplified backend schema).
+ * Used for product detail endpoints.
  *
  * @param product - Internal product data with flattened structure
- * @returns API-compatible detailed product response with nested objects
+ * @returns API-compatible detailed product response
  */
 function transformProductDetailToResponse(
-  product: (typeof mockProducts)[0]
+  product: { productBrand: string; productType: string; id: string; name: string; description: string; imageFile: string; price: number }
 ): ProductDetailResponse {
-  const baseResponse = transformProductToResponse(product);
-
-  // Build Stock object from flattened fields
-  let Stock = undefined;
-  if (product.stockQuantity !== undefined) {
-    Stock = {
-      quantity: product.stockQuantity,
-      inStock: product.stockInStock ?? false,
-      lowStockThreshold: product.stockLowStockThreshold,
-    };
-  }
-
-  // Build Rating object from flattened fields
-  let Rating = undefined;
-  if (product.ratingAverage !== undefined) {
-    Rating = {
-      average: product.ratingAverage,
-      count: product.ratingCount ?? 0,
-      distribution: product.ratingDistribution ?? {},
-    };
-  }
-
-  // Build Shipping object from flattened fields
-  let Shipping = undefined;
-  if (
-    product.shippingFreeShipping !== undefined ||
-    product.shippingEstimatedDeliveryDays !== undefined ||
-    product.shippingCost !== undefined
-  ) {
-    Shipping = {
-      freeShipping: product.shippingFreeShipping,
-      estimatedDeliveryDays: product.shippingEstimatedDeliveryDays,
-      shippingCost: product.shippingCost,
-    };
-  }
-
-  // Build Meta object from flattened fields
-  let Meta = undefined;
-  if (product.metaTitle || product.metaDescription || product.metaKeywords) {
-    Meta = {
-      title: product.metaTitle,
-      description: product.metaDescription,
-      keywords: product.metaKeywords ?? [],
-    };
-  }
-
-  return {
-    ...baseResponse,
-    images: product.images ?? [],
-    features: product.features ?? [],
-    specifications: product.specifications ?? {},
-    stock: Stock,
-    rating: Rating,
-    shipping: Shipping,
-    relatedProductIds: product.relatedProductIds ?? [],
-    meta: Meta,
-  };
+  return transformProductToResponse(product);
 }
 
 /**
@@ -168,7 +112,7 @@ function transformProductDetailToResponse(
  * @returns API-compatible product response with details and reviews
  */
 function transformProductDetailWithReviewsToResponse(
-  product: (typeof mockProducts)[0]
+  product: { productBrand: string; productType: string; id: string; name: string; description: string; imageFile: string; price: number; reviews?: Array<{ reviewId: string; userId: string; userName: string; rating: number; date: string; comment: string; helpfulCount?: number }> }
 ): ProductDetailWithReviewsResponse {
   const baseResponse = transformProductDetailToResponse(product);
 
@@ -231,7 +175,8 @@ export default function register(mockAdapter: MockAdapter) {
       const rawParams = config.params || {};
       const params = normalizeParams(rawParams);
 
-      const page = parseInt(params.page || String(DEFAULT_PAGE)) || DEFAULT_PAGE;
+      const page =
+        parseInt(params.page || String(DEFAULT_PAGE)) || DEFAULT_PAGE;
       const limit =
         parseInt(params.limit || String(DEFAULT_LIMIT)) || DEFAULT_LIMIT;
 
