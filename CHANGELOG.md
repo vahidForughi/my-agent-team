@@ -1,4 +1,56 @@
 # Changelog
+## [v0.3.0-beta.1767213174] - 2025-12-31
+
+## What's Changed
+
+### 🚀 Features
+- Merge pull request #149 from sloweyyy/feat/deploy-enhancement (d21e8be)
+- Merge branch 'main' into feat/deploy-enhancement (284274d)
+- feat: Introduce k6 load testing suite with Prometheus integration, Grafana dashboard, and add project thesis and diagrams. (37c0b08)
+
+### 🐛 Bug Fixes
+- No bug fixes
+
+### 🔧 Improvements
+- Merge pull request #149 from sloweyyy/feat/deploy-enhancement (d21e8be)
+- Merge branch 'main' into feat/deploy-enhancement (284274d)
+- Merge pull request #145 from sloweyyy/refactor/checkout-conventions-and-store-cleanup (a09475a)
+- Merge branch 'main' into refactor/checkout-conventions-and-store-cleanup (6db046b)
+- refactor: simplify product and checkout logic, update product utils and remove unused fields (a107157)
+- refactor: simplify home page, refactor cart preview to use formatCurrency utility, and update layout to improve micro frontend routing (c58ba0a)
+- refactor(ecommerce-micro-frontend): remove Module.tsx, simplify product detail page, and update product APIs to match new backend schema (d411daf)
+
+### 📚 Documentation
+- docs: update changelog for v0.3.0 [skip ci] (aab97c2)
+
+### 🔐 Security
+- No security updates
+
+### 🏗️ Infrastructure
+- docs: update changelog for v0.3.0 [skip ci] (aab97c2)
+
+### Other Changes
+- Merge pull request #144 from sloweyyy/changelog/v0.3.0 (8b8a62c)
+- Merge branch 'main' into changelog/v0.3.0 (42f8735)
+- Merge pull request #147 from sloweyyy/dependabot/github_actions/aws-actions/configure-aws-credentials-5 (9e2217d)
+- Merge branch 'main' into dependabot/github_actions/aws-actions/configure-aws-credentials-5 (230ad8d)
+- Merge pull request #146 from sloweyyy/dependabot/github_actions/azure/setup-kubectl-4 (0742789)
+- chore(deps): bump aws-actions/configure-aws-credentials from 4 to 5 (592305d)
+- chore(deps): bump azure/setup-kubectl from 3 to 4 (584240e)
+
+## Docker Images
+All services are available as Docker images:
+- 
+- 
+- 
+- 
+- 
+
+## Helm Deployment
+
+
+**Full Changelog**: https://github.com/sloweyyy/cloud-native-ecommerce-platform/compare/v0.3.0...v0.3.0-beta.1767213174
+
 ## [v0.3.0] - 2025-12-28
 
 ## What's Changed
