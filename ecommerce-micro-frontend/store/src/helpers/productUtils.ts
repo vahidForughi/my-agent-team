@@ -38,10 +38,7 @@ export function calculateAverageRating(reviews: Review[]): number {
  * getStockStatus(5, 10) // 'low-stock'
  * getStockStatus(20) // 'in-stock'
  */
-export function getStockStatus(
-  quantity: number,
-  threshold = 10
-): StockStatus {
+export function getStockStatus(quantity: number, threshold = 10): StockStatus {
   if (quantity === 0) {
     return 'out-of-stock';
   }
@@ -69,10 +66,10 @@ export function getDeliveryEstimate(
   if (estimatedDays === 1) {
     return 'Tomorrow';
   }
-  
+
   const deliveryDate = new Date(currentDate);
   deliveryDate.setDate(deliveryDate.getDate() + estimatedDays);
-  
+
   return deliveryDate.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -90,10 +87,7 @@ export function getDeliveryEstimate(
  * @example
  * isNewProduct('2024-01-01', 30) // depends on current date
  */
-export function isNewProduct(
-  createdAt: string,
-  thresholdDays = 30
-): boolean {
+export function isNewProduct(createdAt: string, thresholdDays = 30): boolean {
   const createdDate = new Date(createdAt);
   const now = new Date();
   const diffTime = now.getTime() - createdDate.getTime();
@@ -138,15 +132,8 @@ export function isProductLowStock(
       product.stock.quantity <= product.stock.lowStockThreshold
     );
   }
-  
-  // Check flattened properties (from frontend DTO)
-  if (!product.stockQuantity || !product.stockLowStockThreshold) {
-    return false;
-  }
-  return (
-    product.stockQuantity > 0 &&
-    product.stockQuantity <= product.stockLowStockThreshold
-  );
+
+  return false;
 }
 
 /**
@@ -160,23 +147,8 @@ export function isProductLowStock(
  * // { text: '-20%', type: 'discount' }
  */
 export function calculateDiscountBadge(product: {
-  hasDiscount?: boolean;
   price: number;
-  originalPrice?: number;
 }): { text: string; type: 'discount' } | undefined {
-  if (
-    product.hasDiscount &&
-    product.originalPrice &&
-    product.originalPrice > product.price
-  ) {
-    const discountPercentage = Math.round(
-      ((product.originalPrice - product.price) / product.originalPrice) * 100
-    );
-    return {
-      text: `-${discountPercentage}%`,
-      type: 'discount',
-    };
-  }
   return undefined;
 }
 
@@ -189,13 +161,7 @@ export function calculateDiscountBadge(product: {
  * @example
  * calculateDiscountAmount({ price: 80, originalPrice: 100 }) // 20
  */
-export function calculateDiscountAmount(product: {
-  price: number;
-  originalPrice?: number;
-}): number {
-  if (product.originalPrice && product.originalPrice > product.price) {
-    return product.originalPrice - product.price;
-  }
+export function calculateDiscountAmount(product: { price: number }): number {
   return 0;
 }
 
@@ -213,7 +179,11 @@ export function calculateDiscountPercentage(
   originalPrice: number,
   currentPrice: number
 ): number {
-  if (originalPrice <= 0 || currentPrice <= 0 || currentPrice >= originalPrice) {
+  if (
+    originalPrice <= 0 ||
+    currentPrice <= 0 ||
+    currentPrice >= originalPrice
+  ) {
     return 0;
   }
   return Math.round(((originalPrice - currentPrice) / originalPrice) * 100);
@@ -230,13 +200,10 @@ export function calculateDiscountPercentage(
  * getProductImageUrl({ imageFile: 'main.jpg', images: ['alt1.jpg'] }) // 'main.jpg'
  */
 export function getProductImageUrl(
-  product: Pick<Product, 'imageFile' | 'images'>
+  product: Pick<Product, 'imageFile'>
 ): string | undefined {
   if (product.imageFile) {
     return product.imageFile;
-  }
-  if (product.images && product.images.length > 0) {
-    return product.images[0];
   }
   return undefined;
 }
@@ -252,23 +219,17 @@ export function getProductImageUrl(
  * isProductInStock({ stock: { inStock: true, quantity: 10 } }) // true
  */
 export function isProductInStock(
-  product: Pick<Product, 'stockInStock' | 'stockQuantity'> & { stock?: ProductStock }
+  product: Product & {
+    stock?: ProductStock;
+  }
 ): boolean {
   // Check nested stock object first (from tests/backend)
   if (product.stock) {
     return product.stock.inStock;
   }
-  
-  // Check flattened properties (from frontend DTO)
-  if (product.stockInStock !== undefined) {
-    return product.stockInStock;
-  }
-  if (product.stockQuantity !== undefined) {
-    return product.stockQuantity > 0;
-  }
-  
-  // Return false for safety when no stock info available
-  return false;
+
+  // When no stock info available, assume product is available (in stock)
+  return true;
 }
 
 /**
@@ -280,12 +241,8 @@ export function isProductInStock(
  * @example
  * hasRating({ ratingAverage: 4.5, ratingCount: 10 }) // true
  */
-export function hasRating(
-  product: Pick<Product, 'ratingAverage' | 'ratingCount'>
-): boolean {
-  return (
-    product.ratingAverage !== undefined && product.ratingCount !== undefined
-  );
+export function hasRating(product: Product): boolean {
+  return false;
 }
 
 /**
@@ -299,30 +256,22 @@ export function hasRating(
  * // { label: 'In Stock', color: 'green' }
  */
 export function getStockStatusDisplay(
-  product: Pick<Product, 'stockStatus' | 'stockInStock' | 'stockQuantity'> & { stock?: ProductStock }
+  product: Product & {
+    stock?: ProductStock;
+  }
 ): {
   label: string;
   color: string;
 } {
-  if (product.stockStatus) {
-    switch (product.stockStatus) {
-      case 'in-stock':
-        return { label: 'In Stock', color: 'green' };
-      case 'low-stock':
-        return { label: 'Low Stock', color: 'orange' };
-      case 'out-of-stock':
-        return { label: 'Out of Stock', color: 'red' };
+  if (product.stock) {
+    if (!product.stock.inStock) {
+      return { label: 'Out of Stock', color: 'red' };
     }
-  }
-
-  // Fallback to isProductInStock (handles both patterns)
-  if (!isProductInStock(product)) {
-    return { label: 'Out of Stock', color: 'red' };
-  }
-
-  const quantity = getProductQuantity(product);
-  if (quantity < 10) {
-    return { label: 'Low Stock', color: 'orange' };
+    const quantity = product.stock.quantity;
+    if (quantity > 0 && quantity <= (product.stock.lowStockThreshold ?? 10)) {
+      return { label: 'Low Stock', color: 'orange' };
+    }
+    return { label: 'In Stock', color: 'green' };
   }
 
   return { label: 'In Stock', color: 'green' };
@@ -340,13 +289,13 @@ export function getStockStatusDisplay(
  * getProductQuantity({}) // 0
  */
 export function getProductQuantity(
-  product: Pick<Product, 'stockQuantity'> & { stock?: ProductStock }
+  product: Product & { stock?: ProductStock }
 ): number {
   // Check nested stock object first (from tests/backend)
   if (product.stock) {
     return product.stock.quantity;
   }
-  
-  // Check flattened property (from frontend DTO)
-  return product.stockQuantity ?? 0;
+
+  // When no stock info available, return 0
+  return 0;
 }

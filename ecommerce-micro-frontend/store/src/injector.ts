@@ -1,5 +1,5 @@
 import { createAppInjector, AppInjectorProps } from '@ecommerce-platform/app-injector';
-import StoreModule from './app/Module';
+import App from './App';
 import { setupMocks } from './services/mocks';
 import { env } from './config';
 
@@ -15,7 +15,7 @@ if (env.useMockData) {
  * This creates standardized inject/unmount methods for the Store micro-frontend.
  * Used by the host application to dynamically load and unload this remote app.
  */
-const StoreAppInjector = createAppInjector(StoreModule);
+const StoreAppInjector = createAppInjector(App);
 
 /**
  * Inject the Store app into a DOM element

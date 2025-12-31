@@ -11,8 +11,6 @@ interface CartButtonProps {
   items?: CartItem[];
   /** Loading state for cart preview */
   isLoading?: boolean;
-  /** Callback when removing item from cart */
-  onRemoveItem?: (id: string) => void;
 }
 
 /**
@@ -23,7 +21,6 @@ export const CartButton: React.FC<CartButtonProps> = ({
   count = 0,
   items = [],
   isLoading = false,
-  onRemoveItem,
 }) => {
   const navigate = useNavigate();
   const [showCartPreview, setShowCartPreview] = useState(false);
@@ -59,7 +56,6 @@ export const CartButton: React.FC<CartButtonProps> = ({
         visible={showCartPreview}
         items={items}
         isLoading={isLoading}
-        onRemoveItem={onRemoveItem}
       />
     </NavbarActionButton>
   );

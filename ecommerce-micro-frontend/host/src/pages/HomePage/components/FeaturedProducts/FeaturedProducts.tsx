@@ -16,6 +16,7 @@ import {
 } from 'antd';
 import { featuredProducts } from '../../data/featuredProducts';
 import { brandGradient } from '../../../../config/theme';
+import { formatCurrency } from '../../../../helpers/formatUtils';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -31,12 +32,6 @@ function FeaturedProducts() {
     navigate('/store');
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-    }).format(price);
-  };
 
   const getProductName = (product: (typeof featuredProducts)[0]) => {
     return i18n.language === 'vi' ? product.nameVi : product.name;
@@ -224,14 +219,14 @@ function FeaturedProducts() {
                       color: '#3048a5',
                     }}
                   >
-                    {formatPrice(product.price)}
+                    {formatCurrency(product.price)}
                   </Text>
                   {product.originalPrice && (
                     <Text
                       delete
                       style={{ fontSize: '0.9em', color: '#94a3b8' }}
                     >
-                      {formatPrice(product.originalPrice)}
+                      {formatCurrency(product.originalPrice)}
                     </Text>
                   )}
                 </Space>

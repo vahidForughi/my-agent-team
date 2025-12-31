@@ -60,14 +60,6 @@ function Navbar() {
     }));
   }, [items]);
 
-  function handleRemoveCartItem(id: string) {
-    // Note: Remove functionality will be handled by checkout module
-    // Here we just log and could trigger a refetch
-    console.info('Remove cart item:', id);
-    // Navigate to checkout for actual removal
-    navigate('/checkout');
-  }
-
   return (
     <div
       style={{
@@ -147,7 +139,6 @@ function Navbar() {
               basketCount={itemCount}
               cartItems={cartItems}
               isLoading={isLoading}
-              onRemoveCartItem={handleRemoveCartItem}
             />
           </Flex>
         </Flex>

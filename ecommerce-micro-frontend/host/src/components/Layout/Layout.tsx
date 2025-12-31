@@ -3,17 +3,20 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { Layout as AntLayout } from 'antd';
 import Navbar from '../Navbar/Navbar';
 import Footer from '../Footer/Footer';
+import { isRegistered } from '../../config/microFrontendRegistry';
 
 const { Content } = AntLayout;
 
-/**
- * AppLayout Component
- *
- * Main layout component that wraps all pages with TopBar, Navbar and Footer
- */
+const NAVBAR_HEIGHT = 152;
+
 const AppLayout: React.FC = () => {
   const location = useLocation();
   const isLoginPage = location.pathname === '/login';
+  const isHomePage = location.pathname === '/';
+
+  const pathSegments = location.pathname.split('/').filter(Boolean);
+  const firstSegment = pathSegments[0];
+  const isMicroFrontendRoute = firstSegment && isRegistered(firstSegment);
 
   return (
     <AntLayout
@@ -27,10 +30,17 @@ const AppLayout: React.FC = () => {
       <Content
         style={{
           flex: 1,
-          marginTop: isLoginPage ? 0 : 176,
-          minHeight: isLoginPage ? '100vh' : 'calc(100vh - 176px)',
+          minHeight: isLoginPage ? '100vh' : `calc(100vh - ${NAVBAR_HEIGHT}px)`,
           background: '#ffffff',
-          padding: isLoginPage ? 0 : '32px 0',
+          padding: isLoginPage
+            ? 0
+            : isHomePage
+            ? 0
+            : isMicroFrontendRoute
+            ? `${NAVBAR_HEIGHT}px 0 0 0`
+            : `${NAVBAR_HEIGHT + 16}px 0 0 0`,
+          width: '100%',
+          overflow: 'auto',
         }}
       >
         <Outlet />
