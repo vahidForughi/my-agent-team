@@ -1,4 +1,36 @@
-import { Brand, Product, ProductType, Review } from '../../products/types';
+import { Brand, ProductType, Review } from '../../products/types';
+import { ProductResponse } from '../../products/types';
+
+type MockProduct = {
+  id: string;
+  name: string;
+  description: string;
+  imageFile: string;
+  price: number;
+  originalPrice?: number;
+  discountAmount?: number;
+  hasDiscount?: boolean;
+  productType: string;
+  productBrand: string;
+  images?: string[];
+  features?: string[];
+  specifications?: Record<string, string>;
+  stockQuantity?: number;
+  stockInStock?: boolean;
+  stockLowStockThreshold?: number;
+  stockStatus?: 'in-stock' | 'low-stock' | 'out-of-stock';
+  ratingAverage?: number;
+  ratingCount?: number;
+  ratingDistribution?: Record<string, number>;
+  shippingFreeShipping?: boolean;
+  shippingEstimatedDeliveryDays?: number;
+  shippingCost?: number;
+  metaTitle?: string;
+  metaDescription?: string;
+  metaKeywords?: string[];
+  relatedProductIds?: string[];
+  reviews?: Review[];
+};
 
 // Review generation constants
 const REVIEW_CONSTANTS = {
@@ -93,7 +125,7 @@ function generateReviews(
   return reviews;
 }
 
-export const mockProducts: Product[] = [
+export const mockProducts: MockProduct[] = [
   {
     id: '1',
     name: 'Wireless Headphones',

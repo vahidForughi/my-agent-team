@@ -54,7 +54,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
@@ -137,13 +137,13 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Install kubectl
-        uses: azure/setup-kubectl@v3
+        uses: azure/setup-kubectl@v4
         with:
           version: 'latest'
 
@@ -203,10 +203,18 @@ jobs:
           echo "Deploying microservices..."
           for service in catalog basket discount ordering; do
             echo "  - ${service}"
+
+            # Set AWS-specific environment variables for production
+            EXTRA_ARGS=""
+            if [ "$service" = "catalog" ]; then
+              EXTRA_ARGS="--set env.USE_LOCALSTACK='false' --set env.AWS__S3__ServiceUrl=''"
+            fi
+
             helm upgrade --install "eshopping-${service}" \
               "./${service}" \
               -n ${{ steps.deploy-vars.outputs.namespace }} \
               --set image.registry=${{ needs.build-and-push-to-ecr.outputs.ecr-registry }} \
+              $EXTRA_ARGS \
               --wait \
               --timeout 5m
           done
@@ -227,6 +235,21 @@ jobs:
         run: |
           kubectl wait --for=condition=available --timeout=300s \
             deployment --all -n ${{ steps.deploy-vars.outputs.namespace }} || true
+
+      - name: Migrate product URLs to AWS S3
+        run: |
+          echo "Migrating product image URLs from LocalStack to AWS S3..."
+
+          # Get AWS account ID
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+
+          echo "AWS Account ID: ${ACCOUNT_ID}"
+          echo "Namespace: ${{ steps.deploy-vars.outputs.namespace }}"
+
+          # Run migration script (pass account ID, not bucket name)
+          echo "y" | bash scripts/migrate-products-to-aws-s3.sh \
+            ${{ steps.deploy-vars.outputs.namespace }} \
+            ${ACCOUNT_ID}
 
       - name: Get deployment status
         run: |

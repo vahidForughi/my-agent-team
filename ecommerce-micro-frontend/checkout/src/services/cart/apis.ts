@@ -5,7 +5,6 @@
 
 import { axiosClient } from '../httpClient';
 import { API_CONFIG } from '../../config';
-import { AuthService } from '../../auth';
 import { mapCart } from './mappers';
 import { shoppingCartResponseSchema } from './schemas';
 import type {
@@ -19,6 +18,39 @@ import type {
   Cart,
   CartItem,
 } from './types';
+
+/**
+ * Resolve basket username from auth-provider storage
+ * Matches legacy Angular logic: email → localStorage basket_username → guest-{timestamp}
+ */
+function resolveBasketUsername(): string {
+  // 1. Try to get user email from auth-provider (Azure AD B2C)
+  try {
+    const authUserJson = localStorage.getItem('ecommerce-auth-user');
+    if (authUserJson) {
+      const authUser = JSON.parse(authUserJson);
+      const email = authUser.email || authUser.username;
+      if (email) {
+        const lowerEmail = email.toLowerCase();
+        localStorage.setItem('basket_username', lowerEmail);
+        return lowerEmail;
+      }
+    }
+  } catch (error) {
+    console.error('[Cart API] Failed to parse auth-provider user:', error);
+  }
+
+  // 2. Try existing basket_username from localStorage
+  const existing = localStorage.getItem('basket_username');
+  if (existing) {
+    return existing;
+  }
+
+  // 3. Generate new guest username
+  const guestUsername = `guest-${Date.now()}`;
+  localStorage.setItem('basket_username', guestUsername);
+  return guestUsername;
+}
 
 /**
  * Backend item format (PascalCase) - backend accepts PascalCase in requests
@@ -66,12 +98,13 @@ function createEmptyCart(userName: string): { data: Cart } {
 
 /**
  * Get cart/basket for current user
+ * @param request - Request object with userName. If not provided, defaults to 'guest'
  */
-export async function getCart(
-  request?: { params?: GetCartRequest }
-): Promise<{ data: Cart } | null> {
-  const userName =
-    request?.params?.userName || AuthService.getCurrentUsername() || 'guest';
+export async function getCart(request?: {
+  params?: GetCartRequest;
+}): Promise<{ data: Cart } | null> {
+  // userName should be passed from the hook using useAuth()
+  const userName = request?.params?.userName || 'guest';
   const url = API_CONFIG.BASKET.GET_BASKET(userName);
 
   try {
@@ -79,7 +112,9 @@ export async function getCart(
 
     // Handle 204 No Content - basket doesn't exist yet
     if (response.status === 204) {
-      console.log('[Cart API] No basket exists yet (204), returning empty cart');
+      console.log(
+        '[Cart API] No basket exists yet (204), returning empty cart'
+      );
       return createEmptyCart(userName);
     }
 
@@ -112,7 +147,9 @@ export async function getCart(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const status = (error as any)?.response?.status;
     if (status === 404 || status === 204) {
-      console.log(`[Cart API] Basket not found (${status}), returning empty cart`);
+      console.log(
+        `[Cart API] Basket not found (${status}), returning empty cart`
+      );
       return createEmptyCart(userName);
     }
 
@@ -124,16 +161,27 @@ export async function getCart(
 
 /**
  * Add item to cart (creates or updates basket)
+ * @param request - AddToCartRequest with product info and userName
+ * @param currentCart - Optional current cart data from cache to avoid extra API call
  */
 export async function addToCart(
-  request: { payload: AddToCartRequest }
+  request: {
+    payload: AddToCartRequest & { userName?: string };
+  },
+  currentCart?: { data: Cart } | null
 ): Promise<{ data: Cart } | null> {
-  const userName = AuthService.getCurrentUsername() || 'guest';
+  // userName should be passed from the hook using useAuth()
+  const userName = request.payload.userName || 'guest';
   const url = API_CONFIG.BASKET.CREATE_BASKET;
 
-  // Get current cart first
-  const currentCart = await getCart();
-  const currentItems = currentCart?.data?.items || [];
+  // Use provided currentCart or fetch if not available
+  let currentItems = currentCart?.data?.items || [];
+
+  // If no currentCart provided, fetch from API (fallback)
+  if (!currentCart) {
+    const fetchedCart = await getCart({ params: { userName } });
+    currentItems = fetchedCart?.data?.items || [];
+  }
 
   // Check if item already exists
   const existingItemIndex = currentItems.findIndex(
@@ -194,16 +242,27 @@ export async function addToCart(
 
 /**
  * Update cart item quantity
+ * @param request - UpdateCartItemRequest with product info and userName
+ * @param currentCart - Optional current cart data from cache to avoid extra API call
  */
 export async function updateCartItem(
-  request: { payload: UpdateCartItemRequest }
+  request: {
+    payload: UpdateCartItemRequest & { userName?: string };
+  },
+  currentCart?: { data: Cart } | null
 ): Promise<{ data: Cart } | null> {
-  const userName = AuthService.getCurrentUsername() || 'guest';
+  // userName should be passed from the hook using useAuth()
+  const userName = request.payload.userName || 'guest';
   const url = API_CONFIG.BASKET.CREATE_BASKET;
 
-  // Get current cart
-  const currentCart = await getCart();
-  const currentItems = currentCart?.data?.items || [];
+  // Use provided currentCart or fetch if not available
+  let currentItems = currentCart?.data?.items || [];
+
+  // If no currentCart provided, fetch from API (fallback)
+  if (!currentCart) {
+    const fetchedCart = await getCart({ params: { userName } });
+    currentItems = fetchedCart?.data?.items || [];
+  }
 
   // Update item quantity (filter out if quantity is 0 or less)
   const updatedItems = currentItems
@@ -239,27 +298,37 @@ export async function updateCartItem(
 
 /**
  * Remove item from cart
+ * @param request - RemoveCartItemRequest with productId and userName
+ * @param currentCart - Optional current cart data from cache to avoid extra API call
  */
 export async function removeCartItem(
-  request: { payload: RemoveCartItemRequest }
+  request: {
+    payload: RemoveCartItemRequest & { userName?: string };
+  },
+  currentCart?: { data: Cart } | null
 ): Promise<{ data: Cart } | null> {
   // Remove by setting quantity to 0
-  return updateCartItem({
-    payload: {
-      productId: request.payload.productId,
-      quantity: 0,
+  return updateCartItem(
+    {
+      payload: {
+        productId: request.payload.productId,
+        quantity: 0,
+        userName: request.payload.userName,
+      },
     },
-  });
+    currentCart
+  );
 }
 
 /**
  * Clear entire cart
+ * @param request - ClearCartRequest with userName. If not provided, defaults to 'guest'
  */
-export async function clearCart(
-  request?: { payload?: ClearCartRequest }
-): Promise<{ data: Cart } | null> {
-  const userName =
-    request?.payload?.userName || AuthService.getCurrentUsername() || 'guest';
+export async function clearCart(request?: {
+  payload?: ClearCartRequest;
+}): Promise<{ data: Cart } | null> {
+  // userName should be passed from the hook using useAuth()
+  const userName = request?.payload?.userName || 'guest';
   const url = API_CONFIG.BASKET.DELETE_BASKET(userName);
 
   await axiosClient.delete(url);
@@ -278,31 +347,22 @@ export async function clearCart(
 
 /**
  * Checkout cart (creates order from basket)
+ * @param request - CheckoutRequest with order info and userName
  */
-export async function checkout(
-  request: { payload: CheckoutRequest }
-): Promise<{ success: boolean; orderId?: number }> {
-  const userName = AuthService.getCurrentUsername() || 'guest';
+export async function checkout(request: {
+  payload: CheckoutRequest & { userName?: string };
+}): Promise<{ success: boolean; orderId?: number }> {
+  // Get userName from auth-provider or resolve from basket username logic
+  const userName = request.payload.userName || resolveBasketUsername();
   const url = API_CONFIG.BASKET.CHECKOUT;
 
-  // Transform to backend PascalCase format
+  // V2 API - only requires UserName and TotalPrice (PascalCase)
   const payload = {
     UserName: userName,
     TotalPrice: request.payload.totalPrice,
-    FirstName: request.payload.firstName,
-    LastName: request.payload.lastName,
-    EmailAddress: request.payload.emailAddress,
-    AddressLine: request.payload.addressLine,
-    Country: request.payload.country,
-    State: request.payload.state,
-    ZipCode: request.payload.zipCode,
-    CardName: request.payload.cardName,
-    CardNumber: request.payload.cardNumber,
-    Expiration: request.payload.expiration,
-    CVV: request.payload.cvv,
-    PaymentMethod: request.payload.paymentMethod,
   };
 
+  console.log('[Checkout API] V2 Checkout payload:', payload);
   const response = await axiosClient.post(url, payload);
 
   return {

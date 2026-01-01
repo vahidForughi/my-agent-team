@@ -20,7 +20,7 @@ Parameters:
     Description: Private subnets for EKS data plane
   NodeInstanceType:
     Type: String
-    Default: t3.medium
+    Default: m7i-flex.large
   NodeDesiredCapacity:
     Type: Number
     Default: 2
@@ -90,6 +90,21 @@ Resources:
       Roles: [!Ref NodeRole]
       Path: "/"
 
+  # Launch Template with proper prefix delegation configuration
+  NodeLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        MetadataOptions:
+          HttpPutResponseHopLimit: 2
+          HttpTokens: optional
+        UserData:
+          Fn::Base64: |
+            #!/bin/bash
+            # Enable AWS VPC CNI prefix delegation for higher pod density
+            export ENABLE_PREFIX_DELEGATION=true
+            export WARM_PREFIX_TARGET=1
+
   ManagedNodeGroup:
     Type: AWS::EKS::Nodegroup
     DependsOn: EksCluster
@@ -104,11 +119,14 @@ Resources:
       InstanceTypes:
         - !Ref NodeInstanceType
         - t3.small
-        - t3a.medium
-        - t2.medium
+        - t3.medium
+        - t3.large
       CapacityType: ON_DEMAND
       AmiType: AL2023_x86_64_STANDARD
       DiskSize: !Ref NodeDiskSize
+      LaunchTemplate:
+        Id: !Ref NodeLaunchTemplate
+        Version: !GetAtt NodeLaunchTemplate.LatestVersionNumber
       Tags:
         Name: !Sub ${EnvName}-nodegroup
 

@@ -1,0 +1,105 @@
+// Figure 5.1 - Observability and Operations Architecture
+// Complete monitoring stack with telemetry flow and operational management UIs
+
+// ==================== MICROSERVICES LAYER ====================
+Microservices [icon: k8s-pod, color: blue] {
+  Catalog API [icon: dotnet]
+  Basket API [icon: dotnet]
+  Discount API [icon: dotnet]
+  Ordering API [icon: dotnet]
+  API Gateway [icon: aws-api-gateway]
+}
+
+// ==================== INFRASTRUCTURE ====================
+Infrastructure [icon: server, color: purple] {
+  MongoDB [icon: mongodb]
+  Redis [icon: redis]
+  PostgreSQL [icon: postgresql]
+  SQL Server [icon: mssql]
+  RabbitMQ [icon: rabbitmq]
+}
+
+// ==================== TELEMETRY SIGNALS ====================
+Telemetry Signals [color: gray] {
+  Logs (Serilog) [icon: file-text]
+  Metrics (Prometheus) [icon: prometheus]
+  Traces (Envoy Sidecar) [icon: jaeger]
+}
+
+// ==================== COLLECTION & STORAGE ====================
+Collection & Storage [icon: database, color: orange] {
+  
+  // Logging Stack
+  Logging Stack [color: yellow] {
+    Elasticsearch [icon: elasticsearch]
+  }
+  
+  // Metrics Stack
+  Metrics Stack [color: orange] {
+    Prometheus Server [icon: prometheus]
+    Alertmanager [icon: gcp-cloud-alerts]
+  }
+  
+  // Tracing Stack
+  Tracing Stack [color: green] {
+    Jaeger Collector [icon: jaeger]
+  }
+  
+  // Service Mesh Telemetry
+  Mesh Telemetry [color: cyan] {
+    Istio Telemetry [icon: istio]
+  }
+}
+
+// ==================== VISUALIZATION UIs ====================
+Observability UIs [icon: monitor, color: green] {
+  Kibana [icon: kibana] // Log exploration
+  Grafana [icon: grafana] // Metrics dashboards
+  Jaeger UI [icon: jaeger] // Trace analysis
+  Kiali [icon: istio] // Service topology
+}
+
+// ==================== OPERATIONS UIs ====================
+Operations UIs [icon: tool, color: blue] {
+  Portainer [icon: docker] // Container management
+  pgAdmin [icon: postgresql] // Database admin
+  RabbitMQ UI [icon: rabbitmq] // Message broker
+}
+
+// ==================== OPERATORS ====================
+Operators [icon: user] {
+  DevOps Team [icon: user]
+}
+
+// ==================== CONNECTIONS ====================
+
+// Services emit telemetry
+Microservices > Telemetry Signals : Emit
+
+// Logs flow
+Logs (Serilog) > Elasticsearch : Ship logs
+
+// Metrics flow
+Metrics (Prometheus) > Prometheus Server : Scrape
+
+// Traces flow
+Traces (Envoy Sidecar) > Jaeger Collector : Send spans
+Traces (Envoy Sidecar) > Istio Telemetry : Report
+
+// Alerting
+Prometheus Server > Alertmanager : Fire alerts
+
+// Visualization connections
+Elasticsearch > Kibana : Query logs
+Prometheus Server > Grafana : Query metrics
+Jaeger Collector > Jaeger UI : Query traces
+Istio Telemetry > Kiali : Topology data
+
+// Operations connections
+Infrastructure > RabbitMQ UI : Monitor queues
+Infrastructure > pgAdmin : Query databases
+Microservices > Portainer : Manage containers
+
+// Operators use all UIs
+Observability UIs > DevOps Team : Diagnose & Monitor
+Operations UIs > DevOps Team : Manage & Verify

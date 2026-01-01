@@ -5,7 +5,7 @@
 
 import { httpClient } from '../httpClient';
 import { env, API_CONFIG } from '../../config';
-import { AuthService } from '../../auth';
+import { getStoredUser } from '@ecommerce-platform/auth-provider';
 import {
   ShoppingCartResponseSchema,
   CreateShoppingCartCommandSchema,
@@ -18,6 +18,14 @@ import {
 import { getMockBasket, getMockCheckoutResponse } from './mocks';
 
 /**
+ * Get current username from auth provider
+ */
+function getCurrentUsername(): string {
+  const storedUser = getStoredUser();
+  return storedUser?.email || storedUser?.displayName || storedUser?.id || 'guest';
+}
+
+/**
  * Get basket for current user
  */
 export async function getBasket(): Promise<ShoppingCartFrontend | null> {
@@ -27,7 +35,7 @@ export async function getBasket(): Promise<ShoppingCartFrontend | null> {
     return getMockBasket();
   }
 
-  const username = AuthService.getCurrentUsername();
+  const username = getCurrentUsername();
   const url = API_CONFIG.BASKET.GET_BASKET(username);
 
   try {
@@ -50,9 +58,12 @@ export async function getBasket(): Promise<ShoppingCartFrontend | null> {
 
 /**
  * Create or update basket for current user
+ * @param items - Shopping cart items
+ * @param userName - Optional username. If not provided, will get from storage (fallback to 'guest')
  */
 export async function createBasket(
-  items: ShoppingCartItem[]
+  items: ShoppingCartItem[],
+  userName?: string
 ): Promise<ShoppingCartFrontend> {
   // Use mock data if enabled
   if (env.useMockData) {
@@ -60,8 +71,11 @@ export async function createBasket(
     return getMockBasket();
   }
 
-  const username = AuthService.getCurrentUsername();
+  // Use provided userName or get from storage
+  const username = userName || getCurrentUsername();
   const url = API_CONFIG.BASKET.CREATE_BASKET;
+
+  console.log('[Basket API] createBasket - userName:', username);
 
   // Validate request with Zod schema
   const command = CreateShoppingCartCommandSchema.parse({
@@ -88,7 +102,7 @@ export async function deleteBasket(): Promise<void> {
     return;
   }
 
-  const username = AuthService.getCurrentUsername();
+  const username = getCurrentUsername();
   const url = API_CONFIG.BASKET.DELETE_BASKET(username);
 
   await httpClient.delete(url);
@@ -122,7 +136,7 @@ export async function checkoutBasket(
     return getMockCheckoutResponse();
   }
 
-  const username = AuthService.getCurrentUsername();
+  const username = getCurrentUsername();
   const url = API_CONFIG.BASKET.CHECKOUT;
 
   // Validate request with Zod schema

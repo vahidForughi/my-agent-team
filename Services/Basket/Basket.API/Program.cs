@@ -100,11 +100,11 @@ builder.Services.AddMassTransit(config =>
 {
     config.UsingRabbitMq((ct, cfg) =>
     {
-        // Use simple host configuration for MassTransit 7.3.1
-        cfg.Host("rabbitmq", h =>
+        var rabbitMqUri = new Uri(builder.Configuration["EventBusSettings:HostAddress"] ?? "amqp://guest:guest@localhost:5672");
+        cfg.Host(rabbitMqUri.Host, h =>
         {
-            h.Username("guest");
-            h.Password("guest");
+            h.Username(rabbitMqUri.UserInfo.Split(':')[0]);
+            h.Password(rabbitMqUri.UserInfo.Split(':')[1]);
         });
     });
 });

@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@ecommerce-platform/auth-provider';
 import { ReactQueryOptions } from '../types';
 import * as apis from './apis';
 import { userKeys } from './keys';
@@ -20,12 +21,13 @@ export function useGetUserProfile(
   options?: ReactQueryOptions
 ) {
   const { enabled = true } = options || {};
+  const { user } = useAuth();
 
   return useQuery<{ data: User } | null>({
     queryKey: userKeys.get.create(input),
     queryFn: async () => {
       const result = await apis.getUserProfile({
-        params: input,
+        params: { ...input, user },
       });
       return result ?? null;
     },
