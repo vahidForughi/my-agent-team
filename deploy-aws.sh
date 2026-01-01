@@ -8,11 +8,11 @@ export AWS_PAGER=""
 # This script deploys the entire e-commerce platform to AWS EKS with self-managed databases
 # Mirrors the local deploy.sh functionality but for AWS
 # Usage: ./deploy-aws.sh [env] [region]
-# Example: ./deploy-aws.sh dev ap-southeast-1
+# Example: ./deploy-aws.sh dev us-east-1
 
 # ==================== Configuration ====================
 ENV_NAME="${1:-dev}"
-REGION="${2:-${AWS_DEFAULT_REGION:-ap-southeast-1}}"
+REGION="${2:-${AWS_DEFAULT_REGION:-us-east-1}}"
 AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 ECR_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com"
 
@@ -95,6 +95,7 @@ check_prerequisites() {
     require_bin helm
     require_bin docker
     require_bin jq
+    require_bin python3
 
     # Verify AWS credentials
     if ! aws_cmd sts get-caller-identity >/dev/null 2>&1; then
@@ -216,21 +217,90 @@ deploy_vpc() {
     log_success "VPC deployed: ${VPC_ID}"
 }
 
+# ==================== S3 Bucket Deployment ====================
+deploy_s3_bucket() {
+    log_info "[3.5/10] Deploying S3 bucket for product images..."
+
+    STACK_S3="${ENV_NAME}-s3-bucket"
+    S3_BUCKET="ecommerce-product-images-${AWS_ACCOUNT_ID}"
+    S3_BUCKET_ARN="arn:aws:s3:::${S3_BUCKET}"
+
+    # Check if bucket already exists
+    if aws_cmd s3 ls "s3://${S3_BUCKET}" 2>/dev/null; then
+        log_success "S3 bucket already exists: ${S3_BUCKET}"
+        return 0
+    fi
+
+    # Bucket doesn't exist, create it via CloudFormation
+    log_info "Creating S3 bucket via CloudFormation..."
+    aws_cmd cloudformation deploy \
+        --region "$REGION" \
+        --stack-name "$STACK_S3" \
+        --template-file Infrastructure/aws/cloudformation/s3-bucket.yaml \
+        --capabilities CAPABILITY_NAMED_IAM \
+        --parameter-overrides EnvName="$ENV_NAME"
+
+    # Retrieve S3 bucket outputs from CloudFormation
+    log_info "Retrieving S3 bucket outputs..."
+    S3_BUCKET=$(aws_cmd cloudformation describe-stacks \
+        --region "$REGION" \
+        --stack-name "$STACK_S3" \
+        --query "Stacks[0].Outputs[?OutputKey=='BucketName'].OutputValue" \
+        --output text)
+    S3_BUCKET_ARN=$(aws_cmd cloudformation describe-stacks \
+        --region "$REGION" \
+        --stack-name "$STACK_S3" \
+        --query "Stacks[0].Outputs[?OutputKey=='BucketArn'].OutputValue" \
+        --output text)
+
+    log_success "S3 bucket deployed: ${S3_BUCKET}"
+}
+
 # ==================== EKS Deployment ====================
 deploy_eks() {
     log_info "[4/10] Deploying EKS stack: $STACK_EKS"
 
-    aws_cmd cloudformation deploy \
+    # Check if EKS stack already exists
+    EKS_STACK_STATUS=$(aws_cmd cloudformation describe-stacks \
         --region "$REGION" \
         --stack-name "$STACK_EKS" \
-        --template-file Infrastructure/aws/cloudformation/eks-cluster.yaml \
-        --capabilities CAPABILITY_NAMED_IAM \
-        --parameter-overrides \
-            EnvName="$ENV_NAME" \
-            ClusterName="$CLUSTER_NAME" \
-            KubernetesVersion="$K8S_VERSION" \
-            PrivateSubnetIds="$PRIV_SUBNETS" \
-            NodeDiskSize="$NODE_DISK_SIZE"
+        --query "Stacks[0].StackStatus" \
+        --output text 2>/dev/null || echo "DOES_NOT_EXIST")
+
+    if [ "$EKS_STACK_STATUS" != "DOES_NOT_EXIST" ]; then
+        # Stack exists - check if it's in a usable state
+        if [ "$EKS_STACK_STATUS" = "CREATE_COMPLETE" ] || [ "$EKS_STACK_STATUS" = "UPDATE_COMPLETE" ] || [ "$EKS_STACK_STATUS" = "UPDATE_ROLLBACK_COMPLETE" ]; then
+            log_warning "EKS cluster already exists (status: $EKS_STACK_STATUS)"
+            log_info "Skipping CloudFormation update to avoid NodeGroup modification issues"
+        else
+            log_error "EKS cluster is in an unexpected state: $EKS_STACK_STATUS"
+            log_info "Attempting deployment..."
+            aws_cmd cloudformation deploy \
+                --region "$REGION" \
+                --stack-name "$STACK_EKS" \
+                --template-file Infrastructure/aws/cloudformation/eks-cluster.yaml \
+                --capabilities CAPABILITY_NAMED_IAM \
+                --parameter-overrides \
+                    EnvName="$ENV_NAME" \
+                    ClusterName="$CLUSTER_NAME" \
+                    KubernetesVersion="$K8S_VERSION" \
+                    PrivateSubnetIds="$PRIV_SUBNETS" \
+                    NodeDiskSize="$NODE_DISK_SIZE"
+        fi
+    else
+        # Stack doesn't exist or is in a different state, deploy it
+        aws_cmd cloudformation deploy \
+            --region "$REGION" \
+            --stack-name "$STACK_EKS" \
+            --template-file Infrastructure/aws/cloudformation/eks-cluster.yaml \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --parameter-overrides \
+                EnvName="$ENV_NAME" \
+                ClusterName="$CLUSTER_NAME" \
+                KubernetesVersion="$K8S_VERSION" \
+                PrivateSubnetIds="$PRIV_SUBNETS" \
+                NodeDiskSize="$NODE_DISK_SIZE"
+    fi
 
     log_info "Updating kubeconfig..."
     aws_cmd eks update-kubeconfig --region "$REGION" --name "$CLUSTER_NAME"
@@ -239,6 +309,43 @@ deploy_eks() {
     kubectl cluster-info
 
     log_success "EKS cluster deployed and configured"
+}
+
+# ==================== Setup OIDC Provider ====================
+setup_oidc_provider() {
+    log_info "[4.5/10] Associating OIDC provider with EKS cluster..."
+
+    OIDC_ISSUER=$(aws_cmd eks describe-cluster \
+        --region "$REGION" \
+        --name "$CLUSTER_NAME" \
+        --query "cluster.identity.oidc.issuer" \
+        --output text)
+
+    OIDC_ID=$(echo "$OIDC_ISSUER" | cut -d'/' -f5)
+
+    # Check if already exists
+    if aws_cmd iam get-open-id-connect-provider \
+        --open-id-connect-provider-arn "arn:aws:iam::${AWS_ACCOUNT_ID}:oidc-provider/oidc.eks.${REGION}.amazonaws.com/${OIDC_ID}" \
+        --region "$REGION" >/dev/null 2>&1; then
+        log_success "OIDC provider already associated"
+        return 0
+    fi
+
+    # Get certificate thumbprint
+    OIDC_THUMBPRINT=$(echo | openssl s_client -servername oidc.eks.${REGION}.amazonaws.com \
+        -connect oidc.eks.${REGION}.amazonaws.com:443 2>/dev/null | \
+        openssl x509 -fingerprint -sha1 -noout | \
+        cut -d'=' -f2 | tr -d ':')
+
+    # Create OIDC provider
+    aws_cmd iam create-open-id-connect-provider \
+        --url "${OIDC_ISSUER}" \
+        --client-id-list sts.amazonaws.com \
+        --thumbprint-list "${OIDC_THUMBPRINT}" \
+        --region "$REGION" \
+        --tags Key=Environment,Value="$ENV_NAME" Key=Cluster,Value="$CLUSTER_NAME"
+
+    log_success "OIDC provider associated with EKS cluster"
 }
 
 # ==================== Setup HTTPS Certificate ====================
@@ -323,9 +430,16 @@ setup_irsa_for_ebs_csi() {
     }"
 
     # Create or update role
-    aws_cmd iam create-role --role-name "$ROLE_NAME" \
-        --assume-role-policy-document "$TRUST_POLICY" --region "$REGION" 2>/dev/null || \
-        log_info "Role already exists: $ROLE_NAME"
+    if ! aws_cmd iam create-role --role-name "$ROLE_NAME" \
+        --assume-role-policy-document "$TRUST_POLICY" --region "$REGION" 2>&1; then
+        if aws_cmd iam get-role --role-name "$ROLE_NAME" >/dev/null 2>&1; then
+            log_info "IAM role already exists: $ROLE_NAME"
+        else
+            log_error "Failed to create IAM role: $ROLE_NAME"
+            log_error "Check IAM permissions and CloudWatch Logs"
+            exit 1
+        fi
+    fi
 
     # Attach AWS managed policy for EBS CSI Driver
     log_info "Attaching AmazonEBSCSIDriverPolicy to role..."
@@ -390,6 +504,11 @@ install_ebs_csi_driver() {
 deploy_databases() {
     log_info "[6/10] Deploying self-managed databases..."
 
+    # Create namespace with Istio injection BEFORE any deployments
+    kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | \
+        kubectl apply -f - 2>/dev/null || log_info "Namespace already exists"
+    kubectl label namespace "$NAMESPACE" istio-injection=enabled --overwrite
+
     cd Deployments/helm
 
     # Phase 1: Core databases (required for app)
@@ -426,11 +545,18 @@ deploy_databases() {
     
     # Phase 2: Optional monitoring/admin tools (only if elasticsearch is ready)
     OPTIONAL_CHARTS=(kibana pgadmin portainer)
-    
+
     log_info "Phase 2: Deploying optional monitoring/admin tools..."
     for chart in "${OPTIONAL_CHARTS[@]}"; do
         if [[ -d "$chart" ]]; then
-            log_info "Deploying ${chart}..."
+            log_info "Deploying eshopping-${chart}..."
+
+            # Clean up any orphaned resources from manual deployments without prefix
+            if kubectl get serviceaccount "${chart}" -n "$NAMESPACE" 2>/dev/null; then
+                log_warning "Removing orphaned ServiceAccount (legacy naming): ${chart}"
+                kubectl delete serviceaccount "${chart}" -n "$NAMESPACE" --ignore-not-found=true
+            fi
+
             helm upgrade --install "eshopping-${chart}" "./${chart}" \
                 --namespace "$NAMESPACE" \
                 --wait --timeout 300s || log_warning "${chart} deployment may need more time (optional service)"
@@ -458,31 +584,37 @@ setup_irsa_for_catalog() {
     # Create IAM policy for S3 access
     log_info "Creating IAM policy for S3 access..."
     POLICY_NAME="${ENV_NAME}-catalog-s3-policy"
-    POLICY_DOC='{
-        "Version": "2012-10-17",
-        "Statement": [
+    POLICY_DOC="{
+        \"Version\": \"2012-10-17\",
+        \"Statement\": [
             {
-                "Effect": "Allow",
-                "Action": [
-                    "s3:GetObject",
-                    "s3:PutObject",
-                    "s3:DeleteObject",
-                    "s3:ListBucket"
+                \"Effect\": \"Allow\",
+                \"Action\": [
+                    \"s3:GetObject\",
+                    \"s3:PutObject\",
+                    \"s3:DeleteObject\",
+                    \"s3:ListBucket\"
                 ],
-                "Resource": [
-                    "arn:aws:s3:::ecommerce-product-images-471112812838",
-                    "arn:aws:s3:::ecommerce-product-images-471112812838/*"
+                \"Resource\": [
+                    \"${S3_BUCKET_ARN}\",
+                    \"${S3_BUCKET_ARN}/*\"
                 ]
             }
         ]
-    }'
+    }"
 
     # Create or update policy
-    aws_cmd iam create-policy --policy-name "$POLICY_NAME" \
-        --policy-document "$POLICY_DOC" --region "$REGION" 2>/dev/null || \
-        log_info "Policy already exists: $POLICY_NAME"
-
     POLICY_ARN="arn:aws:iam::${AWS_ACCOUNT_ID}:policy/${POLICY_NAME}"
+    if ! aws_cmd iam create-policy --policy-name "$POLICY_NAME" \
+        --policy-document "$POLICY_DOC" --region "$REGION" 2>&1; then
+        if aws_cmd iam get-policy --policy-arn "$POLICY_ARN" >/dev/null 2>&1; then
+            log_info "IAM policy already exists: $POLICY_NAME"
+        else
+            log_error "Failed to create IAM policy: $POLICY_NAME"
+            log_error "Check IAM permissions and policy document syntax"
+            exit 1
+        fi
+    fi
 
     # Create IAM role with OIDC trust relationship
     log_info "Creating IAM role with OIDC trust relationship..."
@@ -507,9 +639,16 @@ setup_irsa_for_catalog() {
     }"
 
     # Create or update role
-    aws_cmd iam create-role --role-name "$ROLE_NAME" \
-        --assume-role-policy-document "$TRUST_POLICY" --region "$REGION" 2>/dev/null || \
-        log_info "Role already exists: $ROLE_NAME"
+    if ! aws_cmd iam create-role --role-name "$ROLE_NAME" \
+        --assume-role-policy-document "$TRUST_POLICY" --region "$REGION" 2>&1; then
+        if aws_cmd iam get-role --role-name "$ROLE_NAME" >/dev/null 2>&1; then
+            log_info "IAM role already exists: $ROLE_NAME"
+        else
+            log_error "Failed to create IAM role: $ROLE_NAME"
+            log_error "Check IAM permissions and CloudWatch Logs"
+            exit 1
+        fi
+    fi
 
     # Attach policy to role
     log_info "Attaching S3 policy to role..."
@@ -519,10 +658,16 @@ setup_irsa_for_catalog() {
 
     # Update service account annotation
     log_info "Creating/updating service account with IRSA annotation..."
-    kubectl create serviceaccount catalog -n "$NAMESPACE" --dry-run=client -o yaml | \
-        kubectl annotate -f - --overwrite \
-        eks.amazonaws.com/role-arn="arn:aws:iam::${AWS_ACCOUNT_ID}:role/${ROLE_NAME}" | \
-        kubectl apply -f -
+    
+    # Create service account if it doesn't exist
+    if ! kubectl get serviceaccount catalog -n "$NAMESPACE" &>/dev/null; then
+        kubectl create serviceaccount catalog -n "$NAMESPACE"
+    fi
+    
+    # Annotate the service account with the IAM role ARN
+    kubectl annotate serviceaccount catalog -n "$NAMESPACE" \
+        eks.amazonaws.com/role-arn="arn:aws:iam::${AWS_ACCOUNT_ID}:role/${ROLE_NAME}" \
+        --overwrite
 
     log_success "IRSA configured for Catalog Service"
 }
@@ -552,9 +697,9 @@ deploy_api_services() {
                     ;;
             esac
 
-            # Special handling for catalog service to set service account
+            # Special handling for specific services
             if [[ "$chart" == "catalog" ]]; then
-                log_info "Deploying catalog service with IRSA-enabled service account..."
+                log_info "Deploying catalog service with IRSA-enabled service account and AWS S3 configuration..."
                 helm upgrade --install "eshopping-${chart}" "./${chart}" \
                     --namespace "$NAMESPACE" \
                     --set image.registry="$ECR_REGISTRY" \
@@ -564,9 +709,25 @@ deploy_api_services() {
                     --set service.type=ClusterIP \
                     --set serviceAccount.create=false \
                     --set serviceAccount.name=catalog \
+                    --set configmap.AWS__S3__BucketName="$S3_BUCKET" \
+                    --set configmap.AWS__S3__Region="$REGION" \
+                    --set configmap.AWS__S3__ImagePrefix="products/" \
+                    --set configmap.AWS__S3__ServiceUrl="" \
+                    --set configmap.USE_LOCALSTACK="false" \
+                    --force \
+                    --wait --timeout 600s
+            elif [[ "$chart" == "ocelotapigw" ]]; then
+                log_info "Deploying API Gateway with LoadBalancer service type for ELB exposure..."
+                helm upgrade --install "eshopping-${chart}" "./${chart}" \
+                    --namespace "$NAMESPACE" \
+                    --set image.registry="$ECR_REGISTRY" \
+                    --set image.repository="$IMAGE_NAME" \
+                    --set image.tag="latest" \
+                    --set imagePullSecrets=null \
+                    --set service.type=LoadBalancer \
                     --wait --timeout 600s
             else
-                # Deploy other services normally
+                # Deploy other services normally with ClusterIP
                 helm upgrade --install "eshopping-${chart}" "./${chart}" \
                     --namespace "$NAMESPACE" \
                     --set image.registry="$ECR_REGISTRY" \
@@ -590,26 +751,35 @@ deploy_api_services() {
 trigger_migration() {
     log_info "[7.5/10] Triggering product image migration to S3..."
 
-    # Get the catalog service endpoint
-    log_info "Waiting for catalog service to be ready..."
+    # Setup cleanup trap
+    PF_PID=""
+    cleanup_portforward() {
+        if [ -n "$PF_PID" ]; then
+            kill "$PF_PID" 2>/dev/null || true
+        fi
+        # Fallback: kill any orphaned port-forward to catalog
+        pkill -f "port-forward.*eshopping-catalog" 2>/dev/null || true
+    }
+    trap cleanup_portforward EXIT
+
+    # Wait for catalog service
     kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-catalog \
         -n "$NAMESPACE" --timeout=300s || log_warning "Catalog pod not ready, migration may fail"
 
-    # Get service IP (use port-forward as alternative)
-    log_info "Attempting to connect to catalog service for migration..."
-
-    # Port-forward to catalog service in background
+    # Port-forward in background
     kubectl port-forward -n "$NAMESPACE" svc/eshopping-catalog 8000:80 &
     PF_PID=$!
     sleep 3
 
-    # Trigger migration via API Gateway
+    # Trigger migration
     log_info "Calling migration endpoint: POST /Admin/MigrateImagesToS3"
     MIGRATION_RESPONSE=$(curl -s -X POST http://localhost:8000/Admin/MigrateImagesToS3)
 
-    # Clean up port-forward
-    kill $PF_PID 2>/dev/null || true
+    # Cleanup
+    cleanup_portforward
+    trap - EXIT
 
+    # Check response
     if echo "$MIGRATION_RESPONSE" | grep -q "TotalProducts"; then
         log_success "Migration triggered successfully"
         log_info "Migration response: $MIGRATION_RESPONSE"
@@ -622,9 +792,169 @@ trigger_migration() {
     fi
 }
 
+# ==================== Install Istio Early ====================
+install_istio_early() {
+    log_info "[7.5/10] Installing Istio service mesh..."
+
+    # Find or download Istio
+    ISTIO_DIR=$(find . -maxdepth 1 -name "istio-*" -type d | head -n 1)
+
+    if [ -z "$ISTIO_DIR" ]; then
+        log_info "Downloading Istio..."
+        curl -L https://istio.io/downloadIstio | ISTIO_VERSION=1.28.1 sh -
+        ISTIO_DIR=$(find . -maxdepth 1 -name "istio-*" -type d | head -n 1)
+    fi
+
+    # Install Istio
+    log_info "Installing Istio control plane..."
+    ${ISTIO_DIR}/bin/istioctl install --set profile=default -y
+
+    # Install Istio addons
+    log_info "Installing Istio addons (Jaeger, Kiali)..."
+    kubectl apply -f ${ISTIO_DIR}/samples/addons/jaeger.yaml || true
+    kubectl apply -f ${ISTIO_DIR}/samples/addons/kiali.yaml || true
+
+    # Wait for Istio to be ready
+    log_info "Waiting for Istio control plane to be ready..."
+    kubectl wait --for=condition=ready pod -l app=istiod -n istio-system --timeout=300s || log_warning "Istio may need more time"
+
+    log_success "Istio service mesh installed"
+}
+
+# ==================== Configure Istio Networking & Tracing ====================
+configure_istio_networking() {
+    log_info "[7.6/10] Configuring Istio gateway, virtual services, and tracing..."
+
+    # Apply Istio Gateway
+    log_info "Creating Istio gateway..."
+    kubectl apply -f Deployments/istio/gateway.yaml -n ${NAMESPACE}
+
+    # Apply Virtual Services with correct service hosts (using eshopping-* prefix)
+    log_info "Configuring virtual services..."
+    kubectl apply -f - <<EOF
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: catalog
+  namespace: ${NAMESPACE}
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - ecommerce-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /api/v1/Catalog
+    route:
+    - destination:
+        host: eshopping-catalog
+        port:
+          number: 80
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: basket
+  namespace: ${NAMESPACE}
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - ecommerce-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /api/v1/Basket
+    route:
+    - destination:
+        host: eshopping-basket
+        port:
+          number: 80
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: ordering
+  namespace: ${NAMESPACE}
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - ecommerce-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /api/v1/Order
+    route:
+    - destination:
+        host: eshopping-ordering
+        port:
+          number: 80
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: discount
+  namespace: ${NAMESPACE}
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - ecommerce-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /api/v1/Discount
+    route:
+    - destination:
+        host: eshopping-discount-discount-grpc
+        port:
+          number: 8080
+EOF
+
+    # Configure Jaeger tracing
+    log_info "Enabling Jaeger distributed tracing (100% sampling)..."
+    kubectl apply -f Deployments/istio/telemetry-tracing.yaml
+    kubectl apply -f Deployments/istio/tracing-config.yaml 2>/dev/null || log_warning "Tracing config applied (IstioOperator may need manual verification)"
+
+    log_success "Istio networking and tracing configured"
+}
+
+# ==================== Restart Services for Istio Injection ====================
+restart_services_for_istio() {
+    log_info "[7.8/10] Restarting services to inject Istio sidecars..."
+
+    SERVICE_DEPLOYMENTS=(
+        "eshopping-catalog"
+        "eshopping-basket"
+        "eshopping-discount"
+        "eshopping-ocelotapigw"
+    )
+
+    # Note: eshopping-ordering is excluded because Istio injection is disabled for SQL Server compatibility
+
+    for deployment in "${SERVICE_DEPLOYMENTS[@]}"; do
+        if kubectl get deployment "$deployment" -n "$NAMESPACE" &>/dev/null; then
+            log_info "Restarting $deployment..."
+            kubectl rollout restart deployment/"$deployment" -n "$NAMESPACE"
+        fi
+    done
+
+    # Wait for rollouts to complete
+    log_info "Waiting for services to restart with Istio sidecars..."
+    for deployment in "${SERVICE_DEPLOYMENTS[@]}"; do
+        if kubectl get deployment "$deployment" -n "$NAMESPACE" &>/dev/null; then
+            kubectl rollout status deployment/"$deployment" -n "$NAMESPACE" --timeout=300s || log_warning "$deployment restart taking longer"
+        fi
+    done
+
+    log_success "Services restarted with Istio sidecars"
+}
+
 # ==================== Deploy Monitoring Stack ====================
 deploy_monitoring() {
-    log_info "[8/10] Deploying monitoring stack..."
+    log_info "[8/10] Deploying monitoring stack (Prometheus & Grafana)..."
 
     # Create monitoring namespace
     kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
@@ -636,63 +966,270 @@ deploy_monitoring() {
 
     helm upgrade --install prometheus prometheus-community/prometheus \
         --namespace monitoring \
-        --set server.service.type=ClusterIP \
-        --set alertmanager.enabled=false \
+        -f Deployments/helm/prometheus/prometheus-values.yaml \
         --wait --timeout 600s
 
-    # Install Istio
-    log_info "Installing Istio..."
+    # Install Grafana with Helm (separate from Istio)
+    log_info "Installing Grafana..."
+    helm repo add grafana https://grafana.github.io/helm-charts 2>/dev/null || true
+    helm repo update
 
-    # Find or download Istio
-    ISTIO_DIR=$(find . -maxdepth 1 -name "istio-*" -type d | head -n 1)
+    helm upgrade --install grafana grafana/grafana \
+        --namespace monitoring \
+        --set adminPassword=prom-operator \
+        --set service.type=ClusterIP \
+        --set persistence.enabled=false \
+        --wait --timeout 600s
 
-    if [ -z "$ISTIO_DIR" ]; then
-        log_info "Downloading Istio..."
-        curl -L https://istio.io/downloadIstio | ISTIO_VERSION=1.20.0 sh -
-        ISTIO_DIR=$(find . -maxdepth 1 -name "istio-*" -type d | head -n 1)
-    fi
+    # Install Prometheus PushGateway for k6 load testing metrics
+    log_info "Installing Prometheus PushGateway for k6 load testing..."
+    helm upgrade --install prometheus-pushgateway prometheus-community/prometheus-pushgateway \
+        --namespace monitoring \
+        --set service.type=ClusterIP \
+        --set service.port=9091 \
+        --wait --timeout 300s
 
-    # Install Istio
-    ${ISTIO_DIR}/bin/istioctl install --set profile=default -y
+    log_info "Waiting for PushGateway to be ready..."
+    kubectl wait --for=condition=ready pod -l app=prometheus-pushgateway \
+        -n monitoring --timeout=300s || log_warning "PushGateway may need more time"
 
-    # Install Istio addons
-    log_info "Installing Istio addons (Grafana, Jaeger, Kiali)..."
-    kubectl apply -f ${ISTIO_DIR}/samples/addons/grafana.yaml || true
-    kubectl apply -f ${ISTIO_DIR}/samples/addons/jaeger.yaml || true
-    kubectl apply -f ${ISTIO_DIR}/samples/addons/kiali.yaml || true
+    log_success "PushGateway deployed for k6 metrics collection"
+
+    # Setup Grafana with comprehensive dashboards
+    log_info "Configuring Grafana with production dashboards..."
+    setup_grafana_dashboards
 
     # Wait for monitoring pods
     log_info "Waiting for monitoring components..."
-    kubectl wait --for=condition=ready pod -l app=grafana \
-        -n istio-system --timeout=600s || log_warning "Grafana may need more time"
+    kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=grafana \
+        -n monitoring --timeout=600s || log_warning "Grafana may need more time"
 
-    log_success "Monitoring stack deployed"
+    log_success "Monitoring stack deployed with production dashboards"
+}
+
+# ==================== Setup Grafana Dashboards ====================
+setup_grafana_dashboards() {
+    log_info "Setting up Grafana dashboards and datasources..."
+
+    # 1. Create Prometheus datasource
+    kubectl apply -f - <<EOF
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources
+  namespace: monitoring
+  labels:
+    grafana_datasource: "1"
+data:
+  prometheus.yaml: |
+    apiVersion: 1
+    datasources:
+    - name: Prometheus
+      type: prometheus
+      access: proxy
+      url: http://prometheus-server.monitoring.svc.cluster.local:80
+      isDefault: true
+      editable: true
+      jsonData:
+        timeInterval: 5s
+EOF
+
+    # 2. Create dashboard provider
+    kubectl apply -f - <<EOF
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-provider
+  namespace: monitoring
+data:
+  dashboards.yaml: |
+    apiVersion: 1
+    providers:
+    - name: 'Default'
+      orgId: 1
+      folder: ''
+      type: file
+      disableDeletion: false
+      updateIntervalSeconds: 10
+      allowUiUpdates: true
+      options:
+        path: /var/lib/grafana/dashboards
+    - name: 'Istio'
+      orgId: 1
+      folder: 'Istio'
+      type: file
+      disableDeletion: false
+      updateIntervalSeconds: 10
+      allowUiUpdates: true
+      options:
+        path: /var/lib/grafana/dashboards/istio
+EOF
+
+    # 3. Create custom dashboards
+    log_info "Creating custom microservices dashboards..."
+
+    # Service Request Metrics Dashboard
+    kubectl apply -f - <<EOF
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: service-requests-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  dashboard.json: |
+    {
+      "title": "Service Request Metrics",
+      "uid": "service-requests",
+      "tags": ["microservices", "requests"],
+      "timezone": "browser",
+      "panels": [
+        {
+          "title": "Request Rate by Service",
+          "type": "graph",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+          "targets": [{
+            "expr": "sum(rate(istio_requests_total{reporter=\"destination\",destination_workload_namespace=\"${NAMESPACE}\"}[5m])) by (destination_service_name)",
+            "legendFormat": "{{destination_service_name}}"
+          }]
+        },
+        {
+          "title": "Request Duration (P50, P90, P99)",
+          "type": "graph",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.50, sum(rate(istio_request_duration_milliseconds_bucket{destination_workload_namespace=\"${NAMESPACE}\"}[5m])) by (le, destination_service_name))",
+              "legendFormat": "P50 {{destination_service_name}}"
+            },
+            {
+              "expr": "histogram_quantile(0.90, sum(rate(istio_request_duration_milliseconds_bucket{destination_workload_namespace=\"${NAMESPACE}\"}[5m])) by (le, destination_service_name))",
+              "legendFormat": "P90 {{destination_service_name}}"
+            },
+            {
+              "expr": "histogram_quantile(0.99, sum(rate(istio_request_duration_milliseconds_bucket{destination_workload_namespace=\"${NAMESPACE}\"}[5m])) by (le, destination_service_name))",
+              "legendFormat": "P99 {{destination_service_name}}"
+            }
+          ]
+        }
+      ]
+    }
+EOF
+
+    # 4. Create K6 Load Testing Dashboard ConfigMap
+    log_info "Creating K6 load testing dashboard ConfigMap..."
+
+    # Read and create K6 dashboard ConfigMap
+    kubectl apply -f - <<'K6_EOF'
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k6-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  k6-dashboard.json: |-
+K6_EOF
+    cat Deployments/monitoring/grafana-dashboard-k6.json | sed 's/^/    /'
+    cat <<'K6_EOF'
+K6_EOF
+
+    log_success "K6 dashboard ConfigMap created"
+
+    # 5. Copy Istio dashboards from istio-system if they exist
+    log_info "Waiting for Istio dashboards to be created..."
+    sleep 10
+
+    if kubectl get configmap istio-grafana-dashboards -n istio-system &>/dev/null; then
+        log_info "Copying Istio dashboards to monitoring namespace..."
+        kubectl get configmap istio-grafana-dashboards -n istio-system -o yaml | \
+            sed 's/namespace: istio-system/namespace: monitoring/' | \
+            kubectl apply -f - || log_warning "Could not copy istio-grafana-dashboards"
+
+        kubectl label configmap istio-grafana-dashboards -n monitoring grafana_dashboard="1" --overwrite 2>/dev/null || true
+    fi
+
+    if kubectl get configmap istio-services-grafana-dashboards -n istio-system &>/dev/null; then
+        kubectl get configmap istio-services-grafana-dashboards -n istio-system -o yaml | \
+            sed 's/namespace: istio-system/namespace: monitoring/' | \
+            kubectl apply -f - || log_warning "Could not copy istio-services-grafana-dashboards"
+
+        kubectl label configmap istio-services-grafana-dashboards -n monitoring grafana_dashboard="1" --overwrite 2>/dev/null || true
+    fi
+
+    # 5. Mount all dashboards in Grafana
+    log_info "Mounting dashboards in Grafana deployment..."
+
+    # Add datasources volume
+    kubectl patch deployment grafana -n monitoring --type='json' -p='[
+      {"op": "add", "path": "/spec/template/spec/volumes/-", "value": {"name": "datasources", "configMap": {"name": "grafana-datasources"}}},
+      {"op": "add", "path": "/spec/template/spec/containers/0/volumeMounts/-", "value": {"name": "datasources", "mountPath": "/etc/grafana/provisioning/datasources"}}
+    ]' 2>/dev/null || log_warning "Datasources volume may already exist"
+
+    # Add dashboard provider volume
+    kubectl patch deployment grafana -n monitoring --type='json' -p='[
+      {"op": "add", "path": "/spec/template/spec/volumes/-", "value": {"name": "dashboard-provider", "configMap": {"name": "grafana-dashboard-provider"}}},
+      {"op": "add", "path": "/spec/template/spec/containers/0/volumeMounts/-", "value": {"name": "dashboard-provider", "mountPath": "/etc/grafana/provisioning/dashboards"}}
+    ]' 2>/dev/null || log_warning "Dashboard provider volume may already exist"
+
+    # Add custom dashboards
+    kubectl patch deployment grafana -n monitoring --type='json' -p='[
+      {"op": "add", "path": "/spec/template/spec/volumes/-", "value": {"name": "service-requests-dashboard", "configMap": {"name": "service-requests-dashboard"}}},
+      {"op": "add", "path": "/spec/template/spec/containers/0/volumeMounts/-", "value": {"name": "service-requests-dashboard", "mountPath": "/var/lib/grafana/dashboards/service-requests-dashboard"}}
+    ]' 2>/dev/null || log_warning "Service requests dashboard volume may already exist"
+
+    # Add K6 load testing dashboard
+    log_info "Mounting K6 dashboard in Grafana..."
+    kubectl patch deployment grafana -n monitoring --type='json' -p='[
+      {"op": "add", "path": "/spec/template/spec/volumes/-", "value": {"name": "k6-dashboard", "configMap": {"name": "k6-dashboard"}}},
+      {"op": "add", "path": "/spec/template/spec/containers/0/volumeMounts/-", "value": {"name": "k6-dashboard", "mountPath": "/var/lib/grafana/dashboards/k6"}}
+    ]' 2>/dev/null || log_warning "K6 dashboard volume may already exist"
+
+    # Add Istio dashboards if they exist
+    if kubectl get configmap istio-grafana-dashboards -n monitoring &>/dev/null; then
+        kubectl patch deployment grafana -n monitoring --type='json' -p='[
+          {"op": "add", "path": "/spec/template/spec/volumes/-", "value": {"name": "istio-dashboards", "configMap": {"name": "istio-grafana-dashboards"}}},
+          {"op": "add", "path": "/spec/template/spec/containers/0/volumeMounts/-", "value": {"name": "istio-dashboards", "mountPath": "/var/lib/grafana/dashboards/istio"}}
+        ]' 2>/dev/null || log_warning "Istio dashboards volume may already exist"
+    fi
+
+    # Restart Grafana to apply changes
+    log_info "Restarting Grafana to load dashboards..."
+    kubectl rollout restart deployment/grafana -n monitoring
+    kubectl rollout status deployment/grafana -n monitoring --timeout=300s || log_warning "Grafana restart taking longer than expected"
+
+    log_success "Grafana configured with production dashboards"
 }
 
 # ==================== Deploy ALB ====================
-deploy_alb() {
-    log_info "[9/10] Deploying Application Load Balancer..."
-
-    aws_cmd cloudformation deploy \
-        --region "$REGION" \
-        --stack-name "$STACK_ALB" \
-        --template-file Infrastructure/aws/cloudformation/alb-ingress.yaml \
-        --capabilities CAPABILITY_NAMED_IAM \
-        --parameter-overrides \
-            EnvName="$ENV_NAME" \
-            VpcId="$VPC_ID" \
-            PublicSubnetIds="$PUB_SUBNETS" \
-            TargetSubnetType=ip \
-            TargetPort=80
-
-    ALB_DNS=$(aws_cmd cloudformation describe-stacks \
-        --region "$REGION" \
-        --stack-name "$STACK_ALB" \
-        --query "Stacks[0].Outputs[?ExportName=='${ENV_NAME}-alb-dns'].OutputValue" \
-        --output text)
-
-    log_success "ALB deployed: ${ALB_DNS}"
-}
+# NOTE: ALB deployment is currently disabled as it's not connected to any service
+# Ocelot API Gateway uses NLB (LoadBalancer service type) instead
+# Uncomment if ALB integration is needed in the future
+# deploy_alb() {
+#     log_info "[9/10] Deploying Application Load Balancer..."
+#
+#     aws_cmd cloudformation deploy \
+#         --region "$REGION" \
+#         --stack-name "$STACK_ALB" \
+#         --template-file Infrastructure/aws/cloudformation/alb-ingress.yaml \
+#         --capabilities CAPABILITY_NAMED_IAM \
+#         --parameter-overrides \
+#             EnvName="$ENV_NAME" \
+#             VpcId="$VPC_ID" \
+#             PublicSubnetIds="$PUB_SUBNETS" \
+#             TargetSubnetType=ip \
+#             TargetPort=80
+#
+#     ALB_DNS=$(aws_cmd cloudformation describe-stacks \
+#         --region "$REGION" \
+#         --stack-name "$STACK_ALB" \
+#         --query "Stacks[0].Outputs[?ExportName=='${ENV_NAME}-alb-dns'].OutputValue" \
+#         --output text)
+#
+#     log_success "ALB deployed: ${ALB_DNS}"
+# }
 
 # ==================== Verification ====================
 verify_deployment() {
@@ -730,32 +1267,63 @@ display_access_info() {
     echo "     kubectl port-forward -n monitoring svc/prometheus-server 9090:80"
     echo "     Then open: http://localhost:9090"
     echo ""
-    echo "   Grafana:"
-    echo "     kubectl port-forward -n istio-system svc/grafana 3000:3000"
+    echo "   Grafana (with production dashboards):"
+    echo "     kubectl port-forward -n monitoring svc/grafana 3000:80"
     echo "     Then open: http://localhost:3000"
+    echo "     Login: admin / prom-operator"
+    echo "     Dashboards: Istio Service Mesh, Request Metrics, Pod Metrics, K6 Load Testing"
     echo ""
-    echo "   Jaeger:"
+    echo "📊 K6 LOAD TESTING:"
+    echo "   PushGateway (for k6 metrics):"
+    echo "     kubectl port-forward -n monitoring svc/prometheus-pushgateway 9091:9091"
+    echo ""
+    echo "   Dashboard: Grafana → Dashboards → K6 Load Testing Metrics"
+    echo ""
+    echo "   To run k6 tests against deployed services:"
+    echo "   1. Port-forward PushGateway (command above)"
+    echo "   2. Port-forward target services:"
+    echo "      kubectl port-forward -n ${NAMESPACE} svc/eshopping-catalog 8081:80"
+    echo "      kubectl port-forward -n ${NAMESPACE} svc/eshopping-basket 8082:80"
+    echo "      kubectl port-forward -n ${NAMESPACE} svc/eshopping-ordering 8083:80"
+    echo "   3. Run tests: ./tests/k6/push-metrics.sh"
+    echo "   4. View real-time metrics in Grafana k6 dashboard"
+    echo ""
+    echo "   Jaeger (Distributed Tracing - 100% sampling enabled):"
     echo "     kubectl port-forward -n istio-system svc/tracing 16686:80"
     echo "     Then open: http://localhost:16686"
+    echo "     All HTTP requests across microservices are traced"
     echo ""
-    echo "   Kiali:"
+    echo "   Kiali (Service Mesh Visualization):"
     echo "     kubectl port-forward -n istio-system svc/kiali 20001:20001"
     echo "     Then open: http://localhost:20001"
+    echo "     View traffic flow, service dependencies, and mesh health"
     echo ""
     echo "📈 LOGGING:"
     echo "   Kibana:"
-    echo "     kubectl port-forward -n default svc/kibana 5601:5601"
+    echo "     kubectl port-forward -n ${NAMESPACE} svc/eshopping-kibana 5601:5601"
     echo "     Then open: http://localhost:5601"
     echo ""
     echo "🐰 RABBITMQ:"
-    echo "   kubectl port-forward -n default svc/rabbitmq 15672:15672"
+    echo "   kubectl port-forward -n ${NAMESPACE} svc/eshopping-rabbitmq 15672:15672"
     echo "   Then open: http://localhost:15672 (guest/guest)"
+    echo ""
+    echo "☁️  AWS S3 STORAGE:"
+    echo "   S3 Bucket: ${S3_BUCKET}"
+    echo "   Region: ${REGION}"
+    echo "   Image Prefix: products/"
+    echo ""
+    echo "📸 PRODUCT IMAGE MIGRATION:"
+    echo "   Catalog service is now configured to use AWS S3 instead of LocalStack"
+    echo "   To migrate existing product images from database to S3:"
+    echo "     kubectl port-forward -n ${NAMESPACE} svc/eshopping-catalog 8000:80"
+    echo "     curl -X POST http://localhost:8000/Admin/MigrateImagesToS3"
     echo ""
     echo "🔍 USEFUL COMMANDS:"
     echo "   Check all pods: kubectl get pods --all-namespaces"
     echo "   Check services: kubectl get svc --all-namespaces"
     echo "   View logs: kubectl logs <pod-name> -n <namespace>"
     echo "   Scale deployment: kubectl scale deployment/<name> --replicas=3"
+    echo "   Check S3 bucket: aws s3 ls s3://${S3_BUCKET}/ --recursive"
     echo ""
     echo "🗑️  CLEANUP:"
     echo "   Run: ./cleanup-aws.sh ${ENV_NAME}"
@@ -863,12 +1431,14 @@ main() {
         log_info "[2/10] Skipping image build (using existing images in ECR)"
     fi
 
-    # Step 3-4: Infrastructure
+    # Step 3-4-5: Infrastructure
     if [ "$SKIP_INFRA" = false ]; then
         deploy_vpc
+        deploy_s3_bucket
         deploy_eks
     else
         log_info "[3/10] Skipping VPC deployment (using existing)"
+        log_info "[3.5/10] Skipping S3 bucket deployment (using existing)"
         log_info "[4/10] Skipping EKS deployment (using existing)"
 
         # Still need to update kubeconfig
@@ -886,6 +1456,39 @@ main() {
             --stack-name "$STACK_VPC" \
             --query "Stacks[0].Outputs[?ExportName=='${ENV_NAME}-public-subnet-ids'].OutputValue" \
             --output text)
+
+        # Get S3 bucket outputs for catalog IRSA
+        STACK_S3="${ENV_NAME}-s3-bucket"
+        S3_BUCKET=$(aws_cmd cloudformation describe-stacks \
+            --region "$REGION" \
+            --stack-name "$STACK_S3" \
+            --query "Stacks[0].Outputs[?OutputKey=='BucketName'].OutputValue" \
+            --output text)
+        S3_BUCKET_ARN=$(aws_cmd cloudformation describe-stacks \
+            --region "$REGION" \
+            --stack-name "$STACK_S3" \
+            --query "Stacks[0].Outputs[?OutputKey=='BucketArn'].OutputValue" \
+            --output text)
+
+        # Validate infrastructure outputs
+        if [ -z "$VPC_ID" ] || [ "$VPC_ID" = "None" ]; then
+            log_error "Failed to retrieve VPC ID from stack: ${STACK_VPC}"
+            log_error "Ensure VPC stack exists and has completed successfully"
+            exit 1
+        fi
+
+        if [ -z "$PUB_SUBNETS" ] || [ "$PUB_SUBNETS" = "None" ]; then
+            log_error "Failed to retrieve public subnets from VPC stack"
+            exit 1
+        fi
+
+        if [ -z "$S3_BUCKET" ] || [ "$S3_BUCKET" = "None" ]; then
+            log_error "Failed to retrieve S3 bucket from stack: ${STACK_S3}"
+            log_error "Ensure S3 bucket stack exists and has completed successfully"
+            exit 1
+        fi
+
+        log_success "Infrastructure outputs validated"
     fi
 
     # Step 5-10: Kubernetes workloads
@@ -913,13 +1516,17 @@ EOF
         log_warning "No certificate ARN returned, skipping Helm values update"
     fi
 
+    setup_oidc_provider
     install_ebs_csi_driver
     deploy_databases
     setup_irsa_for_catalog
+    install_istio_early
     deploy_api_services
+    configure_istio_networking
+    restart_services_for_istio
     trigger_migration
     deploy_monitoring
-    deploy_alb
+    # deploy_alb  # Disabled - ALB not connected to any service (Ocelot uses NLB)
     verify_deployment
     display_access_info
 }

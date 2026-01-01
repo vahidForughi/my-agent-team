@@ -5,12 +5,42 @@ applications:
       phases:
         preBuild:
           commands:
+            # Clean package builds to ensure fresh builds
+            - echo "=== Cleaning package builds ==="
+            - rm -rf packages/*/dist packages/*/node_modules
+            # Remove local packages from node_modules to force local build usage
+            - echo "=== Removing registry packages from node_modules ==="
+            - rm -rf node_modules/@ecommerce-platform
             # Install dependencies (using npm install for better compatibility)
+            # Note: postinstall script will automatically build packages, but we'll replace them afterwards
+            - echo "=== Installing dependencies ==="
             - npm install --legacy-peer-deps
-            # Build shared packages (app-injector and auth-provider)
-            - npm run build:packages
+            # Replace npm registry packages with local built packages in node_modules
+            # This ensures webpack uses local packages instead of registry versions
+            # The postinstall script already built the packages, so we just need to replace them
+            - echo "=== Replacing registry packages with local builds ==="
+            - rm -rf node_modules/@ecommerce-platform/app-injector
+            - rm -rf node_modules/@ecommerce-platform/auth-provider
+            - rm -rf node_modules/@ecommerce-platform/shared-layout
+            - cp -r packages/app-injector node_modules/@ecommerce-platform/app-injector
+            - cp -r packages/auth-provider node_modules/@ecommerce-platform/auth-provider
+            - cp -r packages/shared-layout node_modules/@ecommerce-platform/shared-layout
+            # Verify local packages are being used
+            - echo "=== Verifying local packages ==="
+            - echo "Checking dist folders:"
+            - ls -la packages/*/dist/ || echo "Warning: Some packages may not have dist folder"
+            - echo "Checking replaced packages in node_modules:"
+            - 'ls -la node_modules/@ecommerce-platform/ || echo "Warning: @ecommerce-platform folder not found"'
+            - echo "Local package versions:"
+            - 'cat packages/app-injector/package.json | grep ''"version"'' || echo ''Cannot read app-injector version'''
+            - 'cat packages/auth-provider/package.json | grep ''"version"'' || echo ''Cannot read auth-provider version'''
+            - 'cat packages/shared-layout/package.json | grep ''"version"'' || echo ''Cannot read shared-layout version'''
+            - echo "=== PreBuild phase completed ==="
         build:
           commands:
+            # Clean Nx cache to ensure fresh builds
+            - echo "Cleaning Nx cache..."
+            - rm -rf .nx/cache
             # Build all micro-frontend apps for production
             - npm run build:prod
             # Copy all apps to a single output directory for deployment
@@ -20,6 +50,7 @@ applications:
             - cp -r dist/store dist/deploy/remotes/
             - cp -r dist/checkout dist/deploy/remotes/
             - cp -r dist/account dist/deploy/remotes/
+            - cp -r dist/admin dist/deploy/remotes/
       artifacts:
         # Output directory with all apps
         baseDirectory: dist/deploy
@@ -28,9 +59,10 @@ applications:
       cache:
         paths:
           # Cache node_modules for faster builds
+          # Note: We exclude @ecommerce-platform packages to ensure local packages are always used
           - node_modules/**/*
-          # Cache Nx cache
+          # Cache Nx cache (but we clean it in build phase for fresh builds)
           - .nx/cache/**/*
-          # Cache package build outputs
-          - packages/*/node_modules/**/*
-          - packages/*/dist/**/*
+          # DO NOT cache package build outputs or local packages in node_modules
+          # This ensures we always use the latest local package versions
+          # The preBuild phase will replace @ecommerce-platform packages with local builds

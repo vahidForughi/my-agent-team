@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: S3 bucket for e-commerce product images storage
+
+Parameters:
+  EnvName:
+    Type: String
+    Default: dev
+    Description: Environment name (dev/staging/prod)
+
+Resources:
+  ProductImagesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ecommerce-product-images-${AWS::AccountId}
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvName}-product-images
+        - Key: Environment
+          Value: !Ref EnvName
+        - Key: Project
+          Value: ecommerce
+
+  ProductImagesBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ProductImagesBucket
+      PolicyText:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowEKSPodsReadWrite
+            Effect: Allow
+            Principal:
+              AWS: !Sub arn:aws:iam::${AWS::AccountId}:root
+            Action:
+              - s3:GetObject
+              - s3:PutObject
+              - s3:DeleteObject
+              - s3:ListBucket
+            Resource:
+              - !GetAtt ProductImagesBucket.Arn
+              - !Sub ${ProductImagesBucket.Arn}/*
+
+Outputs:
+  BucketName:
+    Value: !Ref ProductImagesBucket
+    Export:
+      Name: !Sub ${EnvName}-product-images-bucket
+    Description: S3 bucket name for product images
+
+  BucketArn:
+    Value: !GetAtt ProductImagesBucket.Arn
+    Export:
+      Name: !Sub ${EnvName}-product-images-bucket-arn
+    Description: S3 bucket ARN for product images

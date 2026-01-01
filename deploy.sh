@@ -75,7 +75,7 @@ check_istio_webhooks() {
 check_existing_deployments() {
     log_info "Checking for existing Helm deployments..."
     
-    EXISTING_RELEASES=$(helm list -n default -q 2>/dev/null | grep -c "eshopping-" || echo "0")
+    EXISTING_RELEASES=$(helm list -n default -q 2>/dev/null | grep -c "eshopping-" 2>/dev/null) || EXISTING_RELEASES=0
     
     if [ "$EXISTING_RELEASES" -gt 0 ]; then
         log_warning "Found $EXISTING_RELEASES existing Helm releases"
@@ -245,11 +245,11 @@ deploy_localstack() {
     log_info "Initializing LocalStack S3 bucket and uploading images..."
     if [ -f "scripts/init-localstack-s3.sh" ]; then
         # Clean up any existing port-forwards to LocalStack
-        pkill -f "port-forward svc/localstack" 2>/dev/null || true
+        pkill -f "port-forward.*localstack" 2>/dev/null || true
         sleep 2
 
         # Start fresh port-forward
-        kubectl port-forward svc/localstack 4566:4566 -n default > /dev/null 2>&1 &
+        kubectl port-forward svc/eshopping-localstack 4566:4566 -n default > /dev/null 2>&1 &
         PF_PID=$!
         sleep 8
 
@@ -324,7 +324,10 @@ deploy_apis() {
     fi
     
     # Install microservices with increased timeout
-    helm $HELM_CMD eshopping-catalog ./catalog --namespace default --timeout 600s
+    # Catalog API - use local values file to override AWS defaults for LocalStack
+    helm $HELM_CMD eshopping-catalog ./catalog --namespace default --timeout 600s \
+        -f ./catalog/local-values.yaml
+
     helm $HELM_CMD eshopping-basket ./basket --namespace default --timeout 600s
     helm $HELM_CMD eshopping-discount ./discount --namespace default --timeout 600s
     helm $HELM_CMD eshopping-ordering ./ordering --namespace default --timeout 600s
@@ -518,11 +521,11 @@ setup_port_forwards() {
     
     # Logging & Metrics services
     log_info "Starting Kibana port-forward..."
-    kubectl port-forward svc/kibana 5601:5601 -n default > /dev/null 2>&1 &
+    kubectl port-forward svc/eshopping-kibana 5601:5601 -n default > /dev/null 2>&1 &
     
     # RabbitMQ Management
     log_info "Starting RabbitMQ management port-forward..."
-    kubectl port-forward svc/rabbitmq 15672:15672 -n default > /dev/null 2>&1 &
+    kubectl port-forward svc/eshopping-rabbitmq 15672:15672 -n default > /dev/null 2>&1 &
     
     sleep 5  # Give port forwards time to start
     

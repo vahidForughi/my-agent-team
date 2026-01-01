@@ -1,6 +1,49 @@
-@Ordering.API_HostAddress = http://localhost:5224
+### Ordering API Test Requests
 
-GET {{Ordering.API_HostAddress}}/weatherforecast/
+@baseUrl = http://localhost:8003
+@apiVersion = v1
+
+### Get Recent Activities (Default - 10 items)
+GET {{baseUrl}}/api/{{apiVersion}}/Activity?pageIndex=0&pageSize=10
 Accept: application/json
 
-###
+### Get Recent Activities with filters
+GET {{baseUrl}}/api/{{apiVersion}}/Activity?pageIndex=0&pageSize=5&entityType=Product
+Accept: application/json
+
+### Get Recent Activities - Product activities only
+GET {{baseUrl}}/api/{{apiVersion}}/Activity?pageIndex=0&pageSize=10&activityType=Product.Created
+Accept: application/json
+
+### Get Recent Activities - Order activities only
+GET {{baseUrl}}/api/{{apiVersion}}/Activity?pageIndex=0&pageSize=10&activityType=Order.Created
+Accept: application/json
+
+### Get Recent Activities with date range
+GET {{baseUrl}}/api/{{apiVersion}}/Activity?pageIndex=0&pageSize=10&from=2024-01-01T00:00:00Z&to=2024-12-31T23:59:59Z
+Accept: application/json
+
+### Get Orders by UserName
+GET {{baseUrl}}/api/{{apiVersion}}/Order/testuser
+Accept: application/json
+
+### Create Order (for testing)
+POST {{baseUrl}}/api/{{apiVersion}}/Order
+Content-Type: application/json
+
+{
+  "userName": "testuser",
+  "totalPrice": 99.99,
+  "firstName": "Test",
+  "lastName": "User",
+  "emailAddress": "test@example.com",
+  "addressLine": "123 Test St",
+  "country": "USA",
+  "state": "CA",
+  "zipCode": "12345",
+  "cardName": "Test User",
+  "cardNumber": "1234567890123456",
+  "expiration": "12/25",
+  "cvv": "123",
+  "paymentMethod": 1
+}

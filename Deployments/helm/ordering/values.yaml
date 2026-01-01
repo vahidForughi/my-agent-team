@@ -25,7 +25,7 @@ serviceAccount:
   name: ""
 
 podAnnotations:
-  sidecar.istio.io/inject: "true"
+  sidecar.istio.io/inject: "false"
 
 podSecurityContext: {}
   # fsGroup: 2000
@@ -39,7 +39,7 @@ securityContext: {}
   # runAsUser: 1000
 
 service:
-  type: LoadBalancer
+  type: ClusterIP
   port: 80
 
 ingress:

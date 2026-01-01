@@ -1,0 +1,17 @@
+# Local development overrides for catalog service
+# This file overrides AWS S3 settings to use LocalStack instead of AWS
+
+configmap:
+  AWS__S3__ServiceUrl: "http://localstack:4566"
+  USE_LOCALSTACK: "true"
+
+env:
+  values:
+  - name: ASPNETCORE_ENVIRONMENT
+    value: Development
+  - name: AWS_ACCESS_KEY_ID
+    value: "test"  # LocalStack credentials
+  - name: AWS_SECRET_ACCESS_KEY
+    value: "test"  # LocalStack credentials
+  - name: AWS_ENDPOINT_URL
+    value: "http://localstack:4566"  # LocalStack endpoint

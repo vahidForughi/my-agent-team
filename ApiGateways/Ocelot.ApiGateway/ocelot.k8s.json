@@ -122,6 +122,42 @@
 			"UpstreamHttpMethod": ["POST"]
 		},
 		{
+			"DownstreamPathTemplate": "/api/v1/Catalog/GetProductByProductName/{productName}",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "eshopping-catalog",
+					"Port": 80
+				}
+			],
+			"UpstreamPathTemplate": "/Catalog/GetProductByProductName/{productName}",
+			"UpstreamHttpMethod": ["GET"]
+		},
+		{
+			"DownstreamPathTemplate": "/api/v1/Catalog/UpdateProduct",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "eshopping-catalog",
+					"Port": 80
+				}
+			],
+			"UpstreamPathTemplate": "/Catalog/UpdateProduct",
+			"UpstreamHttpMethod": ["PUT"]
+		},
+		{
+			"DownstreamPathTemplate": "/api/v1/Catalog/{id}",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "eshopping-catalog",
+					"Port": 80
+				}
+			],
+			"UpstreamPathTemplate": "/Catalog/{id}",
+			"UpstreamHttpMethod": ["DELETE"]
+		},
+		{
 			"DownstreamPathTemplate": "/api/v1/Admin/MigrateImagesToS3",
 			"DownstreamScheme": "http",
 			"DownstreamHostAndPorts": [
@@ -237,11 +273,48 @@
 			"DownstreamHostAndPorts": [
 				{
 					"Host": "eshopping-ordering",
-					"Port": 8080
+					"Port": 80
 				}
 			],
 			"UpstreamPathTemplate": "/Order/{userName}",
 			"UpstreamHttpMethod": ["GET"]
+		},
+		{
+			"DownstreamPathTemplate": "/api/v1/Order",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "eshopping-ordering",
+					"Port": 80
+				}
+			],
+			"UpstreamPathTemplate": "/Order",
+			"UpstreamHttpMethod": ["POST", "PUT"]
+		},
+		{
+			"DownstreamPathTemplate": "/api/v1/Order/{id}",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "eshopping-ordering",
+					"Port": 80
+				}
+			],
+			"UpstreamPathTemplate": "/Order/{id}",
+			"UpstreamHttpMethod": ["DELETE"]
+		},
+		{
+			"DownstreamPathTemplate": "/api/v1/Activity",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "eshopping-ordering",
+					"Port": 80
+				}
+			],
+			"UpstreamPathTemplate": "/Activity",
+			"UpstreamHttpMethod": ["GET"],
+			"FileCacheOptions": { "TtlSeconds": 10 }
 		}
 	],
 	"GlobalConfiguration": {

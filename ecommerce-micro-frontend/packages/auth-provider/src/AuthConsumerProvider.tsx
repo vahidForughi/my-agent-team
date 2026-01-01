@@ -119,11 +119,44 @@ export const AuthConsumerProvider: React.FC<AuthConsumerProviderProps> = ({
   // Subscribe to token broadcast events from host
   const broadcastState = useTokenBroadcastSubscription(true);
 
-  // Update state when hostAuth changes
+  // Use ref to track hostAuth and prevent infinite loops from object reference changes
+  const hostAuthRef = useRef<HostAuthContext | null | undefined>(hostAuth);
+  const prevHostAuthValuesRef = useRef<string>('');
+
+  // Extract stable values for comparison
+  const hostAuthUser = hostAuth?.user;
+  const hostAuthToken = hostAuth?.token;
+  const hostAuthTokenExpiry = hostAuth?.tokenExpiry;
+  const hostAuthIsAuthenticated = hostAuth?.isAuthenticated;
+
+  // Update ref whenever hostAuth changes (for function references like onLogout)
   useEffect(() => {
-    debugLog(debugRef.current, 'Host auth changed', { hostAuth });
-    setAuthState(createInitialState(hostAuth, debugRef.current));
+    hostAuthRef.current = hostAuth;
   }, [hostAuth]);
+
+  // Update state when hostAuth values change (not just object reference)
+  useEffect(() => {
+    // Create a stable string representation of the values we care about
+    const currentValues = JSON.stringify({
+      user: hostAuthUser,
+      token: hostAuthToken,
+      tokenExpiry: hostAuthTokenExpiry,
+      isAuthenticated: hostAuthIsAuthenticated,
+    });
+
+    // Only update state if the actual values changed, not just the object reference
+    if (currentValues !== prevHostAuthValuesRef.current) {
+      prevHostAuthValuesRef.current = currentValues;
+      debugLog(debugRef.current, 'Host auth changed', { hostAuth });
+      setAuthState(createInitialState(hostAuth, debugRef.current));
+    }
+  }, [
+    hostAuthUser,
+    hostAuthToken,
+    hostAuthTokenExpiry,
+    hostAuthIsAuthenticated,
+    hostAuth,
+  ]);
 
   // Update token from broadcast
   useEffect(() => {
@@ -156,15 +189,16 @@ export const AuthConsumerProvider: React.FC<AuthConsumerProviderProps> = ({
   // Logout - delegate to host
   const logout = useCallback(async (): Promise<void> => {
     debugLog(debugRef.current, 'Logout requested');
-    if (hostAuth?.onLogout) {
-      await hostAuth.onLogout();
+    const currentHostAuth = hostAuthRef.current;
+    if (currentHostAuth?.onLogout) {
+      await currentHostAuth.onLogout();
     } else {
       console.warn(
         '[AuthConsumerProvider] No logout handler provided by host. ' +
           'Ensure hostAuth.onLogout is passed from the host application.'
       );
     }
-  }, [hostAuth]);
+  }, []);
 
   // Get access token - use current or request refresh from host
   const getAccessToken = useCallback(async (): Promise<string | null> => {
@@ -185,9 +219,10 @@ export const AuthConsumerProvider: React.FC<AuthConsumerProviderProps> = ({
     }
 
     // Request refresh from host
-    if (hostAuth?.requestTokenRefresh) {
+    const currentHostAuth = hostAuthRef.current;
+    if (currentHostAuth?.requestTokenRefresh) {
       try {
-        const newToken = await hostAuth.requestTokenRefresh();
+        const newToken = await currentHostAuth.requestTokenRefresh();
         if (newToken) {
           setAuthState((prev) => ({ ...prev, accessToken: newToken }));
           // Broadcast the new token to other remotes
@@ -200,7 +235,7 @@ export const AuthConsumerProvider: React.FC<AuthConsumerProviderProps> = ({
     }
 
     return authState.accessToken;
-  }, [authState.accessToken, authState.tokenExpiry, hostAuth, isDebugMode]);
+  }, [authState.accessToken, authState.tokenExpiry, isDebugMode]);
 
   // Check if token is expired
   const isTokenExpired = useCallback((): boolean => {

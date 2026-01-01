@@ -100,13 +100,28 @@ export const InternalAuthProvider: React.FC<InternalAuthProviderProps> = ({
       return;
     }
 
+    if (!instance) {
+      const err = new Error('MSAL instance is not available. Please ensure MsalProvider is properly configured.');
+      console.error('[InternalAuthProvider] Login error:', err.message);
+      setAuthState((prev) => ({ ...prev, error: err }));
+      return;
+    }
+
     try {
       debugLog(debug, 'Initiating login redirect');
+      console.log('[InternalAuthProvider] Calling loginRedirect with scopes:', DEFAULT_SCOPES);
       await instance.loginRedirect({
         scopes: DEFAULT_SCOPES,
       });
+      console.log('[InternalAuthProvider] Login redirect initiated successfully');
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
+      console.error('[InternalAuthProvider] Login error:', err);
+      console.error('[InternalAuthProvider] Error details:', {
+        message: err.message,
+        stack: err.stack,
+        name: err.name,
+      });
       debugLog(debug, 'Login error:', err.message);
       setAuthState((prev) => ({ ...prev, error: err }));
     }

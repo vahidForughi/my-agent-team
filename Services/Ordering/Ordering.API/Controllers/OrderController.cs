@@ -1,4 +1,6 @@
-﻿using MediatR;
+﻿using EventBus.Messages.Events;
+using MassTransit;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Ordering.Application.Commands;
 using Ordering.Application.Queries;
@@ -11,11 +13,16 @@ public class OrderController : ApiController
 {
     private readonly IMediator _mediator;
     private readonly ILogger<OrderController> _logger;
+    private readonly IPublishEndpoint _publishEndpoint;
 
-    public OrderController(IMediator mediator, ILogger<OrderController> logger)
+    public OrderController(
+        IMediator mediator, 
+        ILogger<OrderController> logger,
+        IPublishEndpoint publishEndpoint)
     {
         _mediator = mediator;
         _logger = logger;
+        _publishEndpoint = publishEndpoint;
     }
 
     [HttpGet("{userName}", Name = "GetOrdersByUserName")]
@@ -33,6 +40,23 @@ public class OrderController : ApiController
     public async Task<ActionResult<int>> CheckoutOrder([FromBody] CheckoutOrderCommand command)
     {
         var result = await _mediator.Send(command);
+        
+        // Publish OrderActivityEvent after successful order creation
+        if (result > 0)
+        {
+            var eventMessage = new OrderActivityEvent
+            {
+                ActivityType = OrderActivityType.Created,
+                OrderId = result,
+                Actor = command.UserName,
+                TotalPrice = command.TotalPrice,
+                OccurredAt = DateTime.UtcNow
+            };
+            
+            await _publishEndpoint.Publish(eventMessage);
+            _logger.LogInformation("OrderActivityEvent published for OrderId: {OrderId}", result);
+        }
+        
         return Ok(result);
     }
 
