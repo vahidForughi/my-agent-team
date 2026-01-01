@@ -61,25 +61,25 @@ jobs:
           
           echo "✅ All images built and loaded into Minikube"
 
-       - name: Test Kubernetes deployment
-         run: |
-           echo "🚀 Testing Kubernetes deployment..."
-           cd Deployments/k8s
+      - name: Test Kubernetes deployment
+        run: |
+          echo "🚀 Testing Kubernetes deployment..."
+          cd Deployments/k8s
 
-           # Clean up any existing deployments first
-           echo "🧹 Cleaning up existing deployments..."
-           kubectl delete deployment --all -n default --ignore-not-found=true
-           kubectl delete service --all -n default --ignore-not-found=true
-           kubectl delete configmap --all -n default --ignore-not-found=true
-           kubectl delete secret --all -n default --ignore-not-found=true
-           kubectl delete pvc --all -n default --ignore-not-found=true
+          # Clean up any existing deployments first
+          echo "🧹 Cleaning up existing deployments..."
+          kubectl delete deployment --all -n default --ignore-not-found=true
+          kubectl delete service --all -n default --ignore-not-found=true
+          kubectl delete configmap --all -n default --ignore-not-found=true
+          kubectl delete secret --all -n default --ignore-not-found=true
+          kubectl delete pvc --all -n default --ignore-not-found=true
 
-           # Make scripts executable
-           chmod +x *.sh
+          # Make scripts executable
+          chmod +x *.sh
 
-           # Deploy the platform
-           ./deploy-all.sh
-          
+          # Deploy the platform
+          ./deploy-all.sh
+
           echo "✅ Deployment completed"
 
       - name: Wait for pods to be ready
