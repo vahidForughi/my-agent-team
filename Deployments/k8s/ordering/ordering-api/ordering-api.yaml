@@ -1,61 +1,46 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ordering-api-deployment
+  name: eshopping-ordering
+  namespace: default
   labels:
-    app: ordering-api
+    app.kubernetes.io/name: ordering
+    app.kubernetes.io/instance: eshopping-ordering
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ordering-api
+      app.kubernetes.io/name: ordering
+      app.kubernetes.io/instance: eshopping-ordering
   template:
     metadata:
       labels:
-        app: ordering-api
+        app.kubernetes.io/name: ordering
+        app.kubernetes.io/instance: eshopping-ordering
+      annotations:
+        sidecar.istio.io/inject: "false"
     spec:
       containers:
-        - name: ordering-api
-          image: sloweyyy/orderingapi:latest
-          imagePullPolicy: IfNotPresent
+        - name: ordering
+          image: orderingapi:latest
           ports:
-            - containerPort: 80
-          env:
-            - name: ASPNETCORE_ENVIRONMENT
-              value: Development
-            - name: SQLSERVER_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: sqlserver-configmap
-                  key: sqlserver-url
-            - name: RABBITMQ_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: rabbitmq-configmap
-                  key: rabbitmq-url
-            - name: ELASTICSEARCH_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: elasticsearch-configmap
-                  key: elasticsearch-url
-          resources:
-            requests:
-              memory: "128Mi"
-              cpu: "250m"
-            limits:
-              memory: "256Mi"
-              cpu: "500m"
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          resources: {}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: ordering-api-service
+  name: eshopping-ordering
+  namespace: default
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
-    app: ordering-api
+    app.kubernetes.io/name: ordering
+    app.kubernetes.io/instance: eshopping-ordering
   ports:
-    - protocol: TCP
-      port: 9003
+    - name: http
+      protocol: TCP
+      port: 80
       targetPort: 80
-      nodePort: 31003

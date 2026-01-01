@@ -1,71 +1,46 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: catalog-api-deployment
+  name: eshopping-catalog
+  namespace: default
   labels:
-    app: catalog-api
+    app.kubernetes.io/name: catalog
+    app.kubernetes.io/instance: eshopping-catalog
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: catalog-api
+      app.kubernetes.io/name: catalog
+      app.kubernetes.io/instance: eshopping-catalog
   template:
     metadata:
       labels:
-        app: catalog-api
+        app.kubernetes.io/name: catalog
+        app.kubernetes.io/instance: eshopping-catalog
+      annotations:
+        sidecar.istio.io/inject: "true"
     spec:
       containers:
-        - name: catalog-api
-          image: sloweyyy/catalogapi:v1.0.0
-          imagePullPolicy: Always
+        - name: catalog
+          image: catalogapi:latest
           ports:
-            - containerPort: 80
-          env:
-            - name: ASPNETCORE_ENVIRONMENT
-              value: Development
-            - name: DatabaseSettings__ConnectionString
-              valueFrom:
-                configMapKeyRef:
-                  name: mongo-configmap
-                  key: connection_string
-            - name: DatabaseSettings__DatabaseName
-              valueFrom:
-                configMapKeyRef:
-                  name: mongo-configmap
-                  key: DatabaseName
-            - name: DatabaseSettings__CollectionName
-              valueFrom:
-                configMapKeyRef:
-                  name: mongo-configmap
-                  key: CollectionName
-            - name: DatabaseSettings__BrandsCollection
-              valueFrom:
-                configMapKeyRef:
-                  name: mongo-configmap
-                  key: BrandsCollection
-            - name: DatabaseSettings__TypesCollection
-              valueFrom:
-                configMapKeyRef:
-                  name: mongo-configmap
-                  key: TypesCollection
-          resources:
-            requests:
-              memory: "64Mi"
-              cpu: "250m"
-            limits:
-              memory: "128Mi"
-              cpu: "500m"
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          resources: {}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: catalog-api-service
+  name: eshopping-catalog
+  namespace: default
 spec:
   type: ClusterIP
   selector:
-    app: catalog-api
+    app.kubernetes.io/name: catalog
+    app.kubernetes.io/instance: eshopping-catalog
   ports:
-    - protocol: TCP
-      port: 9000
+    - name: http
+      protocol: TCP
+      port: 80
       targetPort: 80
-      nodePort: 31000

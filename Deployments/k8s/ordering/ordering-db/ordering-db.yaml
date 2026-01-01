@@ -1,62 +1,41 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sqlserver-deployment
+  name: eshopping-orderdb
+  namespace: default
   labels:
-    app: sqlserver
+    app.kubernetes.io/name: orderdb
+    app.kubernetes.io/instance: eshopping-orderdb
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: sqlserver
+      app.kubernetes.io/name: orderdb
+      app.kubernetes.io/instance: eshopping-orderdb
   template:
     metadata:
       labels:
-        app: sqlserver
+        app.kubernetes.io/name: orderdb
+        app.kubernetes.io/instance: eshopping-orderdb
+      annotations:
+        sidecar.istio.io/inject: "false"
     spec:
       containers:
-        - name: sqlserver
+        - name: orderdb
           image: mcr.microsoft.com/mssql/server:2022-latest
           ports:
-            - containerPort: 1433
+            - name: sqlserver
+              containerPort: 1433
+              protocol: TCP
           env:
+            - name: SA_PASSWORD
+              value: "SqlPassword123"
             - name: ACCEPT_EULA
               value: "Y"
-            - name: MSSQL_SA_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: sqlserver-secret
-                  key: sa-password
-            - name: MSSQL_PID
-              value: "Developer"
-          resources:
-            requests:
-              memory: "512Mi"
-              cpu: "500m"
-            limits:
-              memory: "1Gi"
-              cpu: "1000m"
+          resources: {}
           volumeMounts:
             - name: sqlserver-data
               mountPath: /var/opt/mssql
-          livenessProbe:
-            exec:
-              command:
-                - /bin/sh
-                - -c
-                - /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P ${MSSQL_SA_PASSWORD} -Q "SELECT 1"
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            timeoutSeconds: 5
-          readinessProbe:
-            exec:
-              command:
-                - /bin/sh
-                - -c
-                - /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P ${MSSQL_SA_PASSWORD} -Q "SELECT 1"
-            initialDelaySeconds: 20
-            periodSeconds: 10
-            timeoutSeconds: 5
       volumes:
         - name: sqlserver-data
           emptyDir: {}
@@ -64,11 +43,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: sqlserver-service
+  name: eshopping-orderdb
+  namespace: default
 spec:
   type: ClusterIP
   selector:
-    app: sqlserver
+    app.kubernetes.io/name: orderdb
+    app.kubernetes.io/instance: eshopping-orderdb
   ports:
     - protocol: TCP
       port: 1433

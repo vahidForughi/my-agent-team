@@ -1,31 +1,33 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: redis-deployment
+  name: eshopping-basketdb
+  namespace: default
   labels:
-    app: redis
+    app.kubernetes.io/name: basketdb
+    app.kubernetes.io/instance: eshopping-basketdb
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: redis
+      app.kubernetes.io/name: basketdb
+      app.kubernetes.io/instance: eshopping-basketdb
   template:
     metadata:
       labels:
-        app: redis
+        app.kubernetes.io/name: basketdb
+        app.kubernetes.io/instance: eshopping-basketdb
+      annotations:
+        sidecar.istio.io/inject: "true"
     spec:
       containers:
-        - name: redis
+        - name: basketdb
           image: redis:alpine
           ports:
-            - containerPort: 6379
-          resources:
-            requests:
-              memory: "64Mi"
-              cpu: "250m"
-            limits:
-              memory: "128Mi"
-              cpu: "500m"
+            - name: redis
+              containerPort: 6379
+              protocol: TCP
+          resources: {}
           volumeMounts:
             - name: redis-data
               mountPath: /data
@@ -36,11 +38,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: redis-service
+  name: eshopping-basketdb
+  namespace: default
 spec:
   type: ClusterIP
   selector:
-    app: redis
+    app.kubernetes.io/name: basketdb
+    app.kubernetes.io/instance: eshopping-basketdb
   ports:
     - protocol: TCP
       port: 6379

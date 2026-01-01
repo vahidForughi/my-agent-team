@@ -1,63 +1,52 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: basket-api-deployment
+  name: eshopping-basket
+  namespace: default
   labels:
-    app: basket-api
+    app.kubernetes.io/name: basket
+    app.kubernetes.io/instance: eshopping-basket
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: basket-api
+      app.kubernetes.io/name: basket
+      app.kubernetes.io/instance: eshopping-basket
   template:
     metadata:
       labels:
-        app: basket-api
+        app.kubernetes.io/name: basket
+        app.kubernetes.io/instance: eshopping-basket
+      annotations:
+        sidecar.istio.io/inject: "true"
     spec:
       containers:
-        - name: basket-api
-          image: sloweyyy/basketapi:latest
-          imagePullPolicy: IfNotPresent
+        - name: basket
+          image: basketapi:latest
           ports:
-            - containerPort: 80
-          env:
-            - name: ASPNETCORE_ENVIRONMENT
-              value: Development
-            - name: REDIS_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: redis-configmap
-                  key: redis-url
-            - name: GrpcSettings__DiscountUrl
-              value: "http://discount-api-service:80"
-            - name: RABBITMQ_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: rabbitmq-configmap
-                  key: rabbitmq-url
-            - name: ELASTICSEARCH_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: elasticsearch-configmap
-                  key: elasticsearch-url
+            - name: http
+              containerPort: 80
+              protocol: TCP
           resources:
-            requests:
-              memory: "64Mi"
-              cpu: "250m"
             limits:
-              memory: "128Mi"
-              cpu: "500m"
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: basket-api-service
+  name: eshopping-basket
+  namespace: default
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
-    app: basket-api
+    app.kubernetes.io/name: basket
+    app.kubernetes.io/instance: eshopping-basket
   ports:
-    - protocol: TCP
-      port: 9001
+    - name: http
+      protocol: TCP
+      port: 80
       targetPort: 80
-      nodePort: 31001

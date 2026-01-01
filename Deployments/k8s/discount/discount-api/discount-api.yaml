@@ -1,62 +1,45 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: discount-api-deployment
+  name: eshopping-discount
+  namespace: default
   labels:
-    app: discount-api
+    app.kubernetes.io/name: discount
+    app.kubernetes.io/instance: eshopping-discount
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: discount-api
+      app.kubernetes.io/name: discount
+      app.kubernetes.io/instance: eshopping-discount
   template:
     metadata:
       labels:
-        app: discount-api
+        app.kubernetes.io/name: discount
+        app.kubernetes.io/instance: eshopping-discount
+      annotations:
+        sidecar.istio.io/inject: "true"
     spec:
       containers:
-        - name: discount-api
-          image: sloweyyy/discountapi:latest
-          imagePullPolicy: IfNotPresent
+        - name: discount
+          image: discountapi:latest
           ports:
-            - containerPort: 80
-            - containerPort: 8080
-              name: grpc
-          env:
-            - name: ASPNETCORE_ENVIRONMENT
-              value: Development
-            - name: POSTGRES_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: postgres-configmap
-                  key: postgres-url
-            - name: ELASTICSEARCH_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: elasticsearch-configmap
-                  key: elasticsearch-url
-          resources:
-            requests:
-              memory: "64Mi"
-              cpu: "250m"
-            limits:
-              memory: "128Mi"
-              cpu: "500m"
+            - name: grpc
+              containerPort: 8080
+              protocol: TCP
+          resources: {}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: discount-api-service
+  name: eshopping-discount-discount-grpc
+  namespace: default
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
-    app: discount-api
+    app.kubernetes.io/name: discount
+    app.kubernetes.io/instance: eshopping-discount
   ports:
-    - name: http
-      protocol: TCP
-      port: 80
-      targetPort: 80
-      nodePort: 31002
     - name: grpc
       protocol: TCP
       port: 8080

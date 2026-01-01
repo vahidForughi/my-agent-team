@@ -1,47 +1,38 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: postgres-deployment
+  name: eshopping-discountdb
+  namespace: default
   labels:
-    app: postgres
+    app.kubernetes.io/name: discountdb
+    app.kubernetes.io/instance: eshopping-discountdb
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: postgres
+      app.kubernetes.io/name: discountdb
+      app.kubernetes.io/instance: eshopping-discountdb
   template:
     metadata:
       labels:
-        app: postgres
+        app.kubernetes.io/name: discountdb
+        app.kubernetes.io/instance: eshopping-discountdb
     spec:
       containers:
-        - name: postgres
-          image: postgres:latest
+        - name: discountdb
+          image: postgres:13-alpine
           ports:
-            - containerPort: 5432
+            - name: postgres
+              containerPort: 5432
+              protocol: TCP
           env:
             - name: POSTGRES_USER
-              valueFrom:
-                secretKeyRef:
-                  name: postgres-secret
-                  key: postgres-user
+              value: "admin"
             - name: POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: postgres-secret
-                  key: postgres-password
+              value: "admin1234"
             - name: POSTGRES_DB
-              valueFrom:
-                configMapKeyRef:
-                  name: postgres-configmap
-                  key: postgres-db
-          resources:
-            requests:
-              memory: "128Mi"
-              cpu: "250m"
-            limits:
-              memory: "256Mi"
-              cpu: "500m"
+              value: "DiscountDb"
+          resources: {}
           volumeMounts:
             - name: postgres-data
               mountPath: /var/lib/postgresql/data
@@ -52,11 +43,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: postgres-service
+  name: eshopping-discountdb
+  namespace: default
 spec:
   type: ClusterIP
   selector:
-    app: postgres
+    app.kubernetes.io/name: discountdb
+    app.kubernetes.io/instance: eshopping-discountdb
   ports:
     - protocol: TCP
       port: 5432

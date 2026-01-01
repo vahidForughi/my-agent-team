@@ -1,41 +1,33 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: elasticsearch-deployment
+  name: eshopping-elasticsearch
+  namespace: default
   labels:
-    app: elasticsearch
+    app.kubernetes.io/name: elasticsearch
+    app.kubernetes.io/instance: eshopping-elasticsearch
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: elasticsearch
+      app.kubernetes.io/name: elasticsearch
+      app.kubernetes.io/instance: eshopping-elasticsearch
   template:
     metadata:
       labels:
-        app: elasticsearch
+        app.kubernetes.io/name: elasticsearch
+        app.kubernetes.io/instance: eshopping-elasticsearch
+      annotations:
+        sidecar.istio.io/inject: "true"
     spec:
       containers:
         - name: elasticsearch
-          image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+          image: docker.elastic.co/elasticsearch/elasticsearch:7.9.2
           ports:
-            - containerPort: 9200
-              name: http
-            - containerPort: 9300
-              name: transport
-          env:
-            - name: discovery.type
-              value: "single-node"
-            - name: xpack.security.enabled
-              value: "false"
-            - name: ES_JAVA_OPTS
-              value: "-Xms512m -Xmx512m"
-          resources:
-            requests:
-              memory: "1Gi"
-              cpu: "500m"
-            limits:
-              memory: "2Gi"
-              cpu: "1000m"
+            - name: http
+              containerPort: 9200
+              protocol: TCP
+          resources: {}
           volumeMounts:
             - name: elasticsearch-data
               mountPath: /usr/share/elasticsearch/data
@@ -46,17 +38,15 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: elasticsearch-service
+  name: eshopping-elasticsearch
+  namespace: default
 spec:
   type: ClusterIP
   selector:
-    app: elasticsearch
+    app.kubernetes.io/name: elasticsearch
+    app.kubernetes.io/instance: eshopping-elasticsearch
   ports:
     - name: http
       protocol: TCP
       port: 9200
       targetPort: 9200
-    - name: transport
-      protocol: TCP
-      port: 9300
-      targetPort: 9300

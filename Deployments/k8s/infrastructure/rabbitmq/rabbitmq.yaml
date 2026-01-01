@@ -1,39 +1,33 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: rabbitmq-deployment
+  name: eshopping-rabbitmq
+  namespace: default
   labels:
-    app: rabbitmq
+    app.kubernetes.io/name: rabbitmq
+    app.kubernetes.io/instance: eshopping-rabbitmq
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: rabbitmq
+      app.kubernetes.io/name: rabbitmq
+      app.kubernetes.io/instance: eshopping-rabbitmq
   template:
     metadata:
       labels:
-        app: rabbitmq
+        app.kubernetes.io/name: rabbitmq
+        app.kubernetes.io/instance: eshopping-rabbitmq
+      annotations:
+        sidecar.istio.io/inject: "true"
     spec:
       containers:
         - name: rabbitmq
           image: rabbitmq:3-management-alpine
           ports:
-            - containerPort: 5672
-              name: amqp
-            - containerPort: 15672
-              name: management
-          env:
-            - name: RABBITMQ_DEFAULT_USER
-              value: "guest"
-            - name: RABBITMQ_DEFAULT_PASS
-              value: "guest"
-          resources:
-            requests:
-              memory: "256Mi"
-              cpu: "250m"
-            limits:
-              memory: "512Mi"
-              cpu: "500m"
+            - name: amqp
+              containerPort: 5672
+              protocol: TCP
+          resources: {}
           volumeMounts:
             - name: rabbitmq-data
               mountPath: /var/lib/rabbitmq
@@ -44,18 +38,15 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: rabbitmq-service
+  name: eshopping-rabbitmq
+  namespace: default
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
-    app: rabbitmq
+    app.kubernetes.io/name: rabbitmq
+    app.kubernetes.io/instance: eshopping-rabbitmq
   ports:
     - name: amqp
       protocol: TCP
       port: 5672
       targetPort: 5672
-    - name: management
-      protocol: TCP
-      port: 15672
-      targetPort: 15672
-      nodePort: 31672
