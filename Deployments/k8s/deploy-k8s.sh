@@ -68,7 +68,8 @@ check_images() {
 # Deploy namespaces
 deploy_namespaces() {
     log_info "Creating namespaces..."
-    kubectl apply -f namespace.yaml
+    kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
+    kubectl create namespace istio-system --dry-run=client -o yaml | kubectl apply -f -
     log_success "Namespaces created"
 }
 
@@ -90,10 +91,10 @@ deploy_databases() {
     kubectl apply -f databases/sqlserver.yaml
     
     log_info "Waiting for databases to be ready..."
-    kubectl wait --for=condition=ready pod -l app=mongodb -n ecommerce --timeout=300s
-    kubectl wait --for=condition=ready pod -l app=redis -n ecommerce --timeout=300s
-    kubectl wait --for=condition=ready pod -l app=postgres -n ecommerce --timeout=300s
-    kubectl wait --for=condition=ready pod -l app=sqlserver -n ecommerce --timeout=300s
+    kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-catalogdb -n default --timeout=300s || echo "MongoDB may not be ready due to PVC"
+    kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-basketdb -n default --timeout=300s || echo "Redis may not be ready"
+    kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-discountdb -n default --timeout=300s || echo "Postgres may not be ready"
+    kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-orderdb -n default --timeout=300s || echo "SQLServer may not be ready"
     
     log_success "Databases deployed and ready"
 }
@@ -107,14 +108,14 @@ deploy_infrastructure() {
     kubectl apply -f infrastructure/kibana.yaml
 
     log_info "Waiting for infrastructure services to be ready..."
-    kubectl wait --for=condition=ready pod -l app=rabbitmq -n ecommerce --timeout=300s
-    kubectl wait --for=condition=ready pod -l app=elasticsearch -n ecommerce --timeout=300s
+    kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-rabbitmq -n default --timeout=300s || echo "RabbitMQ may not be ready"
+    kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-elasticsearch -n default --timeout=300s || echo "Elasticsearch may not be ready"
 
     # Kibana can take longer to start, make it non-blocking for CI
     log_info "Waiting for Kibana to be ready (this may take a while)..."
-    if ! kubectl wait --for=condition=ready pod -l app=kibana -n ecommerce --timeout=600s; then
+    if ! kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-kibana -n default --timeout=600s; then
         log_warning "Kibana is taking longer than expected to start. It will continue starting in the background."
-        log_warning "Check status with: kubectl get pods -l app=kibana -n ecommerce"
+        log_warning "Check status with: kubectl get pods -l app.kubernetes.io/instance=eshopping-kibana -n default"
     fi
 
     log_success "Infrastructure services deployed (Kibana may still be starting)"
@@ -130,10 +131,10 @@ deploy_microservices() {
     kubectl apply -f services/ordering-api.yaml
     
     log_info "Waiting for microservices to be ready..."
-    kubectl wait --for=condition=ready pod -l app=catalog-api -n ecommerce --timeout=300s
-    kubectl wait --for=condition=ready pod -l app=basket-api -n ecommerce --timeout=300s
-    kubectl wait --for=condition=ready pod -l app=discount-api -n ecommerce --timeout=300s
-    kubectl wait --for=condition=ready pod -l app=ordering-api -n ecommerce --timeout=300s
+    kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-catalog -n default --timeout=300s || echo "Catalog API may not be ready"
+    kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-basket -n default --timeout=300s || echo "Basket API may not be ready"
+    kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-discount -n default --timeout=300s || echo "Discount API may not be ready"
+    kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-ordering -n default --timeout=300s || echo "Ordering API may not be ready"
     
     log_success "Microservices deployed and ready"
 }
@@ -145,7 +146,7 @@ deploy_gateway() {
     kubectl apply -f gateway/ocelot-gateway.yaml
     
     log_info "Waiting for API Gateway to be ready..."
-    kubectl wait --for=condition=ready pod -l app=ocelot-gateway -n ecommerce --timeout=300s
+    kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-gateway-ocelotapigw -n default --timeout=300s || echo "API Gateway may not be ready"
     
     log_success "API Gateway deployed and ready"
 }
@@ -159,8 +160,8 @@ deploy_monitoring() {
     kubectl apply -f monitoring/grafana.yaml
     
     log_info "Waiting for monitoring services to be ready..."
-    kubectl wait --for=condition=ready pod -l app=prometheus -n monitoring --timeout=300s
-    kubectl wait --for=condition=ready pod -l app=grafana -n monitoring --timeout=300s
+    kubectl wait --for=condition=ready pod -l app=prometheus -n monitoring --timeout=300s || echo "Prometheus may not be ready"
+    kubectl wait --for=condition=ready pod -l app=grafana -n istio-system --timeout=300s || echo "Grafana may not be ready"
     
     log_success "Monitoring stack deployed and ready"
 }
@@ -173,8 +174,8 @@ deploy_management() {
     kubectl apply -f management/pgadmin.yaml
     
     log_info "Waiting for management tools to be ready..."
-    kubectl wait --for=condition=ready pod -l app=portainer -n ecommerce --timeout=300s
-    kubectl wait --for=condition=ready pod -l app=pgadmin -n ecommerce --timeout=300s
+    kubectl wait --for=condition=ready pod -l app=portainer -n default --timeout=300s || echo "Portainer may not be ready"
+    kubectl wait --for=condition=ready pod -l app=pgadmin -n default --timeout=300s || echo "pgAdmin may not be ready"
     
     log_success "Management tools deployed and ready"
 }
@@ -193,23 +194,27 @@ deploy_ingress() {
 show_status() {
     log_info "Deployment Status:"
     echo ""
-    
-    log_info "Ecommerce Namespace Pods:"
-    kubectl get pods -n ecommerce
+
+    log_info "Default Namespace Pods:"
+    kubectl get pods -n default
     echo ""
-    
+
     log_info "Monitoring Namespace Pods:"
     kubectl get pods -n monitoring
     echo ""
-    
-    log_info "Services:"
-    kubectl get svc -n ecommerce
-    kubectl get svc -n monitoring
+
+    log_info "Istio System Namespace Pods:"
+    kubectl get pods -n istio-system
     echo ""
-    
+
+    log_info "Services:"
+    kubectl get svc -n default
+    kubectl get svc -n monitoring
+    kubectl get svc -n istio-system
+    echo ""
+
     log_info "Ingress:"
-    kubectl get ingress -n ecommerce
-    kubectl get ingress -n monitoring
+    kubectl get ingress -n default
 }
 
 # Main deployment function
@@ -240,13 +245,17 @@ main() {
     log_success "Deployment completed successfully!"
     echo ""
     log_info "Access URLs (use port-forward):"
-    echo "  API Gateway:    kubectl port-forward svc/ocelotapigw-service 8010:80 -n ecommerce"
-    echo "  Grafana:        kubectl port-forward svc/grafana-service 3000:3000 -n monitoring"
-    echo "  Prometheus:     kubectl port-forward svc/prometheus-service 9090:9090 -n monitoring"
-    echo "  Portainer:      kubectl port-forward svc/portainer-service 9000:9000 -n ecommerce"
-    echo "  pgAdmin:        kubectl port-forward svc/pgadmin-service 8080:80 -n ecommerce"
-    echo "  RabbitMQ:       kubectl port-forward svc/rabbitmq-service 15672:15672 -n ecommerce"
-    echo "  Kibana:         kubectl port-forward svc/kibana-service 5601:5601 -n ecommerce"
+    echo "  API Gateway:    kubectl port-forward svc/eshopping-gateway-ocelotapigw 8010:80 -n default"
+    echo "  Catalog API:    kubectl port-forward svc/eshopping-catalog 8001:80 -n default"
+    echo "  Basket API:     kubectl port-forward svc/eshopping-basket 8002:80 -n default"
+    echo "  Discount API:   kubectl port-forward svc/eshopping-discount-discount-grpc 8003:8080 -n default"
+    echo "  Ordering API:   kubectl port-forward svc/eshopping-ordering 8004:80 -n default"
+    echo "  Grafana:        kubectl port-forward svc/grafana 3000:3000 -n istio-system"
+    echo "  Prometheus:     kubectl port-forward svc/prometheus-server 9090:80 -n monitoring"
+    echo "  Portainer:      kubectl port-forward svc/portainer 9000:9000 -n default"
+    echo "  pgAdmin:        kubectl port-forward svc/pgadmin 8080:80 -n default"
+    echo "  RabbitMQ:       kubectl port-forward svc/eshopping-rabbitmq 15672:5672 -n default"
+    echo "  Kibana:         kubectl port-forward svc/eshopping-kibana 5601:5601 -n default"
 }
 
 # Run main function

@@ -70,7 +70,7 @@ jobs:
           chmod +x *.sh
           
           # Deploy the platform
-          ./deploy-k8s.sh
+          ./deploy-all.sh
           
           echo "✅ Deployment completed"
 
