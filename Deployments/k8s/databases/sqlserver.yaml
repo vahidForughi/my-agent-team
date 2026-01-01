@@ -9,6 +9,17 @@ spec:
   resources:
     requests:
       storage: 15Gi
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: eshopping-orderdb
+  namespace: default
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 15Gi
 ---
 apiVersion: apps/v1
 kind: Deployment
