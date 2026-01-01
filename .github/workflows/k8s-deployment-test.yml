@@ -80,36 +80,37 @@ jobs:
 
           # Wait for critical services first (databases and core services)
           echo "Waiting for databases..."
-          kubectl wait --for=condition=ready pod -l app=mongodb -n ecommerce --timeout=300s || echo "MongoDB timeout"
-          kubectl wait --for=condition=ready pod -l app=redis -n ecommerce --timeout=300s || echo "Redis timeout"
-          kubectl wait --for=condition=ready pod -l app=postgres -n ecommerce --timeout=300s || echo "Postgres timeout"
-          kubectl wait --for=condition=ready pod -l app=sqlserver -n ecommerce --timeout=300s || echo "SQLServer timeout"
+          kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-catalogdb -n default --timeout=300s || echo "MongoDB timeout"
+          kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-basketdb -n default --timeout=300s || echo "Redis timeout"
+          kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-discountdb -n default --timeout=300s || echo "Postgres timeout"
+          kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-orderdb -n default --timeout=300s || echo "SQLServer timeout"
 
           echo "Waiting for infrastructure services..."
-          kubectl wait --for=condition=ready pod -l app=rabbitmq -n ecommerce --timeout=300s || echo "RabbitMQ timeout"
-          kubectl wait --for=condition=ready pod -l app=elasticsearch -n ecommerce --timeout=300s || echo "Elasticsearch timeout"
+          kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-rabbitmq -n default --timeout=300s || echo "RabbitMQ timeout"
+          kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-elasticsearch -n default --timeout=300s || echo "Elasticsearch timeout"
 
           echo "Waiting for microservices..."
-          kubectl wait --for=condition=ready pod -l app=catalog-api -n ecommerce --timeout=300s || echo "Catalog API timeout"
-          kubectl wait --for=condition=ready pod -l app=basket-api -n ecommerce --timeout=300s || echo "Basket API timeout"
-          kubectl wait --for=condition=ready pod -l app=discount-api -n ecommerce --timeout=300s || echo "Discount API timeout"
-          kubectl wait --for=condition=ready pod -l app=ordering-api -n ecommerce --timeout=300s || echo "Ordering API timeout"
-          kubectl wait --for=condition=ready pod -l app=ocelot-gateway -n ecommerce --timeout=300s || echo "Gateway timeout"
+          kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-catalog -n default --timeout=300s || echo "Catalog API timeout"
+          kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-basket -n default --timeout=300s || echo "Basket API timeout"
+          kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-discount -n default --timeout=300s || echo "Discount API timeout"
+          kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-ordering -n default --timeout=300s || echo "Ordering API timeout"
+          kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-gateway-ocelotapigw -n default --timeout=300s || echo "Gateway timeout"
 
           echo "Waiting for monitoring stack..."
           kubectl wait --for=condition=ready pod -l app=prometheus -n monitoring --timeout=300s || echo "Prometheus timeout"
-          kubectl wait --for=condition=ready pod -l app=grafana -n monitoring --timeout=300s || echo "Grafana timeout"
+          kubectl wait --for=condition=ready pod -l app=grafana -n istio-system --timeout=300s || echo "Grafana timeout"
 
           # Kibana is allowed to take longer - non-blocking
           echo "Checking Kibana status (non-blocking)..."
-          kubectl wait --for=condition=ready pod -l app=kibana -n ecommerce --timeout=60s || echo "⚠️ Kibana still starting (this is expected and OK)"
+          kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-kibana -n default --timeout=60s || echo "⚠️ Kibana still starting (this is expected and OK)"
 
           echo ""
           echo "✅ Pod readiness check completed"
           echo ""
           echo "📊 Final pod status:"
-          kubectl get pods -n ecommerce
+          kubectl get pods -n default
           kubectl get pods -n monitoring
+          kubectl get pods -n istio-system
 
       - name: Validate deployment
         run: |
@@ -124,42 +125,41 @@ jobs:
       - name: Test service connectivity
         run: |
           echo "🌐 Testing service connectivity..."
-          
+
           # Test internal service connectivity
           kubectl run test-pod --image=busybox --rm -i --restart=Never -- /bin/sh -c "
             echo 'Testing internal connectivity...'
-            nslookup catalog-service.ecommerce.svc.cluster.local || echo 'Catalog service DNS failed'
-            nslookup basket-service.ecommerce.svc.cluster.local || echo 'Basket service DNS failed'
-            nslookup discount-service.ecommerce.svc.cluster.local || echo 'Discount service DNS failed'
-            nslookup ordering-service.ecommerce.svc.cluster.local || echo 'Ordering service DNS failed'
-            nslookup ocelotapigw-service.ecommerce.svc.cluster.local || echo 'Gateway service DNS failed'
-            nslookup grafana-service.monitoring.svc.cluster.local || echo 'Grafana service DNS failed'
-            nslookup prometheus-service.monitoring.svc.cluster.local || echo 'Prometheus service DNS failed'
+            nslookup eshopping-catalog.default.svc.cluster.local || echo 'Catalog service DNS failed'
+            nslookup eshopping-basket.default.svc.cluster.local || echo 'Basket service DNS failed'
+            nslookup eshopping-discount-discount-grpc.default.svc.cluster.local || echo 'Discount service DNS failed'
+            nslookup eshopping-ordering.default.svc.cluster.local || echo 'Ordering service DNS failed'
+            nslookup eshopping-gateway-ocelotapigw.default.svc.cluster.local || echo 'Gateway service DNS failed'
+            nslookup prometheus-server.monitoring.svc.cluster.local || echo 'Prometheus service DNS failed'
           " || echo "⚠️ Some connectivity tests failed"
-          
+
           echo "✅ Connectivity tests completed"
 
       - name: Test API endpoints
         run: |
           echo "🔌 Testing API endpoints..."
-          
+
           # Port forward to test APIs
-          kubectl port-forward svc/ocelotapigw-service 8010:80 -n ecommerce &
-          kubectl port-forward svc/catalog-service 8001:80 -n ecommerce &
-          kubectl port-forward svc/grafana-service 3000:3000 -n monitoring &
-          
+          kubectl port-forward svc/eshopping-gateway-ocelotapigw 8010:80 -n default &
+          kubectl port-forward svc/eshopping-catalog 8001:80 -n default &
+          kubectl port-forward svc/grafana 3000:3000 -n istio-system &
+
           # Wait for port forwarding to establish
           sleep 10
-          
+
           # Test API Gateway
           curl -f http://localhost:8010 || echo "⚠️ API Gateway not responding"
-          
+
           # Test Catalog API
           curl -f http://localhost:8001 || echo "⚠️ Catalog API not responding"
-          
+
           # Test Grafana
           curl -f http://localhost:3000 || echo "⚠️ Grafana not responding"
-          
+
           echo "✅ API endpoint tests completed"
 
       - name: Check resource usage
@@ -206,14 +206,14 @@ jobs:
         run: |
           echo "🧹 Cleaning up..."
           cd Deployments/k8s
-          
+
           # Run cleanup script
           ./cleanup-k8s.sh || echo "⚠️ Cleanup script failed"
-          
-          # Force cleanup if needed
-          kubectl delete namespace ecommerce --ignore-not-found=true
+
+          # Force cleanup if needed (don't delete default namespace)
           kubectl delete namespace monitoring --ignore-not-found=true
-          
+          kubectl delete namespace istio-system --ignore-not-found=true
+
           echo "✅ Cleanup completed"
 
       - name: Generate test report
