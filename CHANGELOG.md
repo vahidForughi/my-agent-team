@@ -1,4 +1,66 @@
 # Changelog
+## [0.4.0] - 2026-01-01
+
+## What's Changed
+
+### 🚀 Features
+- feat: remove npm publish configuration from semantic-release setup (#168) (a2fd77c)
+- Merge branch 'main' into feat/deploy-enhancement (a790c73)
+- feat: remove npm publish configuration from semantic-release setup (d970764)
+- feat: streamline semantic-release process by removing dry-run logic and enhancing version extraction (#166) (a5493b4)
+- feat: streamline semantic-release process by removing dry-run logic and enhancing version extraction (0848482)
+- feat: update feature request template with detailed fields and descriptions (594b41c)
+- Merge pull request #165 from sloweyyy/feat/deploy-enhancement (6960ec2)
+- Merge branch 'main' into feat/deploy-enhancement (a987453)
+- feat: enhance bug report template with additional components and environment details (acf3ae3)
+- Merge pull request #164 from sloweyyy/feat/deploy-enhancement (77d46e0)
+- Merge pull request #163 from sloweyyy/feat/deploy-enhancement (d5eab5c)
+- Implement feature X to enhance user experience and optimize performance (9f7d54e)
+- Merge branch 'main' into feat/deploy-enhancement (350e2de)
+
+### 🐛 Bug Fixes
+- feat: enhance bug report template with additional components and environment details (acf3ae3)
+
+### 🔧 Improvements
+- Merge branch 'main' into feat/deploy-enhancement (a790c73)
+- Merge pull request #165 from sloweyyy/feat/deploy-enhancement (6960ec2)
+- Merge branch 'main' into feat/deploy-enhancement (a987453)
+- feat: enhance bug report template with additional components and environment details (acf3ae3)
+- Merge pull request #164 from sloweyyy/feat/deploy-enhancement (77d46e0)
+- Merge pull request #163 from sloweyyy/feat/deploy-enhancement (d5eab5c)
+- Implement feature X to enhance user experience and optimize performance (9f7d54e)
+- Merge branch 'main' into feat/deploy-enhancement (350e2de)
+
+### 📚 Documentation
+- chore: remove outdated wiki documentation for deployment, development, home, microservices, monitoring, README, and troubleshooting (342192f)
+- docs: update changelog for v0.3.0-beta.1767213174 [skip ci] (0b53c60)
+
+### 🔐 Security
+- No security updates
+
+### 🏗️ Infrastructure
+- feat: streamline semantic-release process by removing dry-run logic and enhancing version extraction (#166) (a5493b4)
+- feat: streamline semantic-release process by removing dry-run logic and enhancing version extraction (0848482)
+- docs: update changelog for v0.3.0-beta.1767213174 [skip ci] (0b53c60)
+
+### Other Changes
+- chore: update subproject commit reference in wiki (1e7e193)
+- chore: update subproject commit reference in wiki (795d4eb)
+- Merge pull request #162 from sloweyyy/changelog/v0.3.0-beta.1767213174 (9d891f3)
+
+## Docker Images
+All services are available as Docker images:
+- 
+- 
+- 
+- 
+- 
+
+## Helm Deployment
+
+
+**Full Changelog**: https://github.com/sloweyyy/cloud-native-ecommerce-platform/compare/v0.3.0-beta.1767213174...0.4.0
+
 ## [v0.3.0-beta.1767213174] - 2025-12-31
 
 ## What's Changed
