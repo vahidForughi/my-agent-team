@@ -5,85 +5,85 @@ metadata:
   namespace: default
 data:
   ocelot.json: |
+{
+  "Routes": [
     {
-      "Routes": [
+      "DownstreamPathTemplate": "/api/v1/Catalog",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
         {
-          "DownstreamPathTemplate": "/api/v1/Catalog",
-          "DownstreamScheme": "http",
-          "DownstreamHostAndPorts": [
-            {
-              "Host": "eshopping-catalog",
-              "Port": 80
-            }
-          ],
-          "UpstreamPathTemplate": "/Catalog",
-          "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
-        },
-        {
-          "DownstreamPathTemplate": "/api/v1/Catalog/{everything}",
-          "DownstreamScheme": "http",
-          "DownstreamHostAndPorts": [
-            {
-              "Host": "eshopping-catalog",
-              "Port": 80
-            }
-          ],
-          "UpstreamPathTemplate": "/Catalog/{everything}",
-          "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
-        },
-        {
-          "DownstreamPathTemplate": "/api/v1/Basket",
-          "DownstreamScheme": "http",
-          "DownstreamHostAndPorts": [
-            {
-              "Host": "eshopping-basket",
-              "Port": 80
-            }
-          ],
-          "UpstreamPathTemplate": "/Basket",
-          "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
-        },
-        {
-          "DownstreamPathTemplate": "/api/v1/Basket/{everything}",
-          "DownstreamScheme": "http",
-          "DownstreamHostAndPorts": [
-            {
-              "Host": "eshopping-basket",
-              "Port": 80
-            }
-          ],
-          "UpstreamPathTemplate": "/Basket/{everything}",
-          "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
-        },
-        {
-          "DownstreamPathTemplate": "/api/v1/Ordering",
-          "DownstreamScheme": "http",
-          "DownstreamHostAndPorts": [
-            {
-              "Host": "eshopping-ordering",
-              "Port": 80
-            }
-          ],
-          "UpstreamPathTemplate": "/Ordering",
-          "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
-        },
-        {
-          "DownstreamPathTemplate": "/api/v1/Ordering/{everything}",
-          "DownstreamScheme": "http",
-          "DownstreamHostAndPorts": [
-            {
-              "Host": "eshopping-ordering",
-              "Port": 80
-            }
-          ],
-          "UpstreamPathTemplate": "/Ordering/{everything}",
-          "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+          "Host": "eshopping-catalog",
+          "Port": 80
         }
       ],
-      "GlobalConfiguration": {
-        "BaseUrl": "http://localhost:8010"
-      }
+      "UpstreamPathTemplate": "/Catalog",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/v1/Catalog/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "eshopping-catalog",
+          "Port": 80
+        }
+      ],
+      "UpstreamPathTemplate": "/Catalog/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/v1/Basket",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "eshopping-basket",
+          "Port": 80
+        }
+      ],
+      "UpstreamPathTemplate": "/Basket",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/v1/Basket/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "eshopping-basket",
+          "Port": 80
+        }
+      ],
+      "UpstreamPathTemplate": "/Basket/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/v1/Ordering",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "eshopping-ordering",
+          "Port": 80
+        }
+      ],
+      "UpstreamPathTemplate": "/Ordering",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/v1/Ordering/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "eshopping-ordering",
+          "Port": 80
+        }
+      ],
+      "UpstreamPathTemplate": "/Ordering/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
     }
+  ],
+  "GlobalConfiguration": {
+    "BaseUrl": "http://localhost:8010"
+  }
+}
 ---
 apiVersion: apps/v1
 kind: Deployment
