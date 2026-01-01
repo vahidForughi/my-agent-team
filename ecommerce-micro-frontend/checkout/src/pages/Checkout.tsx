@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 
 import {
   Card,
@@ -11,7 +11,6 @@ import {
   Divider,
   Row,
   Col,
-  InputNumber,
   message,
   Spin,
   Flex,
@@ -24,21 +23,23 @@ import {
   DollarOutlined,
   ArrowLeftOutlined,
   CheckOutlined,
-  DeleteOutlined,
-  PlusOutlined,
-  MinusOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from '@tanstack/react-router';
 
 import { AppInjectorProps } from '@ecommerce-platform/app-injector';
 import { useAuth } from '@ecommerce-platform/auth-provider';
 import {
-  useGetCart,
+  useGetBasket,
   useCheckout,
-  useUpdateCartItem,
-  useRemoveCartItem,
-} from '../services/cart/hooks';
-import type { CartItem } from '../services/cart/types';
+  useUpdateBasketItem,
+  useRemoveBasketItem,
+} from '../services/basket/hooks';
+import BasketItemRow from '../components/BasketItemRow';
+import {
+  getUserEmail,
+  handleNavigateToStore,
+} from '../helpers/checkoutHelpers';
+import type { BasketItem } from '../services/basket/schemas';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -49,12 +50,13 @@ type CheckoutProps = {
 
 export default function Checkout(props: CheckoutProps) {
   const { config } = props;
+
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
-  const { data: cart, isLoading } = useGetCart();
+  const { user } = useAuth();
+  const { data: basketResponse, isLoading } = useGetBasket();
   const { mutate: checkout, isPending: isCheckingOut } = useCheckout();
-  const { mutate: updateItem } = useUpdateCartItem();
-  const { mutate: removeItem } = useRemoveCartItem();
+  const { mutate: updateItem } = useUpdateBasketItem();
+  const { mutate: removeItem } = useRemoveBasketItem();
 
   const [paymentMethod, setPaymentMethod] = useState<number>(0);
   const [shippingInfo, setShippingInfo] = useState({
@@ -67,57 +69,49 @@ export default function Checkout(props: CheckoutProps) {
     notes: '',
   });
 
-  const handleUpdateQuantity = (item: CartItem, newQuantity: number) => {
-    if (newQuantity < 1) return;
-    updateItem({
-      productId: item.productId,
-      quantity: newQuantity,
-    });
-  };
+  const basket = basketResponse?.data ?? null;
 
-  const handleRemoveItem = (productId: string) => {
-    removeItem({ productId });
-  };
+  const handleUpdateQuantity = useCallback(
+    (item: BasketItem, newQuantity: number) => {
+      if (newQuantity < 1) return;
+      updateItem({
+        productId: item.productId,
+        quantity: newQuantity,
+      });
+    },
+    [updateItem]
+  );
 
-  const handlePlaceOrder = () => {
-    if (!cart?.data || cart.data.items.length === 0) {
+  const handleRemoveItem = useCallback(
+    (productId: string) => {
+      removeItem({ productId });
+    },
+    [removeItem]
+  );
+
+  const subtotal = useMemo(
+    () =>
+      basket?.items?.reduce(
+        (sum: number, item: BasketItem) => sum + item.price * item.quantity,
+        0
+      ) ?? 0,
+    [basket?.items]
+  );
+
+  const shipping = 0;
+  const tax = 0;
+  const total = useMemo(() => subtotal + shipping + tax, [subtotal]);
+
+  function handlePlaceOrder() {
+    if (!basket || !basket.items || basket.items.length === 0) {
       message.warning('Your cart is empty');
       return;
     }
 
-    const getUserFirstName = () => {
-      if (isAuthenticated && user?.firstName) return user.firstName;
-      if (isAuthenticated && user?.displayName) {
-        return user.displayName.split(' ')[0] || 'Guest';
-      }
-      if (shippingInfo.fullName) return shippingInfo.fullName.split(' ')[0];
-      return 'Guest';
-    };
-
-    const getUserLastName = () => {
-      if (isAuthenticated && user?.lastName) return user.lastName;
-      if (isAuthenticated && user?.displayName) {
-        const parts = user.displayName.split(' ');
-        return parts.slice(1).join(' ') || 'User';
-      }
-      if (shippingInfo.fullName) {
-        const parts = shippingInfo.fullName.split(' ');
-        return parts.slice(1).join(' ') || 'User';
-      }
-      return 'User';
-    };
-
-    const getUserEmail = () => {
-      if (isAuthenticated && user?.email) return user.email;
-      return 'guest@example.com';
-    };
-
     checkout(
       {
-        totalPrice: cart.data.totalPrice,
-        firstName: getUserFirstName(),
-        lastName: getUserLastName(),
-        emailAddress: getUserEmail(),
+        totalPrice: basket.totalPrice,
+        emailAddress: getUserEmail(user),
         addressLine: shippingInfo.address || 'N/A',
         country: shippingInfo.country || 'Vietnam',
         state: shippingInfo.city || 'N/A',
@@ -129,18 +123,20 @@ export default function Checkout(props: CheckoutProps) {
         paymentMethod: paymentMethod,
       },
       {
-        onSuccess: (response) => {
-          console.log('[Checkout] Order placed successfully:', response);
+        onSuccess: () => {
           message.success('Order placed successfully!');
           navigate({ to: '/' });
         },
-        onError: (error) => {
-          console.error('[Checkout] Order failed:', error);
+        onError: () => {
           message.error('Failed to place order. Please try again.');
         },
       }
     );
-  };
+  }
+
+  function handleBackToShopping() {
+    handleNavigateToStore(config);
+  }
 
   if (isLoading) {
     return (
@@ -154,7 +150,7 @@ export default function Checkout(props: CheckoutProps) {
     );
   }
 
-  if (!cart?.data || cart.data.items.length === 0) {
+  if (!basket || !basket.items || basket.items.length === 0) {
     return (
       <Space
         direction="vertical"
@@ -165,30 +161,12 @@ export default function Checkout(props: CheckoutProps) {
         <ShoppingCartOutlined style={{ fontSize: 64 }} />
         <Title level={3}>Your cart is empty</Title>
         <Paragraph>Add some products to continue with checkout.</Paragraph>
-        <Button
-          type="primary"
-          onClick={() => {
-            if (config?.onNavigate) {
-              config.onNavigate('/store');
-            } else {
-              window.location.href = '/store';
-            }
-          }}
-        >
+        <Button type="primary" onClick={handleBackToShopping}>
           Back to Shopping
         </Button>
       </Space>
     );
   }
-
-  const cartData = cart.data;
-  const subtotal = cartData.items.reduce(
-    (sum: number, item: CartItem) => sum + item.price * item.quantity,
-    0
-  );
-  const shipping = 0; // Free shipping
-  const tax = 0; // No tax
-  const total = subtotal + shipping + tax;
 
   return (
     <Space
@@ -206,13 +184,7 @@ export default function Checkout(props: CheckoutProps) {
         <Button
           type="link"
           icon={<ArrowLeftOutlined />}
-          onClick={() => {
-            if (config?.onNavigate) {
-              config.onNavigate('/store');
-            } else {
-              window.location.href = '/store';
-            }
-          }}
+          onClick={handleBackToShopping}
           style={{ padding: 0 }}
         >
           Back to Shopping
@@ -227,74 +199,13 @@ export default function Checkout(props: CheckoutProps) {
           {/* Order Summary Section */}
           <Card title="Order Summary" style={{ marginBottom: 24 }}>
             <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-              {cartData.items.map((item: CartItem) => (
-                <Flex
+              {basket.items.map((item: BasketItem) => (
+                <BasketItemRow
                   key={item.productId}
-                  gap="middle"
-                  justify="space-between"
-                  align="center"
-                  style={{
-                    width: '100%',
-                    padding: '16px 0',
-                    borderBottom: '1px solid #f0f0f0',
-                  }}
-                >
-                  <img
-                    src={item.imageFile || '/placeholder.png'}
-                    alt={item.productName}
-                    style={{
-                      width: 80,
-                      height: 80,
-                      objectFit: 'cover',
-                      borderRadius: 8,
-                    }}
-                  />
-                  <Space direction="vertical" size="small" style={{ flex: 1 }}>
-                    <Title level={5} style={{ margin: 0 }}>
-                      {item.productName}
-                    </Title>
-                    <Text type="secondary" style={{ fontSize: 12 }}>
-                      Qty: {item.quantity}
-                    </Text>
-                  </Space>
-                  <Space direction="vertical" align="end" size="small">
-                    <Space size="small">
-                      <Button
-                        size="small"
-                        icon={<MinusOutlined />}
-                        onClick={() =>
-                          handleUpdateQuantity(item, item.quantity - 1)
-                        }
-                        disabled={item.quantity <= 1}
-                      />
-                      <InputNumber
-                        size="small"
-                        min={1}
-                        value={item.quantity}
-                        onChange={(value) =>
-                          handleUpdateQuantity(item, value || 1)
-                        }
-                        style={{ width: 60 }}
-                      />
-                      <Button
-                        size="small"
-                        icon={<PlusOutlined />}
-                        onClick={() =>
-                          handleUpdateQuantity(item, item.quantity + 1)
-                        }
-                      />
-                      <Button
-                        size="small"
-                        danger
-                        icon={<DeleteOutlined />}
-                        onClick={() => handleRemoveItem(item.productId)}
-                      />
-                    </Space>
-                    <Text strong style={{ fontSize: 16 }}>
-                      ${(item.price * item.quantity).toFixed(2)}
-                    </Text>
-                  </Space>
-                </Flex>
+                  item={item}
+                  onUpdateQuantity={handleUpdateQuantity}
+                  onRemove={handleRemoveItem}
+                />
               ))}
             </Space>
           </Card>

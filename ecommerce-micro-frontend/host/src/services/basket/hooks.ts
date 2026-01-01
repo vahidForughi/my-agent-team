@@ -1,56 +1,43 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@ecommerce-platform/auth-provider';
-import { getBasket } from './api';
-import type { Basket } from './types';
-import {
-  createCacheKeyWithScope,
-} from '../factory/createCacheKeyFactory';
+import { getBasket } from './apis';
+import { basketKeys } from './keys';
+import type { Basket } from './schemas';
 
-const createCacheKey = createCacheKeyWithScope('basket');
-
-/**
- * Get current username from auth hook
- */
 function getUserName(user: ReturnType<typeof useAuth>['user']): string {
   return user?.email || user?.displayName || user?.id || 'guest';
 }
 
-const CACHE_KEYS = {
-  all: createCacheKey(['all']),
-  byUser: (userName: string) => createCacheKey(['byUser', userName]),
-} as const;
-
-/**
- * Hook to fetch basket for current user
- * - Uses React Query for automatic caching and deduplication
- * - Returns null on error (non-blocking for Navbar)
- * - Uses useAuth to get reactive user info
- */
 export function useBasket() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const userName = getUserName(user);
 
   const query = useQuery<Basket | null>({
-    queryKey: CACHE_KEYS.byUser(userName),
-    queryFn: () => getBasket(userName),
-    staleTime: 30 * 1000, // 30 seconds
-    retry: false, // Don't retry on failure for Navbar
+    queryKey: basketKeys.getBasket.create({ userName }),
+    queryFn: async () => {
+      const response = await getBasket({ params: { userName } });
+      return (response as Basket | null) ?? null;
+    },
+    enabled: !authLoading,
+    staleTime: 30 * 1000,
+    retry: false,
     refetchOnWindowFocus: true,
   });
 
+  const basket = query.data ?? null;
+
   return {
-    basket: query.data ?? null,
-    items: query.data?.items ?? [],
-    itemCount: query.data?.itemCount ?? 0,
-    totalPrice: query.data?.totalPrice ?? 0,
-    isEmpty: query.data?.isEmpty ?? true,
+    basket,
+    items: (basket?.items ?? []) as Basket['items'],
+    itemCount: basket?.itemCount ?? 0,
+    totalPrice: basket?.totalPrice ?? 0,
+    isEmpty: basket?.isEmpty ?? true,
     isLoading: query.isLoading,
     error: query.error,
     refetch: query.refetch,
   };
 }
 
-/**
- * Export cache keys for invalidation from other modules
- */
-export const basketCacheKeys = CACHE_KEYS;
+export const basketCacheKeys = {
+  byUser: (userName: string) => basketKeys.getBasket.create({ userName }),
+};

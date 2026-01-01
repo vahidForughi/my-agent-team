@@ -2,6 +2,11 @@
  * Utility functions for app-injector
  */
 
+// Declare require for TypeScript (available in webpack/bundler environments)
+declare const require: {
+  (id: string): unknown;
+} | undefined;
+
 /**
  * Checks if the current React version supports createRoot (React 18+)
  *
@@ -21,7 +26,9 @@ export const isSupportCreateRoot = (): boolean => {
     // Try to dynamically import createRoot from react-dom/client
     // This module only exists in React 18+
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const ReactDOMClient = require('react-dom/client');
+    const ReactDOMClient = typeof require !== 'undefined' 
+      ? (require('react-dom/client') as { createRoot?: unknown } | null)
+      : null;
     return typeof ReactDOMClient?.createRoot === 'function';
   } catch {
     // If the import fails, we're on React 16/17
@@ -76,4 +83,3 @@ export const waitForElement = (
     checkElement();
   });
 };
-

@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { Flex, Space, Divider } from 'antd';
-import { ProductType, Brand } from '../../services/products/types';
+import { ProductType, Brand } from '../../services/products/schemas';
 import ProductStats from './ProductStats';
 import ProductSort from './ProductSort';
 import ProductFilters from './ProductFilters';

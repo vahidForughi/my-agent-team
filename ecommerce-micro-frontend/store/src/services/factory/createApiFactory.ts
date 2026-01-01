@@ -1,12 +1,15 @@
-import { Method } from 'axios';
+import { isApiErrorResponse } from '../utils/common';
+import { AxiosInstance, Method } from 'axios';
 import { ZodType } from 'zod';
 
 import { emitter, EVENT_NAMES } from '../../libs/TinyEmitter';
 import { buildPath } from '../helpers/buildPath';
 import { filterUsedKeys } from '../helpers/filterUsedKeys';
-import { mergeHeaderLocale } from '../helpers/mergeHeaderLocale';
 import { parseParams, parseResponse } from '../helpers/validations';
-import { axiosClient } from '../httpClient';
+
+import { AuthStrategyType, createAuthStrategy } from '../auth/strategies';
+import { mergeHeaderLocale } from '../helpers/mergeHeaderLocale';
+import { axiosClient, createAxiosClientWithAuth } from '../httpClient';
 import {
   ApiResponse,
   ApiResult,
@@ -15,7 +18,6 @@ import {
   RequestParams,
   RequestPayload,
 } from '../types';
-import { isApiErrorResponse } from '../utils/common';
 
 export type ApiFactoryOptions<TResponse, TTransformed = TResponse> = {
   transformer?: (data: TResponse) => Nullable<TTransformed>;
@@ -25,15 +27,44 @@ export type ApiFactoryOptions<TResponse, TTransformed = TResponse> = {
   [key: PropertyKey]: unknown;
 };
 
+/**
+ * version: string
+ *   - 'v1'   => /v1/endpoint
+ *   - 'v0'   => /v0/endpoint
+ *   - ''     => /endpoint (no version prefix, no double slash)
+ */
 type CreateApiFactoryOptions = {
-  version?: string;
+  version?: string; // See above for usage
+  authStrategy?: AuthStrategyType;
+  client?: AxiosInstance;
+  baseURL?: string;
 };
 
 export function createApiFactory(
   rootEndpoint: string,
-  options: CreateApiFactoryOptions = { version: 'v1' },
+  options: CreateApiFactoryOptions = { version: 'v1' }
 ) {
-  const { version = 'v1' } = options;
+  const {
+    version = 'v1',
+    authStrategy = 'bearer',
+    client: providedClient,
+    baseURL: providedBaseURL,
+  } = options;
+
+  // Determine which client to use
+  let selectedClient: AxiosInstance;
+
+  if (providedClient) {
+    selectedClient = providedClient;
+  } else {
+    selectedClient = axiosClient;
+  }
+
+  // Create custom client if baseURL is provided
+  if (providedBaseURL && !providedClient) {
+    const strategy = createAuthStrategy(authStrategy);
+    selectedClient = createAxiosClientWithAuth(providedBaseURL, strategy);
+  }
   return async function <
     TResponse,
     TTransformed = TResponse,
@@ -42,12 +73,12 @@ export function createApiFactory(
       TTransformed
     > = ApiFactoryOptions<TResponse, TTransformed>,
     TParams extends RequestParams = RequestParams,
-    TPayload extends RequestPayload = RequestPayload,
+    TPayload extends RequestPayload = RequestPayload
   >(
     method: Method | string,
     path: `/${string}` | null,
     request?: Request<TParams, TPayload>,
-    options?: Options,
+    options?: Options
   ): Promise<Nullable<ApiResponse<TTransformed>>> {
     const { params = {}, payload = {} } = request ?? {};
 
@@ -56,7 +87,7 @@ export function createApiFactory(
       buildPath(
         rootEndpoint, // rootEndpoint from createApiFactory closure
         params,
-        payload,
+        payload
       );
 
     // Process pathSegment (original 'path' argument) for placeholders
@@ -73,7 +104,7 @@ export function createApiFactory(
       ...segmentPathUsedKeys,
     ]);
 
-    const { baseURL: defaultBaseURL } = axiosClient.defaults;
+    const { baseURL: defaultBaseURL } = selectedClient.defaults;
     const baseURL = options?.useMock ? `/api` : `${defaultBaseURL}`;
 
     // Remove leading slash from finalUrlPath to prevent double slashes
@@ -81,9 +112,13 @@ export function createApiFactory(
       ? finalUrlPath.slice(1)
       : finalUrlPath;
 
-    const url = options?.useMock
-      ? `${version}/mock/${cleanPath}`
-      : `${version}/${cleanPath}`;
+    // Build the URL, avoiding double slashes if version is empty
+    const url = (() => {
+      if (options?.useMock) {
+        return version ? `/${version}/mock/${cleanPath}` : `/mock/${cleanPath}`;
+      }
+      return version ? `/${version}/${cleanPath}` : `/${cleanPath}`;
+    })();
 
     const headers = mergeHeaderLocale(request);
 
@@ -97,14 +132,14 @@ export function createApiFactory(
 
     const filteredParams = filterUsedKeys(
       validParams as Record<PropertyKey, unknown>,
-      allKeysUsedInPath, // Use combined keys
+      allKeysUsedInPath // Use combined keys
     );
     const filteredPayload = filterUsedKeys(
       payload as Record<PropertyKey, unknown>,
-      allKeysUsedInPath, // Use combined keys
+      allKeysUsedInPath // Use combined keys
     );
 
-    const response = await axiosClient<ApiResult<TResponse>>({
+    const response = await selectedClient<ApiResult<TResponse>>({
       baseURL,
       method,
       url,
@@ -116,17 +151,32 @@ export function createApiFactory(
       ...request?.options,
     }).then((res) => res.data); // destructure the data from the axios
 
+    let validResponse: Nullable<ApiResult<TResponse>>;
+
     if (isApiErrorResponse(response)) {
-      emitter.emit(EVENT_NAMES.API_ERROR, response.error.message);
-      const error = new Error('Something went wrong') as Error & { cause?: unknown };
+      // Ensure the message is always a string to prevent React error #31
+      const errorMessage =
+        typeof response.message === 'string'
+          ? response.message
+          : typeof response.error === 'string'
+            ? response.error
+            : JSON.stringify(response) || 'An unknown error occurred';
+
+      emitter.emit(EVENT_NAMES.API_ERROR, errorMessage);
+      const error = new Error('Something went wrong') as Error & {
+        cause?: unknown;
+      };
       error.cause = response;
       throw error;
     }
 
-    let validResponse: Nullable<TResponse> = response as TResponse;
-
     if (options?.responseSchema) {
-      validResponse = parseResponse(response, options.responseSchema) as Nullable<TResponse>;
+      validResponse = parseResponse(
+        response,
+        options.responseSchema
+      ) as Nullable<ApiResult<TResponse>>;
+    } else {
+      validResponse = response;
     }
 
     if (validResponse === null && method !== 'DELETE') {
@@ -134,13 +184,16 @@ export function createApiFactory(
       throw new Error('Parsed response is null or invalid format');
     }
 
-    let transformedData: Nullable<TTransformed> = validResponse as unknown as Nullable<TTransformed>;
+    let transformedData = validResponse as unknown as Nullable<
+      ApiResponse<TTransformed>
+    >;
 
     if (typeof options?.transformer === 'function' && validResponse) {
-      const transformed = options.transformer(validResponse);
+      const transformed = options.transformer(validResponse as TResponse);
       if (transformed === null || transformed === undefined) {
         throw new Error('Transformed data cannot be null or undefined');
       }
+
       transformedData = transformed;
     }
 

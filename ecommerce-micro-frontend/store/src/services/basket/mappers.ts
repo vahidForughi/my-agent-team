@@ -1,61 +1,51 @@
-import type {
-  ShoppingCartResponse,
-  ShoppingCartItemResponse,
+import { createMapper } from '../factory/createMapper';
+import { ZodSchema } from 'zod';
+
+import {
   Basket,
   BasketItem,
-} from './types';
+  BasketItemResponse,
+  BasketResponse,
+  basketItemResponseSchema,
+  basketResponseSchema,
+} from './schemas';
 
-/**
- * Map backend ShoppingCartItem to frontend BasketItem
- * Note: Backend already returns camelCase, so mapping is straightforward
- */
-export function mapShoppingCartItemToBasketItem(
-  response: ShoppingCartItemResponse
-): BasketItem {
-  const price = response.price;
-  const quantity = response.quantity;
-  const itemTotal = price * quantity;
+export const basketItemMapper = createMapper<BasketItemResponse, BasketItem>(
+  (entity) => {
+    return {
+      productId: entity.productId,
+      productName: entity.productName,
+      price: entity.price,
+      originalPrice: entity.originalPrice ?? entity.price,
+      discountAmount: entity.discountAmount ?? 0,
+      quantity: entity.quantity,
+      imageFile: entity.imageFile ?? null,
+      itemTotal: entity.price * entity.quantity,
+    };
+  },
+  basketItemResponseSchema as ZodSchema<BasketItemResponse>
+);
 
-  return {
-    productId: response.productId,
-    productName: response.productName,
-    price,
-    originalPrice: response.originalPrice ?? price,
-    discountAmount: response.discountAmount ?? 0,
-    quantity,
-    imageFile: response.imageFile,
-    itemTotal,
-  };
-}
+export const basketMapper = createMapper<BasketResponse, Basket>((entity) => {
+  const items = entity.items.map((item) => ({
+    productId: item.productId,
+    productName: item.productName,
+    price: item.price,
+    originalPrice: item.originalPrice ?? item.price,
+    discountAmount: item.discountAmount ?? 0,
+    quantity: item.quantity,
+    imageFile: item.imageFile ?? null,
+    itemTotal: item.price * item.quantity,
+  }));
 
-/**
- * Map backend ShoppingCart to frontend Basket
- */
-export function mapShoppingCartToBasket(response: ShoppingCartResponse): Basket {
-  const items = response.items.map(mapShoppingCartItemToBasketItem);
-  const itemCount = items.length;
-  const isEmpty = itemCount === 0;
   const totalPrice =
-    response.totalPrice ?? items.reduce((sum, item) => sum + item.itemTotal, 0);
+    entity.totalPrice ?? items.reduce((sum, item) => sum + item.itemTotal, 0);
 
   return {
-    userName: response.userName,
+    userName: entity.userName,
     items,
     totalPrice,
-    itemCount,
-    isEmpty,
+    itemCount: items.length,
+    isEmpty: items.length === 0,
   };
-}
-
-/**
- * Create an empty basket for a user
- */
-export function createEmptyBasket(userName: string): Basket {
-  return {
-    userName,
-    items: [],
-    totalPrice: 0,
-    itemCount: 0,
-    isEmpty: true,
-  };
-}
+}, basketResponseSchema as ZodSchema<BasketResponse>);

@@ -5,13 +5,8 @@ import { DefinePlugin } from 'webpack';
 
 import baseConfig from './module-federation.config';
 
-// Development environment variables
-// Set these in your shell or create a local .env.local file (gitignored)
-// Required: NX_API_BASE_URL (defaults to localhost:8010 for local dev)
-
-// Filter only NX_ prefixed variables from process.env
 const envVars = Object.keys(process.env)
-  .filter(key => key.startsWith('NX_'))
+  .filter((key) => key.startsWith('NX_'))
   .reduce((acc, key) => {
     acc[`process.env.${key}`] = JSON.stringify(process.env[key]);
     return acc;
@@ -26,11 +21,28 @@ export default composePlugins(
     dts: false,
   }),
   (config) => {
-    // Add DefinePlugin to inject environment variables
     config.plugins = config.plugins || [];
-    config.plugins.push(
-      new DefinePlugin(envVars)
-    );
+    config.plugins.push(new DefinePlugin(envVars));
+
+    if (config.resolve) {
+      const path = require('path');
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        '@components': path.resolve(__dirname, './src/components'),
+        '@services': path.resolve(__dirname, './src/services'),
+        '@typings': path.resolve(__dirname, './src/typings'),
+        '@constants': path.resolve(__dirname, './src/config'),
+        '@helpers': path.resolve(__dirname, './src/helpers'),
+        '@libs': path.resolve(__dirname, './src/libs'),
+        '@hooks': path.resolve(__dirname, './src/hooks'),
+        '@utils': path.resolve(__dirname, './src/utils'),
+        '@ecommerce-platform/app-injector': path.resolve(
+          __dirname,
+          '../packages/app-injector/dist/index.js'
+        ),
+      };
+    }
+
     return config;
   }
 );

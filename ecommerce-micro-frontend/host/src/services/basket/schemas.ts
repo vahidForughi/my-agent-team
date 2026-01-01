@@ -1,33 +1,22 @@
 import { z } from 'zod';
 
-/**
- * Backend ShoppingCartItem response schema (camelCase)
- * Matches actual API response from /Basket/GetBasket
- */
-export const shoppingCartItemResponseSchema = z.object({
-  quantity: z.number().int().min(1),
-  price: z.number(),
-  originalPrice: z.number(),
-  discountAmount: z.number().default(0),
+export const basketItemResponseSchema = z.object({
   productId: z.string(),
-  imageFile: z.string().optional().nullable(),
   productName: z.string(),
+  price: z.number(),
+  originalPrice: z.number().optional().default(0),
+  discountAmount: z.number().optional().default(0),
+  quantity: z.number(),
+  imageFile: z.string().nullable().optional(),
   finalPrice: z.number().optional(),
 });
 
-/**
- * Backend ShoppingCart response schema (camelCase)
- * Matches actual API response from /Basket/GetBasket
- */
-export const shoppingCartResponseSchema = z.object({
+export const basketResponseSchema = z.object({
   userName: z.string(),
-  items: z.array(shoppingCartItemResponseSchema).default([]),
+  items: z.array(basketItemResponseSchema).default([]),
   totalPrice: z.number().optional(),
 });
 
-/**
- * Frontend BasketItem DTO schema
- */
 export const basketItemSchema = z.object({
   productId: z.string(),
   productName: z.string(),
@@ -35,13 +24,10 @@ export const basketItemSchema = z.object({
   originalPrice: z.number(),
   discountAmount: z.number(),
   quantity: z.number(),
-  imageFile: z.string().optional().nullable(),
+  imageFile: z.string().nullable().optional(),
   itemTotal: z.number(),
 });
 
-/**
- * Frontend Basket DTO schema
- */
 export const basketSchema = z.object({
   userName: z.string(),
   items: z.array(basketItemSchema),
@@ -49,3 +35,9 @@ export const basketSchema = z.object({
   itemCount: z.number(),
   isEmpty: z.boolean(),
 });
+
+export type BasketItemResponse = z.infer<typeof basketItemResponseSchema>;
+export type BasketResponse = z.infer<typeof basketResponseSchema>;
+
+export type BasketItem = z.infer<typeof basketItemSchema>;
+export type Basket = z.infer<typeof basketSchema>;

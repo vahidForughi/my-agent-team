@@ -1,163 +1,132 @@
-/**
- * Basket API Service
- * Type-safe API calls for Shopping Cart/Basket operations
- */
+import { createApiFactory } from '../factory/createApiFactory';
+import { RequestParamsRequired } from '../types';
+import { axiosClient } from '../httpClient';
+import { API_CONFIG } from '../../config';
 
-import { httpClient } from '../httpClient';
-import { env, API_CONFIG } from '../../config';
-import { getStoredUser } from '@ecommerce-platform/auth-provider';
 import {
-  ShoppingCartResponseSchema,
-  CreateShoppingCartCommandSchema,
-  CheckoutBasketCommandSchema,
-  mapShoppingCartToFrontend,
-  type ShoppingCartResponse,
-  type ShoppingCartItem,
-  type ShoppingCartFrontend,
-} from '../../types';
-import { getMockBasket, getMockCheckoutResponse } from './mocks';
+  getBasketInput,
+  GetBasketInput,
+  AddToCartInput,
+  UpdateBasketItemInput,
+  RemoveBasketItemInput,
+  CheckoutInput,
+} from './input';
+import { basketMapper } from './mappers';
+import {
+  BasketResponse,
+  basketResponseSchema,
+  Basket,
+  BasketItem,
+} from './schemas';
 
-/**
- * Get current username from auth provider
- */
-function getCurrentUsername(): string {
-  const storedUser = getStoredUser();
-  return storedUser?.email || storedUser?.displayName || storedUser?.id || 'guest';
-}
+export const apiFactory = createApiFactory('/Basket', { version: '' });
 
-/**
- * Get basket for current user
- */
-export async function getBasket(): Promise<ShoppingCartFrontend | null> {
-  // Use mock data if enabled
-  if (env.useMockData) {
-    console.warn('🚧 Using mock basket data');
-    return getMockBasket();
-  }
-
-  const username = getCurrentUsername();
-  const url = API_CONFIG.BASKET.GET_BASKET(username);
-
-  try {
-    const response = await httpClient.get<ShoppingCartResponse>(url);
-
-    // Validate response with Zod schema
-    const validatedData = ShoppingCartResponseSchema.parse(response.data);
-
-    // Map to frontend camelCase format
-    return mapShoppingCartToFrontend(validatedData);
-  } catch (error) {
-    // Return null if basket doesn't exist (404)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((error as any)?.statusCode === 404) {
-      return null;
-    }
-    throw error;
-  }
-}
-
-/**
- * Create or update basket for current user
- * @param items - Shopping cart items
- * @param userName - Optional username. If not provided, will get from storage (fallback to 'guest')
- */
-export async function createBasket(
-  items: ShoppingCartItem[],
-  userName?: string
-): Promise<ShoppingCartFrontend> {
-  // Use mock data if enabled
-  if (env.useMockData) {
-    console.warn('🚧 Using mock basket creation');
-    return getMockBasket();
-  }
-
-  // Use provided userName or get from storage
-  const username = userName || getCurrentUsername();
-  const url = API_CONFIG.BASKET.CREATE_BASKET;
-
-  console.log('[Basket API] createBasket - userName:', username);
-
-  // Validate request with Zod schema
-  const command = CreateShoppingCartCommandSchema.parse({
-    UserName: username,
-    Items: items,
+export async function getBasket(
+  request?: RequestParamsRequired<GetBasketInput>
+) {
+  console.log('[checkout] getBasket', request);
+  return apiFactory<BasketResponse>('GET', `/GetBasket/:userName`, request, {
+    transformer: basketMapper.toDto,
+    paramsSchema: getBasketInput,
+    responseSchema: basketResponseSchema,
+    useMock: request?.params?.useMock ?? false,
   });
-
-  const response = await httpClient.post<ShoppingCartResponse>(url, command);
-
-  // Validate response
-  const validatedData = ShoppingCartResponseSchema.parse(response.data);
-
-  // Map to frontend format
-  return mapShoppingCartToFrontend(validatedData);
 }
 
-/**
- * Delete basket for current user
- */
-export async function deleteBasket(): Promise<void> {
-  // Use mock data if enabled
-  if (env.useMockData) {
-    console.warn('🚧 Mock basket delete (no-op)');
-    return;
+export async function addToCart(request: {
+  payload: AddToCartInput;
+  params?: { useMock?: boolean };
+}) {
+  return apiFactory<BasketResponse>('POST', '/CreateBasket', request, {
+    transformer: basketMapper.toDto,
+    responseSchema: basketResponseSchema,
+    useMock: request?.params?.useMock ?? false,
+  });
+}
+
+export async function updateBasketItem(request: {
+  payload: UpdateBasketItemInput & { userName?: string };
+  currentBasket?: Basket | null;
+}): Promise<{ data: Basket } | null> {
+  const userName = request.payload.userName || 'guest';
+  const currentItems = request.currentBasket?.items || [];
+
+  const updatedItems = currentItems
+    .map((item) => {
+      if (item.productId === request.payload.productId) {
+        if (request.payload.quantity <= 0) {
+          return null;
+        }
+        return { ...item, quantity: request.payload.quantity };
+      }
+      return item;
+    })
+    .filter((item): item is BasketItem => item !== null);
+
+  const command: AddToCartInput = {
+    UserName: userName,
+    Items: updatedItems.map((item) => ({
+      Quantity: item.quantity,
+      Price: item.price,
+      OriginalPrice: item.originalPrice,
+      DiscountAmount: item.discountAmount,
+      ProductId: item.productId,
+      ImageFile: item.imageFile || undefined,
+      ProductName: item.productName,
+    })),
+  };
+
+  const response = await apiFactory<BasketResponse>(
+    'POST',
+    '/CreateBasket',
+    {
+      payload: command,
+      params: { useMock: false },
+    },
+    {
+      transformer: basketMapper.toDto,
+      responseSchema: basketResponseSchema,
+    }
+  );
+
+  if (!response) {
+    return null;
   }
 
-  const username = getCurrentUsername();
-  const url = API_CONFIG.BASKET.DELETE_BASKET(username);
+  const basketData: Basket = {
+    ...(response as Basket),
+    items: (response as Basket).items || [],
+  };
 
-  await httpClient.delete(url);
+  return { data: basketData };
 }
 
-/**
- * Checkout basket (creates order from basket)
- */
-export interface CheckoutRequest {
-  totalPrice: number;
-  firstName?: string;
-  lastName?: string;
-  emailAddress?: string;
-  addressLine?: string;
-  country?: string;
-  state?: string;
-  zipCode?: string;
-  cardName?: string;
-  cardNumber?: string;
-  expiration?: string;
-  cvv?: string;
-  paymentMethod?: number;
+export async function removeBasketItem(request: {
+  payload: RemoveBasketItemInput & { userName?: string };
+  currentBasket?: Basket | null;
+}): Promise<{ data: Basket } | null> {
+  return updateBasketItem({
+    payload: {
+      productId: request.payload.productId,
+      quantity: 0,
+      userName: request.payload.userName,
+    },
+    currentBasket: request.currentBasket,
+  });
 }
 
-export async function checkoutBasket(
-  request: CheckoutRequest
-): Promise<{ success: boolean; orderId?: number }> {
-  // Use mock data if enabled
-  if (env.useMockData) {
-    console.warn('🚧 Using mock checkout');
-    return getMockCheckoutResponse();
-  }
-
-  const username = getCurrentUsername();
+export async function checkout(request: {
+  payload: CheckoutInput & { userName?: string };
+}) {
+  const userName = request.payload.userName || 'guest';
   const url = API_CONFIG.BASKET.CHECKOUT;
 
-  // Validate request with Zod schema
-  const command = CheckoutBasketCommandSchema.parse({
-    UserName: username,
-    TotalPrice: request.totalPrice,
-    FirstName: request.firstName,
-    LastName: request.lastName,
-    EmailAddress: request.emailAddress,
-    AddressLine: request.addressLine,
-    Country: request.country,
-    State: request.state,
-    ZipCode: request.zipCode,
-    CardName: request.cardName,
-    CardNumber: request.cardNumber,
-    Expiration: request.expiration,
-    CVV: request.cvv,
-    PaymentMethod: request.paymentMethod,
-  });
+  const payload = {
+    UserName: userName,
+    TotalPrice: request.payload.totalPrice,
+  };
 
-  const response = await httpClient.post(url, command);
+  const response = await axiosClient.post(url, payload);
 
   return {
     success: true,

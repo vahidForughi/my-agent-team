@@ -1,7 +1,5 @@
 export { default as ProductImageGallery } from './ProductImageGallery';
-export { default as ProductTitle } from './ProductTitle';
 export { default as ProductRating } from './ProductRating';
-export { default as ProductStockBadge } from './ProductStockBadge';
 export { default as ProductPrice } from './ProductPrice';
 export { default as ProductDescription } from './ProductDescription';
 export { default as ProductFeatures } from './ProductFeatures';

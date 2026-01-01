@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Typography, Space, Tag } from 'antd';
 import { formatCurrency } from '../../helpers/formatUtils';
 import { calculateDiscountPercentage } from '../../helpers/productUtils';
@@ -13,33 +13,38 @@ type ProductPriceProps = {
 function ProductPrice(props: ProductPriceProps) {
   const { price, originalPrice } = props;
 
-  const discountPercentage = originalPrice
-    ? calculateDiscountPercentage(originalPrice, price)
-    : 0;
+  const discountPercentage = useMemo(() => {
+    if (!originalPrice) {
+      return 0;
+    }
+    return calculateDiscountPercentage(originalPrice, price);
+  }, [originalPrice, price]);
 
   const hasDiscount = discountPercentage > 0;
+  const savingsAmount = useMemo(() => {
+    if (!hasDiscount || !originalPrice) {
+      return 0;
+    }
+    return originalPrice - price;
+  }, [hasDiscount, originalPrice, price]);
 
   return (
-    <div>
+    <Space direction="vertical" size="small">
       <Space size="middle" align="baseline">
         <Title level={2}>{formatCurrency(price)}</Title>
         {hasDiscount && originalPrice && (
           <>
-            <Text delete type="secondary" style={{ fontSize: 18 }}>
+            <Text delete type="secondary">
               {formatCurrency(originalPrice)}
             </Text>
             <Tag color="red">-{discountPercentage}%</Tag>
           </>
         )}
       </Space>
-      {hasDiscount && originalPrice && (
-        <div style={{ marginTop: 8 }}>
-          <Text type="secondary">
-            You save {formatCurrency(originalPrice - price)}
-          </Text>
-        </div>
+      {hasDiscount && (
+        <Text type="secondary">You save {formatCurrency(savingsAmount)}</Text>
       )}
-    </div>
+    </Space>
   );
 }
 

@@ -7,7 +7,8 @@ import NavbarCategories from './NavbarCategories';
 import NavbarQuickLinks from './NavbarQuickLinks';
 import { CartItem } from '../CartPreview/CartPreview';
 import { brandGradient } from '../../config/theme';
-import { useBasket, BasketItem, basketCacheKeys } from '../../services/basket';
+import { useBasket, basketCacheKeys } from '../../services/basket';
+import type { BasketItem } from '../../services/basket';
 import { useAuth } from '@ecommerce-platform/auth-provider';
 
 const { Title } = Typography;
@@ -28,14 +29,14 @@ function Navbar() {
 
   // Listen for cart updates from other modules (e.g., store)
   useEffect(() => {
-    function handleCartUpdated() {
+    function handleCartUpdated(event: Event) {
+      const customEvent = event as CustomEvent;
+      const eventUserName = customEvent.detail?.userName;
+      
       // Get current username from auth to ensure we use the latest user info
       const currentUserName =
         user?.email || user?.displayName || user?.id || 'guest';
-      console.log(
-        '[Navbar] Cart updated event received, invalidating and refetching basket for user:',
-        currentUserName
-      );
+      
       // Invalidate cache to force refetch, even if data is still fresh
       queryClient.invalidateQueries({
         queryKey: basketCacheKeys.byUser(currentUserName),

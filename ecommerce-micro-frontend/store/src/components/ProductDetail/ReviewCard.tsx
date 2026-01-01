@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, Space, Rate, Typography, Button } from 'antd';
 import { LikeOutlined, UserOutlined } from '@ant-design/icons';
-import { Review } from '../../services/products/types';
+import { Review } from '../../services/products/schemas';
 import { formatDate } from '../../helpers/formatUtils';
 
 const { Text, Paragraph } = Typography;

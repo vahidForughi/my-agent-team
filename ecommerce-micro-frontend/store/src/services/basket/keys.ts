@@ -1,9 +1,17 @@
-import { createCacheKeyWithScope } from '../factory/createCacheKeyFactory';
+import { FilterOptions } from '@services/types';
+import {
+  createCacheKeyWithScope,
+  createCacheSection,
+} from '../factory/createCacheKeyFactory';
+import { AddToCartInput, GetBasketInput } from './input';
 
 const createBasketKeys = createCacheKeyWithScope('_basket');
 
 export const basketKeys = {
-  all: createBasketKeys(['all']),
-  detail: (userName?: string) => createBasketKeys(['detail', userName]),
+  getBasket: createCacheSection((input?: FilterOptions<GetBasketInput>) =>
+    createBasketKeys(['getBasket', input])
+  ),
+  addToCart: createCacheSection((input?: FilterOptions<AddToCartInput>) =>
+    createBasketKeys(['addToCart', input])
+  ),
 };
-

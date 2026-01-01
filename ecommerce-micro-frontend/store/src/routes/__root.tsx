@@ -8,11 +8,6 @@ interface RouterContext {
     isAuthenticated: boolean;
     logout: () => void;
   };
-  config?: {
-    appContext?: Record<string, unknown>;
-    onNavigate?: (path: string) => void;
-    onError?: (error: Error) => void;
-  };
 }
 
 export const Route = createRootRouteWithContext<RouterContext>()({

@@ -151,7 +151,7 @@ export interface HostAuthContext {
 export interface AuthConsumerProviderProps {
   children: ReactNode;
   /** Host auth context from appContext */
-  hostAuth?: HostAuthContext | null;
+  config?: HostAuthContext | null;
   /** Debug options for development */
   debug?: DebugOptions;
 }

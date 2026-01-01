@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useGetProducts } from '../services/products/hooks';
-import { Product } from '../services/products/types';
+import { Product, PaginatedProducts } from '../services/products/schemas';
 
 type UseRelatedProductsReturn = {
   relatedProducts: Product[];
@@ -25,12 +25,14 @@ export function useRelatedProducts(
     }
   );
 
+  const typedPaginatedData = paginatedData as PaginatedProducts | null | undefined;
+
   const relatedProducts = useMemo(() => {
-    if (!relatedProductIds || !paginatedData) {
+    if (!relatedProductIds || !typedPaginatedData?.data) {
       return [];
     }
 
-    const allProducts = paginatedData.data;
+    const allProducts = typedPaginatedData.data;
     const filtered = allProducts.filter((product: Product) =>
       relatedProductIds.includes(product.id)
     );
@@ -41,7 +43,7 @@ export function useRelatedProducts(
       .filter((product): product is Product => product !== undefined);
 
     return sorted.slice(0, limit);
-  }, [relatedProductIds, paginatedData, limit]);
+  }, [relatedProductIds, typedPaginatedData, limit]);
 
   return {
     relatedProducts,

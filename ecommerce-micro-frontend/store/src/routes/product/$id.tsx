@@ -7,8 +7,7 @@ export const Route = createFileRoute('/product/$id')({
 
 function ProductDetailRoute() {
   const { id } = Route.useParams();
-  const { config } = Route.useRouteContext();
 
-  return <ProductDetail productId={id} config={config} />;
+  return <ProductDetail productId={id} />;
 }
 
