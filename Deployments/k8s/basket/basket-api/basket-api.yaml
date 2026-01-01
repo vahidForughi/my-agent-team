@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: basket
-          image: basketapi:latest
+          image: eshop/basket.api:latest
           ports:
             - name: http
               containerPort: 80
