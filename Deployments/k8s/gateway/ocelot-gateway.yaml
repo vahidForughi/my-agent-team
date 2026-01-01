@@ -136,9 +136,9 @@ spec:
               memory: "512Mi"
               cpu: "500m"
               ephemeral-storage: "2Gi"
-          envFrom:
-            - configMapRef:
-                name: ocelot-config
+           envFrom:
+             - configMapRef:
+                 name: eshopping-gateway-ocelotapigw
           volumeMounts:
             - name: ocelot-config-volume
               mountPath: /app/ocelot.json
