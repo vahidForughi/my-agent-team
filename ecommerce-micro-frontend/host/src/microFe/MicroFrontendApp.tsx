@@ -46,7 +46,7 @@ const MicroFrontendContent: React.FC<{ appName: string }> = ({ appName }) => {
   // Get initial search params from browser URL
   const getInitialSearchParams = useCallback(() => {
     const params: Record<string, string> = {};
-    searchParams.forEach((value, key) => {
+    searchParams.forEach((value: string, key: string) => {
       params[key] = value;
     });
     return params;
@@ -180,7 +180,13 @@ const MicroFrontendContent: React.FC<{ appName: string }> = ({ appName }) => {
         }
       }
     };
-  }, [appName, microFrontendConfig, appConfig, getInitialSearchParams, handleSearchChange]);
+  }, [
+    appName,
+    microFrontendConfig,
+    appConfig,
+    getInitialSearchParams,
+    handleSearchChange,
+  ]);
 
   // Show error state
   if (error) {

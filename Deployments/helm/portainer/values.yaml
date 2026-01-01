@@ -7,7 +7,7 @@ image:
 
 imagePullSecrets: []
 nameOverride: ""
-fullnameOverride: "portainer"
+fullnameOverride: ""
 
 serviceAccount:
   create: true
@@ -37,8 +37,8 @@ tolerations: []
 affinity: {}
 
 persistence:
-  enabled: true
-  storageClass: "gp2"
+  enabled: false
+  storageClass: "gp2"  # AWS EKS storage class
   accessMode: ReadWriteOnce
   size: 1Gi
 

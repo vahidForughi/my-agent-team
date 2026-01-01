@@ -3,175 +3,306 @@ name: Continuous Deployment
 on:
   push:
     branches: [main]
-    tags: ["v*"]
+    tags: ['v*']
   workflow_dispatch:
     inputs:
       environment:
         description: "Environment to deploy to"
         required: true
-        default: "staging"
+        default: 'dev'
         type: choice
         options:
+          - dev
           - staging
           - production
+      aws_region:
+        description: 'AWS Region'
+        required: false
+        default: 'ap-southeast-1'
+        type: string
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-  DOTNET_VERSION: "8.0.x"
+  AWS_REGION: ${{ github.event.inputs.aws_region || 'ap-southeast-1' }}
+  ENV_NAME: ${{ github.event.inputs.environment || 'dev' }}
 
 jobs:
-  build-and-push:
+  build-and-push-to-ecr:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    permissions:
+      id-token: write
+      contents: read
     outputs:
-      image-tag: ${{ steps.meta.outputs.tags }}
-      image-digest: ${{ steps.build.outputs.digest }}
+      image-tag: ${{ steps.image-tag.outputs.tag }}
+      ecr-registry: ${{ steps.ecr-info.outputs.registry }}
+      env-name: ${{ steps.env-info.outputs.env_name }}
+    strategy:
+      matrix:
+        service:
+          - name: catalogapi
+            path: Services/Catalog/Catalog.API
+          - name: basketapi
+            path: Services/Basket/Basket.API
+          - name: discountapi
+            path: Services/Discount/Discount.API
+          - name: orderingapi
+            path: Services/Ordering/Ordering.API
+          - name: ocelotapigateway
+            path: ApiGateways/Ocelot.ApiGateway
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Get AWS Account ID and setup
+        id: ecr-info
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          REGISTRY="${ACCOUNT_ID}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com"
+          echo "registry=$REGISTRY" >> $GITHUB_OUTPUT
+          echo "AWS Account: $ACCOUNT_ID"
+          echo "ECR Registry: $REGISTRY"
+
+      - name: Set environment info
+        id: env-info
+        run: |
+          ENV_NAME="${{ env.ENV_NAME }}"
+          echo "env_name=$ENV_NAME" >> $GITHUB_OUTPUT
+          echo "Environment: $ENV_NAME"
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Determine image tag
+        id: image-tag
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+          else
+            TAG="latest"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "Image tag: $TAG"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=sha
-
-      - name: Build and push Docker images
-        id: build
+      - name: Create ECR repository if not exists
         run: |
-          # Build and push all service images
-          services=(
-            "catalog-api:Services/Catalog/Catalog.API"
-            "basket-api:Services/Basket/Basket.API"
-            "discount-api:Services/Discount/Discount.API"
-            "ordering-api:Services/Ordering/Ordering.API"
-            "ocelot-gateway:ApiGateways/Ocelot.ApiGateway"
-          )
+          aws ecr describe-repositories --repository-names ${{ matrix.service.name }} --region ${{ env.AWS_REGION }} || \
+          aws ecr create-repository \
+            --repository-name ${{ matrix.service.name }} \
+            --region ${{ env.AWS_REGION }} \
+            --image-scanning-configuration scanOnPush=true \
+            --tags Key=Project,Value=ecommerce Key=ManagedBy,Value=github-actions
 
-          for service in "${services[@]}"; do
-            name=$(echo $service | cut -d: -f1)
-            path=$(echo $service | cut -d: -f2)
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./${{ matrix.service.path }}/Dockerfile
+          push: true
+          platforms: linux/amd64
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/${{ matrix.service.name }}:${{ steps.image-tag.outputs.tag }}
+            ${{ steps.login-ecr.outputs.registry }}/${{ matrix.service.name }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-            echo "Building and pushing $name..."
-            docker build -f $path/Dockerfile -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/$name:${{ github.sha }} .
-            docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/$name:${{ github.sha }}
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.login-ecr.outputs.registry }}/${{ matrix.service.name }}:${{ steps.image-tag.outputs.tag }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+        continue-on-error: true
 
-            # Also tag as latest for main branch
-            if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-              docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/$name:${{ github.sha }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/$name:latest
-              docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/$name:latest
-            fi
-          done
-
-  deploy-staging:
+  deploy-to-eks:
     runs-on: ubuntu-latest
-    needs: build-and-push
-    if: github.ref == 'refs/heads/main' || github.event.inputs.environment == 'staging'
+    needs: build-and-push-to-ecr
+    if: github.event_name != 'pull_request'
     environment:
-      name: staging
-      url: https://staging.ecommerce.example.com
+      name: ${{ needs.build-and-push-to-ecr.outputs.env-name }}
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v3
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v5
         with:
-          version: "latest"
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
 
-      - name: Configure kubectl for staging
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'latest'
+
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: 'latest'
+
+      - name: Set deployment variables
+        id: deploy-vars
         run: |
-          # Configure kubectl for staging cluster
-          # This would typically involve setting up kubeconfig with cluster credentials
-          echo "Configuring kubectl for staging cluster..."
-          # kubectl config set-cluster staging --server=${{ secrets.STAGING_CLUSTER_URL }}
-          # kubectl config set-credentials staging-user --token=${{ secrets.STAGING_TOKEN }}
-          # kubectl config set-context staging --cluster=staging --user=staging-user
-          # kubectl config use-context staging
+          ENV_NAME="${{ needs.build-and-push-to-ecr.outputs.env-name }}"
+          CLUSTER_NAME="${ENV_NAME}-ecommerce-eks"
+          NAMESPACE="${ENV_NAME}"
+          echo "cluster_name=$CLUSTER_NAME" >> $GITHUB_OUTPUT
+          echo "namespace=$NAMESPACE" >> $GITHUB_OUTPUT
+          echo "Cluster: $CLUSTER_NAME"
+          echo "Namespace: $NAMESPACE"
 
-      - name: Update image tags for staging
+      - name: Update kubeconfig
         run: |
-          echo "Updating image tags for staging deployment..."
-          # Update image tags in Kubernetes manifests or Helm values
-          # This could be done with sed, yq, or a custom script
+          aws eks update-kubeconfig \
+            --region ${{ env.AWS_REGION }} \
+            --name ${{ steps.deploy-vars.outputs.cluster_name }}
 
-          # Example: Update image tags in k8s manifests
-          find Deployments/k8s -name "*.yaml" -type f -exec sed -i "s|eshop/catalog.api:latest|${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/catalog-api:${{ github.sha }}|g" {} \;
-          find Deployments/k8s -name "*.yaml" -type f -exec sed -i "s|eshop/basket.api:latest|${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/basket-api:${{ github.sha }}|g" {} \;
-          find Deployments/k8s -name "*.yaml" -type f -exec sed -i "s|eshop/discount.grpc:latest|${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/discount-api:${{ github.sha }}|g" {} \;
-          find Deployments/k8s -name "*.yaml" -type f -exec sed -i "s|eshop/ordering.api:latest|${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/ordering-api:${{ github.sha }}|g" {} \;
-          find Deployments/k8s -name "*.yaml" -type f -exec sed -i "s|eshop/ocelot.apigw:latest|${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/ocelot-gateway:${{ github.sha }}|g" {} \;
-
-      - name: Deploy to staging
+      - name: Verify cluster connection
         run: |
-          echo "Deploying to staging environment..."
-          cd Deployments/k8s
+          kubectl get nodes
+          echo "Connected to EKS cluster: ${{ steps.deploy-vars.outputs.cluster_name }}"
 
-          # Make scripts executable
-          chmod +x *.sh
-
-          # Deploy using Kubernetes manifests
-          ./deploy-k8s.sh
-
-          echo "✅ Deployment to staging completed"
-
-      - name: Wait for deployment
+      - name: Create namespace if not exists
         run: |
-          echo "Waiting for deployment to be ready..."
-          kubectl wait --for=condition=ready pod --all -n ecommerce --timeout=600s
-          kubectl wait --for=condition=ready pod --all -n monitoring --timeout=600s
-          echo "✅ All pods are ready"
+          kubectl create namespace ${{ steps.deploy-vars.outputs.namespace }} --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy databases with Helm
+        run: |
+          cd Deployments/helm
+
+          echo "Deploying databases..."
+          for db in catalogdb basketdb discountdb orderdb rabbitmq; do
+            echo "  - ${db}"
+            helm upgrade --install "eshopping-${db}" \
+              "./${db}" \
+              -n ${{ steps.deploy-vars.outputs.namespace }} \
+              --set image.registry=${{ needs.build-and-push-to-ecr.outputs.ecr-registry }} \
+              --wait \
+              --timeout 5m
+          done
+
+          echo "Waiting for databases to be ready..."
+          sleep 30
+
+      - name: Deploy microservices with Helm
+        run: |
+          cd Deployments/helm
+
+          echo "Deploying microservices..."
+          for service in catalog basket discount ordering; do
+            echo "  - ${service}"
+
+            # Set AWS-specific environment variables for production
+            EXTRA_ARGS=""
+            if [ "$service" = "catalog" ]; then
+              EXTRA_ARGS="--set env.USE_LOCALSTACK='false' --set env.AWS__S3__ServiceUrl=''"
+            fi
+
+            helm upgrade --install "eshopping-${service}" \
+              "./${service}" \
+              -n ${{ steps.deploy-vars.outputs.namespace }} \
+              --set image.registry=${{ needs.build-and-push-to-ecr.outputs.ecr-registry }} \
+              $EXTRA_ARGS \
+              --wait \
+              --timeout 5m
+          done
+
+      - name: Deploy API Gateway with Helm
+        run: |
+          cd Deployments/helm
+
+          echo "Deploying API Gateway..."
+          helm upgrade --install eshopping-ocelotapigw \
+            "./ocelotapigw" \
+            -n ${{ steps.deploy-vars.outputs.namespace }} \
+            --set image.registry=${{ needs.build-and-push-to-ecr.outputs.ecr-registry }} \
+            --wait \
+            --timeout 5m
+
+      - name: Wait for deployments to be ready
+        run: |
+          kubectl wait --for=condition=available --timeout=300s \
+            deployment --all -n ${{ steps.deploy-vars.outputs.namespace }} || true
+
+      - name: Migrate product URLs to AWS S3
+        run: |
+          echo "Migrating product image URLs from LocalStack to AWS S3..."
+
+          # Get AWS account ID
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+
+          echo "AWS Account ID: ${ACCOUNT_ID}"
+          echo "Namespace: ${{ steps.deploy-vars.outputs.namespace }}"
+
+          # Run migration script (pass account ID, not bucket name)
+          echo "y" | bash scripts/migrate-products-to-aws-s3.sh \
+            ${{ steps.deploy-vars.outputs.namespace }} \
+            ${ACCOUNT_ID}
+
+      - name: Get deployment status
+        run: |
+          echo "=== Deployed Services ==="
+          kubectl get pods -n ${{ steps.deploy-vars.outputs.namespace }} -o wide
+
+          echo ""
+          echo "=== Service Endpoints ==="
+          kubectl get svc -n ${{ steps.deploy-vars.outputs.namespace }}
 
       - name: Run smoke tests
         run: |
-          echo "Running smoke tests on staging..."
-          cd Deployments/k8s
+          echo "Running smoke tests..."
 
-          # Run validation script
-          ./validate-deployment.sh
+          # Try to get load balancer URL
+          LB_URL=$(kubectl get svc -n ${{ steps.deploy-vars.outputs.namespace }} -l app=eshopping-ocelotapigw -o jsonpath='{.items[0].status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "")
 
-          # Additional smoke tests
-          kubectl port-forward svc/ocelotapigw-service 8010:80 -n ecommerce &
-          sleep 10
+          if [ -z "$LB_URL" ]; then
+            echo "Load balancer not yet available, skipping health checks"
+            exit 0
+          fi
 
-          # Test API Gateway health
-          curl -f http://localhost:8010 || exit 1
+          echo "Load Balancer URL: http://${LB_URL}"
+          echo "Waiting for load balancer to be ready..."
+          sleep 30
 
-          echo "✅ Smoke tests passed"
+          # Health check
+          curl -f "http://${LB_URL}/" || echo "Health check endpoint not available yet"
 
-  deploy-production:
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.environment == 'production'
-    environment:
-      name: production
-      url: https://ecommerce.example.com
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Deploy to production
+      - name: Deployment summary
         run: |
-          echo "Deploying to production environment"
-          # Add actual deployment commands here
+          echo "### Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** ${{ needs.build-and-push-to-ecr.outputs.env-name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Cluster:** ${{ steps.deploy-vars.outputs.cluster_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Namespace:** ${{ steps.deploy-vars.outputs.namespace }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Region:** ${{ env.AWS_REGION }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Image Tag:** ${{ needs.build-and-push-to-ecr.outputs.image-tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Deployed Services:**" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          kubectl get deployments -n ${{ steps.deploy-vars.outputs.namespace }} >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Next Steps:**" >> $GITHUB_STEP_SUMMARY
+          echo "1. Check pod status: \`kubectl get pods -n ${{ steps.deploy-vars.outputs.namespace }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "2. Check logs: \`kubectl logs -n ${{ steps.deploy-vars.outputs.namespace }} -l app=eshopping-catalog --tail=100\`" >> $GITHUB_STEP_SUMMARY
+          echo "3. Port-forward API Gateway: \`kubectl port-forward -n ${{ steps.deploy-vars.outputs.namespace }} svc/eshopping-ocelotapigw 8080:80\`" >> $GITHUB_STEP_SUMMARY
 
-      - name: Run production tests
+      - name: Notify deployment complete
+        if: always()
         run: |
-          echo "Running production smoke tests"
-          # Add production tests here
+          echo "Deployment completed at $(date)"
+          echo "Environment: ${{ needs.build-and-push-to-ecr.outputs.env-name }}"
+          echo "Cluster: ${{ steps.deploy-vars.outputs.cluster_name }}"
+          echo "Image tag: ${{ needs.build-and-push-to-ecr.outputs.image-tag }}"

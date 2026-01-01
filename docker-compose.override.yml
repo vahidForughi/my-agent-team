@@ -57,7 +57,7 @@ services:
       interval: 15s
       timeout: 10s
       retries: 15
-      start_period: 90s
+      start_period: 60s
 
   rabbitmq:
     container_name: rabbitmq
@@ -101,10 +101,24 @@ services:
       - DatabaseSettings__BrandsCollection=Brands
       - DatabaseSettings__TypesCollection=Types
       - ElasticConfiguration__Uri=${ELASTICSEARCH_URL}
+      - EventBusSettings__HostAddress=${RABBITMQ_URL}
+      # LocalStack S3 Configuration
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_ENDPOINT_URL=http://localstack:4566
+      - USE_LOCALSTACK=true
+      - AWS__S3__BucketName=ecommerce-product-images
+      - AWS__S3__Region=us-east-1
+      - AWS__S3__ImagePrefix=products/
+    volumes:
+      - ~/.aws:/root/.aws:ro
+      - ./client/src/images/products:/app/images/products:ro
     depends_on:
       catalogdb:
         condition: service_healthy
       elasticsearch:
+        condition: service_healthy
+      localstack:
         condition: service_healthy
     ports:
       - "8000:80"
@@ -174,22 +188,22 @@ services:
 
   elasticsearch:
     container_name: elasticsearch
+    restart: always
     environment:
-      - ES_JAVA_OPTS=${ES_JAVA_OPTS}
+      - ES_JAVA_OPTS=${ES_JAVA_OPTS:--Xms1g -Xmx1g}
       - discovery.type=single-node
       - xpack.security.enabled=false
-      - xpack.monitoring.enabled=true
       - xpack.watcher.enabled=false
     ports:
       - "9200:9200"
     volumes:
       - elasticsearch-data:/usr/share/elasticsearch/data
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
-      interval: 10s
-      timeout: 5s
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s || exit 1"]
+      interval: 15s
+      timeout: 10s
       retries: 10
-      start_period: 30s
+      start_period: 120s
 
   kibana:
     container_name: kibana

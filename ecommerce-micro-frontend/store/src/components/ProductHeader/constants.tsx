@@ -12,9 +12,5 @@ export const SORT_OPTIONS: SortOptionConfig[] = [
   { label: 'Name: Z to A', value: 'nameDesc' },
 ];
 
-export const SPECIAL_FILTERS: SpecialFilterConfig[] = [
-  { label: 'All Products', value: 'all', icon: null },
-  { label: 'New Arrivals', value: 'new-arrivals', icon: <FireOutlined /> },
-  { label: 'Best Seller', value: 'best-seller', icon: <StarOutlined /> },
-];
+export const SPECIAL_FILTERS: SpecialFilterConfig[] = [];
 

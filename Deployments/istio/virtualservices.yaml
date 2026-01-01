@@ -70,6 +70,6 @@ spec:
         prefix: /api/v1/Discount
     route:
     - destination:
-        host: discountapi
+        host: eshopping-discount-discount-grpc
         port:
-          number: 80 
+          number: 8080 

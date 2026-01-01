@@ -2,6 +2,8 @@
 using Catalog.Application.Queries;
 using Catalog.Application.Responses;
 using Catalog.Core.Specs;
+using EventBus.Messages.Events;
+using MassTransit;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
@@ -12,11 +14,16 @@ public class CatalogController : ApiController
 {
     private readonly IMediator _mediator;
     private readonly ILogger<CatalogController> _logger;
+    private readonly IPublishEndpoint _publishEndpoint;
 
-    public CatalogController(IMediator mediator, ILogger<CatalogController> logger)
+    public CatalogController(
+        IMediator mediator, 
+        ILogger<CatalogController> logger,
+        IPublishEndpoint publishEndpoint)
     {
         _mediator = mediator;
         _logger = logger;
+        _publishEndpoint = publishEndpoint;
     }
 
     [HttpGet]
@@ -106,6 +113,40 @@ public class CatalogController : ApiController
     public async Task<ActionResult<ProductResponse>> CreateProduct([FromBody] CreateProductCommand productCommand)
     {
         var result = await _mediator.Send<ProductResponse>(productCommand);
+        
+        // Publish ProductActivityEvent after successful creation
+        if (result != null)
+        {
+            var eventMessage = new ProductActivityEvent
+            {
+                ActivityType = ProductActivityType.Created,
+                ProductId = result.Id,
+                ProductName = result.Name,
+                Actor = "system", // TODO: Get from auth context
+                OccurredAt = DateTime.UtcNow
+            };
+            
+            await _publishEndpoint.Publish(eventMessage);
+            _logger.LogInformation("ProductActivityEvent published for ProductId: {ProductId}", result.Id);
+        }
+        
+        return Ok(result);
+    }
+
+    [HttpPost]
+    [Route("UploadProductImage")]
+    [ProducesResponseType(typeof(ImageUploadResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+    public async Task<ActionResult<ImageUploadResponse>> UploadProductImage([FromForm] IFormFile imageFile)
+    {
+        var command = new UploadProductImageCommand { ImageFile = imageFile };
+        var result = await _mediator.Send(command);
+
+        if (!result.Success)
+        {
+            return BadRequest(result);
+        }
+
         return Ok(result);
     }
 
@@ -115,6 +156,25 @@ public class CatalogController : ApiController
     public async Task<ActionResult<ProductResponse>> UpdateProduct([FromBody] UpdateProductCommand productCommand)
     {
         var result = await _mediator.Send(productCommand);
+        
+        // Publish ProductActivityEvent after successful update
+        if (result)
+        {
+            // Get product name for event (we need to fetch it or include in command)
+            // For now, using productCommand.Name if available
+            var eventMessage = new ProductActivityEvent
+            {
+                ActivityType = ProductActivityType.Updated,
+                ProductId = productCommand.Id,
+                ProductName = productCommand.Name ?? "Unknown",
+                Actor = "system", // TODO: Get from auth context
+                OccurredAt = DateTime.UtcNow
+            };
+            
+            await _publishEndpoint.Publish(eventMessage);
+            _logger.LogInformation("ProductActivityEvent published for ProductId: {ProductId}", productCommand.Id);
+        }
+        
         return Ok(result);
     }
 

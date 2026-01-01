@@ -27,6 +27,7 @@ export const updateCartItemRequestSchema = z.object({
 
 export const removeCartItemRequestSchema = z.object({
   productId: z.string(),
+  userName: z.string().optional(),
   useMock: z.boolean().optional(),
 });
 

@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, forkJoin, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { IProduct, IProductWithDiscount } from '../models/product';
+import { environment } from '../../../environments/environment';
 
 export interface IDiscount {
   id: number;

@@ -1,0 +1,35 @@
+// Figure 3.7: Micro-Frontend Runtime Composition
+// Sequence: Browser → Host → Router → Registry → Remote → Inject
+
+// ==================== ACTORS (left to right) ====================
+Browser [icon: chrome, color: blue]
+Host Shell [icon: react, color: green]
+Router [icon: git-branch, color: orange]
+Registry [icon: list, color: purple]
+Remote MFE [icon: package, color: cyan]
+Fallback [icon: alert-circle, color: red]
+
+// ==================== SUCCESS PATH ====================
+// 1. User navigates
+Browser > Host Shell : Navigate to /store/*
+
+// 2. Host matches route
+Host Shell > Router : routes.tsx
+
+// 3. Router checks registry
+Router > Registry : getMicroFrontendConfig(store)
+
+// 4. Registry returns config
+Registry > Remote MFE : Fetch remoteEntry.js
+
+// 5. Remote injects into Host
+Remote MFE > Host Shell : inject(containerId, config)
+
+// ==================== PROTECTED PATH ====================
+// For /checkout/* and /account/*
+Router > Router : ProtectedRoute check
+Router > Registry : If auth OK
+
+// ==================== FAILURE PATH ====================
+Registry > Fallback : Remote unavailable
+Fallback > Host Shell : ErrorBoundaryFallback

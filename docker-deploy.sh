@@ -253,10 +253,10 @@ start_infrastructure() {
     sleep 5
     log_success "MongoDB should be ready"
     
-    # Start message broker and logging
-    log_info "Starting RabbitMQ and Elasticsearch..."
-    docker-compose up -d rabbitmq elasticsearch
-    
+    # Start message broker, logging, and LocalStack
+    log_info "Starting RabbitMQ, Elasticsearch, and LocalStack..."
+    docker-compose up -d rabbitmq elasticsearch localstack
+
     log_info "Waiting for Elasticsearch..."
     sleep 20
     
@@ -274,8 +274,46 @@ start_infrastructure() {
     
     log_info "Starting Kibana..."
     docker-compose up -d kibana
-    
+
+    # Wait for LocalStack health
+    log_info "Waiting for LocalStack..."
+    for i in {1..30}; do
+        if curl -s http://localhost:4566/_localstack/health | grep -q "running"; then
+            log_success "LocalStack is healthy"
+            break
+        fi
+        if [ $i -eq 30 ]; then
+            log_warning "LocalStack health check timeout, but continuing..."
+        fi
+        sleep 2
+    done
+
     log_success "Infrastructure services started"
+    echo ""
+}
+
+# Function to initialize LocalStack S3
+initialize_localstack_s3() {
+    log_step "Initializing LocalStack S3 bucket and uploading images..."
+
+    # Wait a bit more for LocalStack to be fully ready
+    sleep 5
+
+    # Check if init script exists
+    if [ ! -f "scripts/init-localstack-s3.sh" ]; then
+        log_warning "scripts/init-localstack-s3.sh not found, skipping S3 initialization"
+        return 0
+    fi
+
+    # Run the initialization script
+    log_info "Creating S3 bucket and uploading product images..."
+    if bash scripts/init-localstack-s3.sh ecommerce-product-images http://localhost:4566 client/src/images/products; then
+        log_success "LocalStack S3 bucket initialized with product images"
+    else
+        log_warning "LocalStack S3 initialization failed, you may need to run it manually"
+        log_info "Manual command: bash scripts/init-localstack-s3.sh ecommerce-product-images http://localhost:4566 client/src/images/products"
+    fi
+
     echo ""
 }
 
@@ -330,7 +368,15 @@ verify_infrastructure() {
         log_error "Elasticsearch is not running"
         return 1
     fi
-    
+
+    # Check LocalStack
+    if docker ps | grep -q localstack; then
+        log_success "LocalStack is running"
+    else
+        log_error "LocalStack is not running"
+        return 1
+    fi
+
     echo ""
 }
 
@@ -463,6 +509,12 @@ display_access_info() {
     echo "   Elasticsearch:  http://localhost:9200"
     echo "   Kibana:         http://localhost:5601"
     echo ""
+    echo "☁️  LOCALSTACK (LOCAL S3):"
+    echo "   Health Check:   http://localhost:4566/_localstack/health"
+    echo "   S3 Endpoint:    http://localhost:4566"
+    echo "   S3 Bucket:      ecommerce-product-images"
+    echo "   AWS CLI Test:   aws --endpoint-url=http://localhost:4566 s3 ls s3://ecommerce-product-images/products/"
+    echo ""
     echo "🛠️  MANAGEMENT TOOLS:"
     echo "   Portainer:      http://localhost:9000"
     echo "   pgAdmin:        http://localhost:5050 (admin@example.com/admin1234)"
@@ -478,6 +530,12 @@ display_access_info() {
     echo "   Check Catalog data:  docker logs catalog.api | grep -i seed"
     echo "   Check MongoDB auth:  docker exec -it catalogdb mongosh -u admin -p admin1234"
     echo "   Test Discount gRPC:  docker logs basket.api | grep -i discount"
+    echo "   Test LocalStack S3:  curl http://localhost:4566/_localstack/health"
+    echo "   List S3 images:      aws --endpoint-url=http://localhost:4566 s3 ls s3://ecommerce-product-images/products/"
+    echo ""
+    echo "📝 IMPORTANT NOTES:"
+    echo "   LocalStack Images:   Make sure you added '127.0.0.1 localstack' to /etc/hosts"
+    echo "   Setup DNS:           bash setup-localstack-dns.sh"
     echo ""
     echo "═══════════════════════════════════════════════════════════"
     echo ""
@@ -517,7 +575,9 @@ main() {
     
     start_infrastructure
     verify_infrastructure
-    
+
+    initialize_localstack_s3
+
     start_api_services
     start_gateway
     

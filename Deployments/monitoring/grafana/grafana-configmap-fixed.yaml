@@ -14,14 +14,14 @@ data:
     apiVersion: 1
     providers:
     - disableDeletion: false
-      folder: istio
+      folder: istio-mesh
       name: istio
       options:
         path: /var/lib/grafana/dashboards/istio
       orgId: 1
       type: file
     - disableDeletion: false
-      folder: istio
+      folder: istio-services
       name: istio-services
       options:
         path: /var/lib/grafana/dashboards/istio-services
@@ -51,6 +51,14 @@ data:
   grafana.ini: |
     [analytics]
     check_for_updates = true
+    [auth]
+    disable_login_form = true
+    [auth.anonymous]
+    enabled = true
+    org_id = 1
+    org_role = Admin
+    [auth.basic]
+    enabled = false
     [grafana_net]
     url = https://grafana.net
     [log]

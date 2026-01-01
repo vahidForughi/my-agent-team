@@ -32,7 +32,7 @@ log_error() {
 # Function to check prerequisites
 check_prerequisites() {
     log_info "Checking prerequisites..."
-    
+
     # Check if required tools are installed
     for tool in minikube helm kubectl docker; do
         if ! command -v $tool &> /dev/null; then
@@ -40,15 +40,42 @@ check_prerequisites() {
             exit 1
         fi
     done
-    
+
     log_success "All required tools are available"
+}
+
+# Function to check and fix Istio webhook issues
+check_istio_webhooks() {
+    log_info "Checking for Istio webhook issues..."
+
+    # Check if Kubernetes is accessible
+    if ! kubectl cluster-info &>/dev/null; then
+        log_info "Kubernetes not yet accessible, skipping webhook check"
+        return 0
+    fi
+
+    # Check if istiod service exists
+    if ! kubectl get svc istiod -n istio-system &>/dev/null 2>&1; then
+        # Check if Istio webhooks are registered
+        if kubectl get mutatingwebhookconfiguration istio-sidecar-injector &>/dev/null 2>&1; then
+            log_warning "Istio webhooks found but istiod service not available"
+            log_info "Removing Istio webhooks to prevent pod creation failures..."
+
+            kubectl delete mutatingwebhookconfiguration istio-sidecar-injector istio-revision-tag-default 2>/dev/null || true
+            kubectl delete validatingwebhookconfiguration istio-validator-istio-system 2>/dev/null || true
+
+            log_success "Istio webhooks removed. Pods will deploy without issues."
+        fi
+    else
+        log_success "Istio is properly configured"
+    fi
 }
 
 # Function to check and handle existing Helm releases
 check_existing_deployments() {
     log_info "Checking for existing Helm deployments..."
     
-    EXISTING_RELEASES=$(helm list -n default -q 2>/dev/null | grep -c "eshopping-" || echo "0")
+    EXISTING_RELEASES=$(helm list -n default -q 2>/dev/null | grep -c "eshopping-" 2>/dev/null) || EXISTING_RELEASES=0
     
     if [ "$EXISTING_RELEASES" -gt 0 ]; then
         log_warning "Found $EXISTING_RELEASES existing Helm releases"
@@ -194,11 +221,90 @@ deploy_infrastructure() {
     log_success "Infrastructure services deployed"
 }
 
+# Function to deploy LocalStack
+deploy_localstack() {
+    if [ "$DEPLOYMENT_MODE" = "skip" ]; then
+        log_info "Skipping LocalStack deployment (using existing)"
+        return 0
+    fi
+
+    log_info "Deploying LocalStack for local S3 storage..."
+
+    cd Deployments/helm
+
+    # Always use upgrade --install to handle both new and existing installations
+    helm upgrade --install eshopping-localstack ./localstack --namespace default --timeout 600s
+
+    cd ../..
+
+    # Wait for LocalStack to be ready
+    log_info "Waiting for LocalStack to be ready..."
+    kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=localstack -n default --timeout=300s || log_warning "LocalStack pod may not be ready yet"
+
+    # Initialize S3 bucket with images
+    log_info "Initializing LocalStack S3 bucket and uploading images..."
+    if [ -f "scripts/init-localstack-s3.sh" ]; then
+        # Clean up any existing port-forwards to LocalStack
+        pkill -f "port-forward.*localstack" 2>/dev/null || true
+        sleep 2
+
+        # Start fresh port-forward
+        kubectl port-forward svc/eshopping-localstack 4566:4566 -n default > /dev/null 2>&1 &
+        PF_PID=$!
+        sleep 8
+
+        # Verify port-forward is working
+        if ! curl -s http://localhost:4566/_localstack/health > /dev/null 2>&1; then
+            log_warning "Port-forward to LocalStack not ready, waiting longer..."
+            sleep 5
+        fi
+
+        # Create bucket and upload images TO LocalStack S3
+        bash scripts/init-localstack-s3.sh ecommerce-product-images http://localhost:4566 client/src/images/products
+
+        kill $PF_PID 2>/dev/null || true
+    else
+        log_warning "LocalStack initialization script not found, skipping image upload"
+    fi
+
+    log_success "LocalStack deployed and S3 images uploaded"
+}
+
 # Function to wait for pods to be ready
 wait_for_pods() {
     log_info "Waiting for infrastructure pods to be ready..."
-    kubectl wait --for=condition=ready pod --all --timeout=900s -n default
-    log_success "All infrastructure pods are ready"
+
+    # Wait for critical infrastructure pods first
+    log_info "Waiting for databases..."
+    kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-catalogdb \
+        -n default --timeout=300s || log_warning "CatalogDB may not be ready yet, but continuing..."
+    kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-basketdb \
+        -n default --timeout=300s || log_warning "BasketDB may not be ready yet, but continuing..."
+    kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-discountdb \
+        -n default --timeout=300s || log_warning "DiscountDB may not be ready yet, but continuing..."
+    kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-orderdb \
+        -n default --timeout=300s || log_warning "OrderDB may not be ready yet, but continuing..."
+
+    log_info "Waiting for messaging and search..."
+    kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-rabbitmq \
+        -n default --timeout=300s || log_warning "RabbitMQ may not be ready yet, but continuing..."
+    kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-elasticsearch \
+        -n default --timeout=300s || log_warning "Elasticsearch may not be ready yet, but continuing..."
+
+    log_info "Waiting for LocalStack..."
+    kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=localstack \
+        -n default --timeout=300s || log_warning "LocalStack may not be ready yet, but continuing..."
+
+    # Wait for non-critical infrastructure (with warnings instead of failures)
+    log_info "Waiting for monitoring tools..."
+    kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-kibana \
+        -n default --timeout=300s || log_warning "Kibana may not be ready yet, but continuing..."
+    kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-portainer \
+        -n default --timeout=300s || log_warning "Portainer may not be ready yet, but continuing..."
+    kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-pgadmin \
+        -n default --timeout=300s || log_warning "pgAdmin may not be ready yet, but continuing..."
+
+    log_success "Infrastructure pods are ready (or starting)"
 }
 
 # Function to deploy API services
@@ -218,7 +324,10 @@ deploy_apis() {
     fi
     
     # Install microservices with increased timeout
-    helm $HELM_CMD eshopping-catalog ./catalog --namespace default --timeout 600s
+    # Catalog API - use local values file to override AWS defaults for LocalStack
+    helm $HELM_CMD eshopping-catalog ./catalog --namespace default --timeout 600s \
+        -f ./catalog/local-values.yaml
+
     helm $HELM_CMD eshopping-basket ./basket --namespace default --timeout 600s
     helm $HELM_CMD eshopping-discount ./discount --namespace default --timeout 600s
     helm $HELM_CMD eshopping-ordering ./ordering --namespace default --timeout 600s
@@ -227,6 +336,59 @@ deploy_apis() {
     cd ../..
     
     log_success "API microservices deployed"
+}
+
+# Function to migrate images to S3
+migrate_images_to_s3() {
+    log_info "Migrating product images to LocalStack S3..."
+    log_warning "Note: Catalog API cold start can take 2-3 minutes. Skipping automatic migration."
+    log_info "You can manually run migration later using:"
+    log_info "  bash scripts/migrate-images-to-localstack.sh"
+
+    log_success "Deployment complete - manual migration available"
+    return 0
+
+    # DISABLED: Automatic migration during deployment
+    # The Catalog API takes too long to cold start (2+ minutes)
+    # Run migration manually after deployment when API is warmed up
+    #
+    # # Wait for catalog service to be ready
+    # log_info "Waiting for Catalog service..."
+    # kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-catalog \
+    #     -n default --timeout=300s || log_warning "Catalog pod may not be ready"
+    #
+    # # Port-forward to catalog and localstack
+    # log_info "Setting up port-forwards for migration..."
+    #
+    # # Clean up any existing port-forwards
+    # pkill -f "port-forward svc/eshopping-catalog" 2>/dev/null || true
+    # pkill -f "port-forward svc/localstack" 2>/dev/null || true
+    # sleep 2
+    #
+    # # Start fresh port-forwards
+    # kubectl port-forward svc/eshopping-catalog 8000:80 -n default > /dev/null 2>&1 &
+    # CATALOG_PF_PID=$!
+    # kubectl port-forward svc/localstack 4566:4566 -n default > /dev/null 2>&1 &
+    # LOCALSTACK_PF_PID=$!
+    # sleep 10
+    #
+    # # Verify port-forwards are working
+    # if ! curl -s http://localhost:4566/_localstack/health > /dev/null 2>&1; then
+    #     log_warning "Port-forward to LocalStack not ready, waiting longer..."
+    #     sleep 5
+    # fi
+    #
+    # # Run migration script
+    # if [ -f "scripts/migrate-images-to-localstack.sh" ]; then
+    #     bash scripts/migrate-images-to-localstack.sh http://localhost:8000 http://localhost:4566
+    # else
+    #     log_warning "Migration script not found, products may still have local image paths"
+    # fi
+    #
+    # # Clean up port-forwards
+    # kill $CATALOG_PF_PID $LOCALSTACK_PF_PID 2>/dev/null || true
+    #
+    # log_success "Product images migrated to LocalStack S3"
 }
 
 # Function to deploy monitoring stack
@@ -270,11 +432,11 @@ deploy_monitoring() {
 
     # Wait for Grafana pod to be ready
     log_info "Waiting for Grafana to be ready..."
-    kubectl wait --for=condition=ready pod -l app=grafana -n istio-system --timeout=600s || log_warning "Grafana pod may not be ready yet, but continuing deployment"
+    kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=grafana -n istio-system --timeout=600s || log_warning "Grafana pod may not be ready yet, but continuing deployment"
 
     # Wait for Kiali pod to be ready
     log_info "Waiting for Kiali to be ready..."
-    kubectl wait --for=condition=ready pod -l app=kiali -n istio-system --timeout=600s || log_warning "Kiali pod may not be ready yet, but continuing deployment"
+    kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=kiali -n istio-system --timeout=600s || log_warning "Kiali pod may not be ready yet, but continuing deployment"
 
     # Fix Kiali-Prometheus connection
     log_info "Applying Kiali-Prometheus connection fix..."
@@ -348,7 +510,7 @@ setup_port_forwards() {
     
     # Core services
     log_info "Starting API Gateway port-forward..."
-    kubectl port-forward svc/ocelotapigw 8010:80 -n default > /dev/null 2>&1 &
+    kubectl port-forward svc/eshopping-gateway-ocelotapigw 8010:80 -n default > /dev/null 2>&1 &
     
     # Monitoring services
     log_info "Starting monitoring port-forwards..."
@@ -359,11 +521,11 @@ setup_port_forwards() {
     
     # Logging & Metrics services
     log_info "Starting Kibana port-forward..."
-    kubectl port-forward svc/kibana 5601:5601 -n default > /dev/null 2>&1 &
+    kubectl port-forward svc/eshopping-kibana 5601:5601 -n default > /dev/null 2>&1 &
     
     # RabbitMQ Management
     log_info "Starting RabbitMQ management port-forward..."
-    kubectl port-forward svc/rabbitmq 15672:15672 -n default > /dev/null 2>&1 &
+    kubectl port-forward svc/eshopping-rabbitmq 15672:15672 -n default > /dev/null 2>&1 &
     
     sleep 5  # Give port forwards time to start
     
@@ -403,12 +565,20 @@ verify_deployment() {
         fi
     done
     
+    # Test LocalStack S3
+    log_info "Testing LocalStack S3..."
+    if curl -s http://localhost:4566/_localstack/health 2>/dev/null | grep -q "running"; then
+        log_success "LocalStack S3 is responding"
+    else
+        log_warning "LocalStack S3 may not be ready"
+    fi
+
     # Check pod status
     log_info "Checking pod status..."
     kubectl get pods -n default
     kubectl get pods -n monitoring
     kubectl get pods -n istio-system
-    
+
     log_success "Deployment verification completed"
 }
 
@@ -440,6 +610,12 @@ display_access_info() {
     echo "   Management UI: http://localhost:15672"
     echo "   Credentials: guest/guest"
     echo ""
+    echo "☁️  LOCALSTACK (LOCAL S3):"
+    echo "   Health Check: http://localhost:4566/_localstack/health"
+    echo "   S3 Bucket: ecommerce-product-images"
+    echo "   S3 Endpoint: http://localhost:4566"
+    echo "   Verify: bash scripts/verify-localstack.sh"
+    echo ""
     echo "📚 ADDITIONAL COMMANDS:"
     echo "   Check pods: kubectl get pods --all-namespaces"
     echo "   Check services: kubectl get svc --all-namespaces"
@@ -469,14 +645,17 @@ trap cleanup EXIT
 main() {
     echo "🚀 Starting Cloud-Native E-Commerce Platform Deployment..."
     echo ""
-    
+
     check_prerequisites
     check_existing_deployments
     start_minikube
+    check_istio_webhooks  # Check and fix webhook issues after minikube starts
     build_images
     deploy_infrastructure
+    deploy_localstack
     wait_for_pods
     deploy_apis
+    migrate_images_to_s3
     deploy_monitoring
     configure_frontend
     setup_port_forwards

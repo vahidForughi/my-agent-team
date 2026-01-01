@@ -1,0 +1,30 @@
+// Data Consistency Strategy - Event-Driven Architecture
+// Eventual Consistency with RabbitMQ Message Broker
+
+// ==================== SERVICES ====================
+Basket Service [icon: dotnet, color: green] {
+  BasketCheckoutEvent
+}
+
+RabbitMQ Broker [icon: rabbitmq, color: orange] {
+  BasketCheckoutQueue
+}
+
+Ordering Service [icon: dotnet, color: blue] {
+  BasketOrderingConsumer
+}
+
+// ==================== DATABASES ====================
+Redis Cache [icon: redis, color: red]
+
+SQL Server DB [icon: mssql, color: purple]
+
+// ==================== CONNECTIONS ====================
+
+// Event Flow (Async Messaging)
+Basket Service > RabbitMQ Broker : Publish BasketCheckoutEvent
+RabbitMQ Broker > Ordering Service : Subscribe & Create Order
+
+// Database Connections
+Basket Service > Redis Cache : Read/Write Cart
+Ordering Service > SQL Server DB : Persist Order

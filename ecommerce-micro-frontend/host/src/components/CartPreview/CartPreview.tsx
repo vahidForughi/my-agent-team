@@ -7,16 +7,14 @@ import {
   Spin,
   Typography,
   Flex,
-  Space,
-  Divider,
 } from 'antd';
 import {
-  DeleteOutlined,
   ShoppingCartOutlined,
   RightOutlined,
 } from '@ant-design/icons';
 import { brandGradient } from '../../config/theme';
 import { env } from '../../config';
+import { formatCurrency } from '../../helpers/formatUtils';
 
 const { Text } = Typography;
 
@@ -32,19 +30,6 @@ interface CartPreviewProps {
   visible: boolean;
   items?: CartItem[];
   isLoading?: boolean;
-  onRemoveItem?: (id: string) => void;
-}
-
-/**
- * Format currency for display
- */
-function formatPrice(price: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(price);
 }
 
 /**
@@ -74,10 +59,8 @@ function getImageUrl(imagePath: string | null | undefined): string {
  */
 function CartItemRow({
   item,
-  onRemove,
 }: {
   item: CartItem;
-  onRemove: () => void;
 }) {
   const itemTotal = item.price * item.quantity;
 
@@ -142,13 +125,13 @@ function CartItemRow({
               color: '#64748b',
             }}
           >
-            {formatPrice(item.price)} × {item.quantity}
+            {formatCurrency(item.price, 'USD', 'en-US')} × {item.quantity}
           </Text>
         </Flex>
       </Flex>
 
-      {/* Price & Remove */}
-      <Flex vertical align="flex-end" gap={4}>
+      {/* Price */}
+      <Flex vertical align="flex-end">
         <Text
           strong
           style={{
@@ -157,20 +140,8 @@ function CartItemRow({
             whiteSpace: 'nowrap',
           }}
         >
-          {formatPrice(itemTotal)}
+          {formatCurrency(itemTotal, 'USD', 'en-US')}
         </Text>
-        <Button
-          type="text"
-          size="small"
-          icon={<DeleteOutlined />}
-          onClick={onRemove}
-          style={{
-            color: '#94a3b8',
-            padding: '2px 6px',
-            height: 'auto',
-          }}
-          aria-label={`Remove ${item.name}`}
-        />
       </Flex>
     </Flex>
   );
@@ -180,7 +151,6 @@ const CartPreview: React.FC<CartPreviewProps> = ({
   visible,
   items = [],
   isLoading = false,
-  onRemoveItem,
 }) => {
   const navigate = useNavigate();
 
@@ -283,7 +253,6 @@ const CartPreview: React.FC<CartPreviewProps> = ({
               <CartItemRow
                 key={item.id}
                 item={item}
-                onRemove={() => onRemoveItem?.(item.id)}
               />
             ))}
 
@@ -320,38 +289,23 @@ const CartPreview: React.FC<CartPreviewProps> = ({
                   color: brandGradient.start,
                 }}
               >
-                {formatPrice(totalAmount)}
+                {formatCurrency(totalAmount, 'USD', 'en-US')}
               </Text>
             </Flex>
 
-            <Space direction="vertical" style={{ width: '100%' }} size={8}>
-              <Button
-                type="primary"
-                size="middle"
-                block
-                onClick={() => navigate('/checkout')}
-                style={{
-                  height: 42,
-                  fontWeight: 600,
-                  borderRadius: 10,
-                }}
-              >
-                Checkout
-              </Button>
-              <Button
-                size="middle"
-                block
-                onClick={() => navigate('/checkout')}
-                style={{
-                  height: 38,
-                  borderRadius: 10,
-                  border: '1px solid #e2e8f0',
-                  color: '#64748b',
-                }}
-              >
-                View Cart
-              </Button>
-            </Space>
+            <Button
+              type="primary"
+              size="middle"
+              block
+              onClick={() => navigate('/checkout')}
+              style={{
+                height: 42,
+                fontWeight: 600,
+                borderRadius: 10,
+              }}
+            >
+              Checkout
+            </Button>
           </div>
         </>
       )}

@@ -1,8 +1,9 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: discountapi
-  namespace: default
+  name: {{ include "discount-grpc.fullname" . }}
+  namespace: {{ .Release.Namespace }}
 data:
-  DatabaseSettings__ConnectionString: Server=discountdb;Port=5432;Database=DiscountDb;User Id=admin;Password=admin1234;Pooling=true;SSL Mode=Disable;
-  ElasticConfiguration__Uri: http://elasticsearch:9200
+  DatabaseSettings__ConnectionString: {{ .Values.configmap.DatabaseSettings__ConnectionString | default "Server=eshopping-discountdb;Port=5432;Database=DiscountDb;User Id=admin;Password=admin1234;Pooling=true;SSL Mode=Disable;" | quote }}
+  ElasticConfiguration__Uri: {{ .Values.configmap.ElasticConfiguration__Uri | default "http://eshopping-elasticsearch:9200" }}
+  EventBusSettings__HostAddress: {{ .Values.configmap.EventBusSettings__HostAddress | default "eshopping-rabbitmq:5672" }}

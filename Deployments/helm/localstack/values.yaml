@@ -1,0 +1,47 @@
+replicaCount: 1
+
+image:
+  repository: localstack/localstack
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations:
+  sidecar.istio.io/inject: "false"
+
+podSecurityContext: {}
+
+securityContext: {}
+
+service:
+  type: NodePort
+  port: 4566
+  nodePort: 30566
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 200m
+    memory: 256Mi
+
+env:
+  - name: SERVICES
+    value: "s3"
+  - name: DEBUG
+    value: "1"
+  - name: DATA_DIR
+    value: "/var/lib/localstack/data"
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

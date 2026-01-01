@@ -1,0 +1,83 @@
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Node modules and frontend build artifacts
+**/node_modules/
+**/dist/
+**/build/
+**/target/
+client/node_modules/
+client/dist/
+client/.angular/
+ecommerce-micro-frontend/node_modules/
+ecommerce-micro-frontend/dist/
+
+# .NET build outputs
+**/bin/
+**/obj/
+**/.vs/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Documentation and markdown
+*.md
+CHANGELOG.md
+README.md
+LICENSE
+CODE_OF_CONDUCT.md
+CONTRIBUTING.md
+SECURITY.md
+
+# Deployment and infrastructure (not needed in container)
+.github/
+Deployments/
+Infrastructure/aws/
+scripts/
+wiki/
+docs/
+images/
+diagrams/
+
+# Docker files
+docker-compose*.yml
+Dockerfile
+*.dockerignore
+
+# Kubernetes and Helm
+**/*.yaml
+**/*.yml
+!**/appsettings*.json
+
+# Istio
+istio-*/
+
+# Test files
+**/*Tests/
+**/*.Tests/
+
+# Logs and temp files
+*.log
+*.tmp
+**/.terraform/
+
+# AWS and cloud config
+.aws/
+*.pem
+*.key
+
+# Product images (not needed for build, only for migration)
+client/src/images/products/
+
+# Postman collections
+PostmanCollection/
+
+# Shell scripts
+*.sh

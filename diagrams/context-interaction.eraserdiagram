@@ -1,0 +1,65 @@
+// Figure 3.2: Context Interaction Diagram (DDD Bounded Contexts)
+// Shows synchronous (Gateway), asynchronous (RabbitMQ), and gRPC communication
+
+// ==================== BOUNDED CONTEXTS ====================
+
+// Identity / Security Context
+Identity Context [icon: lock, color: red] {
+  IdentityServer4 [icon: key]
+  JWT Tokens [icon: shield]
+}
+
+// Product Context
+Product Context [icon: package, color: blue] {
+  Catalog Service [icon: dotnet]
+  MongoDB [icon: mongodb]
+}
+
+// Shopping Context
+Shopping Context [icon: shopping-cart, color: green] {
+  Basket Service [icon: dotnet]
+  Redis Cache [icon: redis]
+}
+
+// Pricing Context
+Pricing Context [icon: tag, color: orange] {
+  Discount Service [icon: dotnet]
+  gRPC Server [icon: zap]
+  PostgreSQL [icon: postgresql]
+}
+
+// Sales Context
+Sales Context [icon: clipboard-list, color: purple] {
+  Ordering Service [icon: dotnet]
+  SQL Server [icon: mssql]
+}
+
+// ==================== INTEGRATION INFRASTRUCTURE ====================
+
+API Gateway [icon: aws-api-gateway, color: gray]
+Message Broker [icon: rabbitmq, color: yellow] {
+  RabbitMQ [icon: message-circle]
+}
+
+// ==================== SYNCHRONOUS COMMUNICATION (Gateway Routes) ====================
+// Gateway → Services (REST/HTTP)
+API Gateway > Identity Context : Authentication
+API Gateway > Product Context : GET Products
+API Gateway > Shopping Context : Cart Operations
+API Gateway > Sales Context : Order Queries
+
+// ==================== SYNCHRONOUS INTER-SERVICE (gRPC) ====================
+// Basket → Discount for low-latency pricing
+Shopping Context > Pricing Context : gRPC GetDiscount
+
+// ==================== ASYNCHRONOUS COMMUNICATION (Events) ====================
+// Checkout triggers order creation via event
+Shopping Context > Message Broker : BasketCheckoutEvent
+Message Broker > Sales Context : CreateOrder
+
+// ==================== CONTEXT NOTES ====================
+// Identity: Centralized auth, JWT issuance
+// Product: Read-heavy, document store (MongoDB)
+// Shopping: High-frequency, ephemeral (Redis)
+// Pricing: Low-latency calculations (gRPC)
+// Sales: Order integrity, ACID (SQL Server)

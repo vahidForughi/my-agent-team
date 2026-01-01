@@ -45,7 +45,19 @@ spec:
               - name: {{ .name }}
                 value: {{ .value | quote }}
             {{- end -}}
-            {{- end -}}              
+            {{- end }}
+          volumeMounts:
+            {{- if .Values.kibanaConfig.enabled }}
+            - name: kibana-config
+              mountPath: /usr/share/kibana/config/kibana.yml
+              subPath: kibana.yml
+            {{- end }}
+      volumes:
+        {{- if .Values.kibanaConfig.enabled }}
+        - name: kibana-config
+          configMap:
+            name: {{ include "kibana.fullname" . }}-config
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

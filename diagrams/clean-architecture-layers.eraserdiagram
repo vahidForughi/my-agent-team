@@ -1,0 +1,40 @@
+// Figure 3.3a: Clean Architecture Layers (Generic)
+// Shows dependency direction inward: API → Application → Core ← Infrastructure
+
+// ==================== API LAYER (Entry Points) ====================
+API Layer [icon: globe, color: blue] {
+  Controllers [icon: server]
+  Middleware [icon: filter]
+  Program.cs [icon: file]
+  Dockerfile [icon: docker]
+}
+
+// ==================== APPLICATION LAYER (Use Cases) ====================
+Application Layer [icon: cpu, color: green] {
+  Commands [icon: edit]
+  Queries [icon: search]
+  Handlers [icon: zap]
+  Validators [icon: check-circle]
+  Mappers [icon: shuffle]
+  Behaviours [icon: layers]
+}
+
+// ==================== CORE LAYER (Domain) ====================
+Core Layer [icon: hexagon, color: orange] {
+  Entities [icon: box]
+  Repository Interfaces [icon: file-text]
+  Domain Rules [icon: shield]
+}
+
+// ==================== INFRASTRUCTURE LAYER (External) ====================
+Infrastructure Layer [icon: database, color: purple] {
+  DbContext [icon: database]
+  Repository Impl [icon: code]
+  External APIs [icon: cloud]
+  Migrations [icon: git-branch]
+}
+
+// ==================== DEPENDENCY FLOW ====================
+API Layer > Application Layer : depends on
+Application Layer > Core Layer : depends on
+Infrastructure Layer > Core Layer : implements

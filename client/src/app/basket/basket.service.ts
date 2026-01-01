@@ -10,6 +10,7 @@ import {
   IBasketTotal,
 } from '../shared/models/basket';
 import { IProduct, IProductWithDiscount } from '../shared/models/product';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
@@ -68,7 +69,7 @@ export class BasketService {
 
     return this.http
       .post<any>(
-        'http://localhost:8010/api/v2/Basket/Checkout',
+        `${this.baseUrl}/Basket/CheckoutV2`,
         checkoutData,
         httpOptions
       )

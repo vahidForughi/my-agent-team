@@ -1,14 +1,14 @@
 import React, { useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Flex, Typography, Button } from 'antd';
-import NavbarSearch from './NavbarSearch';
 import NavbarActions from './NavbarActions';
 import NavbarCategories from './NavbarCategories';
 import NavbarQuickLinks from './NavbarQuickLinks';
-import LanguageSwitcher from '../LanguageSwitcher/LanguageSwitcher';
 import { CartItem } from '../CartPreview/CartPreview';
 import { brandGradient } from '../../config/theme';
-import { useBasket, BasketItem } from '../../services/basket';
+import { useBasket, BasketItem, basketCacheKeys } from '../../services/basket';
+import { useAuth } from '@ecommerce-platform/auth-provider';
 
 const { Title } = Typography;
 
@@ -20,15 +20,26 @@ const CART_UPDATED_EVENT = 'ecommerce:cart:updated';
 
 function Navbar() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   // Fetch basket data using React Query
-  const { items, itemCount, isLoading, refetch } = useBasket();
+  const { items, itemCount, isLoading } = useBasket();
 
   // Listen for cart updates from other modules (e.g., store)
   useEffect(() => {
     function handleCartUpdated() {
-      console.log('[Navbar] Cart updated event received, refetching basket...');
-      refetch();
+      // Get current username from auth to ensure we use the latest user info
+      const currentUserName =
+        user?.email || user?.displayName || user?.id || 'guest';
+      console.log(
+        '[Navbar] Cart updated event received, invalidating and refetching basket for user:',
+        currentUserName
+      );
+      // Invalidate cache to force refetch, even if data is still fresh
+      queryClient.invalidateQueries({
+        queryKey: basketCacheKeys.byUser(currentUserName),
+      });
     }
 
     window.addEventListener(CART_UPDATED_EVENT, handleCartUpdated);
@@ -36,7 +47,7 @@ function Navbar() {
     return () => {
       window.removeEventListener(CART_UPDATED_EVENT, handleCartUpdated);
     };
-  }, [refetch]);
+  }, [queryClient, user]);
 
   // Map BasketItem to CartItem format for CartPreview
   const cartItems: CartItem[] = useMemo(() => {
@@ -48,14 +59,6 @@ function Navbar() {
       image: item.imageFile || '',
     }));
   }, [items]);
-
-  function handleRemoveCartItem(id: string) {
-    // Note: Remove functionality will be handled by checkout module
-    // Here we just log and could trigger a refetch
-    console.info('Remove cart item:', id);
-    // Navigate to checkout for actual removal
-    navigate('/checkout');
-  }
 
   return (
     <div
@@ -91,6 +94,7 @@ function Navbar() {
               padding: '0 32px',
               width: '100%',
               alignItems: 'center',
+              justifyContent: 'space-between',
               gap: 40,
             }}
           >
@@ -131,17 +135,10 @@ function Navbar() {
               </Typography.Text>
             </Button>
 
-            <div style={{ flex: 1, maxWidth: 700 }}>
-              <NavbarSearch />
-            </div>
-
-            <LanguageSwitcher />
-
             <NavbarActions
               basketCount={itemCount}
               cartItems={cartItems}
               isLoading={isLoading}
-              onRemoveCartItem={handleRemoveCartItem}
             />
           </Flex>
         </Flex>

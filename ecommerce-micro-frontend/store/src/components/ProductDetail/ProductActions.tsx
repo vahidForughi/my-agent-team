@@ -3,7 +3,6 @@ import { Button, Space, Flex, Typography, message } from 'antd';
 import {
   ShoppingCartOutlined,
   ThunderboltOutlined,
-  HeartOutlined,
   ShareAltOutlined,
 } from '@ant-design/icons';
 import QuantitySelector from './QuantitySelector';
@@ -15,9 +14,8 @@ type ProductActionsProps = {
   onQuantityChange: (quantity: number) => void;
   onAddToCart: () => void;
   onBuyNow: () => void;
-  onAddToWishlist: () => void;
   canAddToCart: boolean;
-  maxQuantity: number;
+  maxQuantity: number | undefined;
   isInStock: boolean;
   isLoading?: boolean;
 };
@@ -28,7 +26,6 @@ function ProductActions(props: ProductActionsProps) {
     onQuantityChange,
     onAddToCart,
     onBuyNow,
-    onAddToWishlist,
     canAddToCart,
     maxQuantity,
     isInStock,
@@ -70,20 +67,13 @@ function ProductActions(props: ProductActionsProps) {
             />
             <Button
               type="text"
-              icon={<HeartOutlined />}
-              onClick={onAddToWishlist}
-            >
-              Add to Wishlist
-            </Button>
-            <Button
-              type="text"
               icon={<ShareAltOutlined />}
               onClick={handleShare}
             >
               Share
             </Button>
           </Flex>
-          {maxQuantity > 0 && (
+          {maxQuantity !== undefined && maxQuantity > 0 && (
             <Text type="secondary" style={{ fontSize: 12 }}>
               {maxQuantity} available
             </Text>

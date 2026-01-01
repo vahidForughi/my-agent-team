@@ -1,10 +1,10 @@
 import { createAppInjector, AppInjectorProps } from '@ecommerce-platform/app-injector';
-import CheckoutModule from './app/Module';
+import App from './App';
 import { setupMocks } from './services/mocks';
 
 setupMocks();
 
-const CheckoutAppInjector = createAppInjector(CheckoutModule);
+const CheckoutAppInjector = createAppInjector(App);
 
 export const inject = (elementId: string, props?: AppInjectorProps) => {
   CheckoutAppInjector.inject(elementId, props);

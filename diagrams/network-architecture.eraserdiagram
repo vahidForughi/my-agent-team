@@ -1,0 +1,72 @@
+// Network Architecture and Ingress Strategy
+// Multi-layered Networking: North-South & East-West Traffic
+
+// ==================== EXTERNAL ====================
+Client Browser [icon: user, color: blue]
+
+// ==================== KUBERNETES CLUSTER ====================
+Kubernetes Cluster [icon: k8s-node] {
+
+  // North-South Traffic (Ingress)
+  Ingress Layer [color: orange] {
+    Ingress Controller [icon: nginx] {
+      SSL/TLS Termination
+      Host-based Routing
+    }
+  }
+
+  // API Gateway Layer
+  Gateway Layer [color: yellow] {
+    Ocelot API Gateway [icon: aws-api-gateway] {
+      Reverse Proxy
+      Request Aggregation
+      Rate Limiting
+    }
+  }
+
+  // Service Mesh (East-West Traffic)
+  Service Mesh (Istio) [color: green] {
+    
+    Microservices [icon: dotnet] {
+      Catalog API [icon: dotnet]
+      Basket API [icon: dotnet]
+      Discount API [icon: dotnet]
+      Ordering API [icon: dotnet]
+    }
+
+    Istio Sidecar Proxies [icon: istio] {
+      Service Discovery
+      Load Balancing
+      mTLS Encryption
+    }
+  }
+
+  // Data Layer
+  Data Layer [color: purple] {
+    MongoDB [icon: mongodb]
+    Redis [icon: redis]
+    PostgreSQL [icon: postgresql]
+    SQL Server [icon: mssql]
+  }
+}
+
+// ==================== TRAFFIC FLOW ====================
+
+// North-South Traffic (External → Cluster)
+Client Browser > Ingress Controller : HTTPS Request
+Ingress Controller > Ocelot API Gateway : Route by Host
+
+// API Gateway to Services
+Ocelot API Gateway > Catalog API : /Catalog/*
+Ocelot API Gateway > Basket API : /Basket/*
+Ocelot API Gateway > Ordering API : /Order/*
+
+// East-West Traffic (Service to Service via Istio)
+Basket API > Discount API : gRPC (via Istio)
+Basket API > Ordering API : Event (via RabbitMQ)
+
+// Service to Database
+Catalog API > MongoDB
+Basket API > Redis
+Discount API > PostgreSQL
+Ordering API > SQL Server

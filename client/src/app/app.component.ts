@@ -4,6 +4,7 @@ import { BasketService } from './basket/basket.service';
 import { MsalService } from '@azure/msal-angular';
 import { BrowserCacheLocation, PublicClientApplication } from '@azure/msal-browser';
 import { Router } from '@angular/router';
+import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
@@ -145,10 +146,10 @@ export class AppComponent implements OnInit, AfterViewInit {
   private async initializeMsal(): Promise<void> {
     const pca = new PublicClientApplication({
       auth: {
-        clientId: 'd0dafab9-cae6-426d-a516-eab88853767c',
-        authority: 'https://nexttechuit.b2clogin.com/nexttechuit.onmicrosoft.com/B2C_1_SignInSignUp/v2.0/',
-        redirectUri: 'http://localhost:4200',
-        knownAuthorities: ['nexttechuit.b2clogin.com'],
+        clientId: environment.azureB2C.clientId,
+        authority: environment.azureB2C.authority,
+        redirectUri: environment.azureB2C.redirectUri,
+        knownAuthorities: environment.azureB2C.knownAuthorities,
       },
       cache: {
         cacheLocation: BrowserCacheLocation.LocalStorage,

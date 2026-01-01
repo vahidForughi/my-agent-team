@@ -1,0 +1,37 @@
+// Figure 3.x: Data Consistency - Event-Driven Checkout Flow
+// Sequence diagram showing cross-service data isolation
+
+// ==================== ACTORS ====================
+Client [icon: user, color: blue]
+Basket API [icon: shopping-cart, color: green]
+Redis [icon: redis, color: green]
+Discount gRPC [icon: tag, color: orange]
+RabbitMQ [icon: rabbitmq, color: yellow]
+Ordering Consumer [icon: message-circle, color: purple]
+Ordering API [icon: clipboard-list, color: purple]
+SQL Server [icon: mssql, color: red]
+
+// ==================== ADD TO CART (gRPC call) ====================
+Client > Basket API : POST /Basket/CreateBasket
+Basket API > Discount gRPC : GetDiscount(productName)
+Discount gRPC > Basket API : CouponModel (amount)
+Basket API > Redis : Save cart with discount applied
+Basket API > Client : Cart response
+
+// ==================== CHECKOUT (Event-driven) ====================
+Client > Basket API : POST /Basket/Checkout
+Basket API > Redis : GetBasketByUserNameQuery
+Basket API > RabbitMQ : Publish BasketCheckoutEvent
+Basket API > Redis : DeleteBasketByUserNameCommand
+Basket API > Client : 202 Accepted
+
+// ==================== ASYNC ORDER CREATION ====================
+RabbitMQ > Ordering Consumer : Consume event
+Ordering Consumer > Ordering API : CheckoutOrderCommand
+Ordering API > SQL Server : INSERT Order
+Ordering API > Ordering Consumer : Order created
+Ordering Consumer > RabbitMQ : Acknowledge
+
+// Key: Each service owns its database
+// No cross-database transactions
+// Eventual consistency via events

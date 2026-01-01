@@ -17,6 +17,7 @@ public static class InfraServices
             sqlServerOptions => sqlServerOptions.EnableRetryOnFailure()));
         serviceCollection.AddScoped(typeof(IAsyncRepository<>), typeof(RepositoryBase<>));
         serviceCollection.AddScoped<IOrderRepository, OrderRepository>();
+        serviceCollection.AddScoped<IActivityRepository, ActivityRepository>();
         return serviceCollection;
     }
 }

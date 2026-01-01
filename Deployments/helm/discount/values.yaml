@@ -13,7 +13,7 @@ image:
 
 imagePullSecrets: []
 nameOverride: ""
-fullnameOverride: "discountapi"
+fullnameOverride: ""
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -83,10 +83,19 @@ affinity: {}
 env:
   values:
   - name: ASPNETCORE_ENVIRONMENT
-    value: Development  
+    value: Development
   urls:
   configmap:
     - name: DatabaseSettings__ConnectionString
       key: DatabaseSettings__ConnectionString
     - name: ElasticConfiguration__Uri
       key: ElasticConfiguration__Uri
+    - name: EventBusSettings__HostAddress
+      key: EventBusSettings__HostAddress
+
+# ConfigMap data values (used by templates/configmap.yaml)
+# Override these for different environments
+configmap:
+  DatabaseSettings__ConnectionString: "Server=eshopping-discountdb;Port=5432;Database=DiscountDb;User Id=admin;Password=admin1234;Pooling=true;SSL Mode=Disable;"
+  ElasticConfiguration__Uri: "http://eshopping-elasticsearch:9200"
+  EventBusSettings__HostAddress: "eshopping-rabbitmq:5672"
