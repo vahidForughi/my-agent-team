@@ -1,6 +1,6 @@
 import MockAdapter from 'axios-mock-adapter';
 import { createEndpoint, createResponse } from '../utils';
-import { mockOrdersResponse } from './mocks';
+import { mockOrdersResponse } from './data';
 
 const ENDPOINT = '/api/v1/mock/order';
 

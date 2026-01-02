@@ -26,9 +26,21 @@ export default composePlugins(
       const path = require('path');
       config.resolve.alias = {
         ...config.resolve.alias,
+        '@components': path.resolve(__dirname, './src/components'),
+        '@services': path.resolve(__dirname, './src/services'),
+        '@types': path.resolve(__dirname, './src/types'),
+        '@constants': path.resolve(__dirname, './src/config'),
+        '@helpers': path.resolve(__dirname, './src/helpers'),
+        '@libs': path.resolve(__dirname, './src/libs'),
+        '@hooks': path.resolve(__dirname, './src/hooks'),
+        '@utils': path.resolve(__dirname, './src/utils'),
+        '@ecommerce-platform/app-injector': path.resolve(
+          __dirname,
+          '../packages/app-injector/dist/index.js'
+        ),
         '@ecommerce-platform/auth-provider': path.resolve(
           __dirname,
-          '../packages/auth-provider/src/index.ts'
+          '../packages/auth-provider/dist/index.js'
         ),
       };
     }

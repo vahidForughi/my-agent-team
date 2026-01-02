@@ -12,8 +12,6 @@ const envVars = Object.keys(process.env)
     return acc;
   }, {} as Record<string, string>);
 
-console.log('[store/webpack.config] Injecting env vars:', Object.keys(envVars));
-
 export default composePlugins(
   withNx(),
   withReact(),

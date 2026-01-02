@@ -1,4 +1,5 @@
 import type { AuthUser } from '@ecommerce-platform/auth-provider';
+import type { Order } from '../services/orders';
 
 /**
  * Common props for account view components
@@ -10,31 +11,18 @@ export interface AccountViewProps {
 
 /**
  * Props for ProfileView component
+ * Uses AuthUser from Azure AD B2C
  */
 export interface ProfileViewProps extends AccountViewProps {
   user: AuthUser;
+  isLoading?: boolean;
 }
 
 /**
  * Props for OrdersView component
  */
-export type OrdersViewProps = AccountViewProps;
-
-/**
- * Props for SettingsView component
- */
-export interface SettingsViewProps extends AccountViewProps {
-  onLogout: () => Promise<void>;
-}
-
-/**
- * Order item type
- */
-export interface OrderItem {
-  id: string;
-  date: string;
-  total: number;
-  status: 'delivered' | 'shipped' | 'processing' | 'cancelled';
-  items: number;
+export interface OrdersViewProps extends AccountViewProps {
+  orders: Order[];
+  isLoading?: boolean;
 }
 
