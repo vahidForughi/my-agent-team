@@ -1,4 +1,48 @@
 # Changelog
+## [0.5.0] - 2026-01-08
+
+## What's Changed
+
+### 🚀 Features
+- feat: refactor store and checkout services (#171) (e2f7120)
+- Merge branch 'main' into feat/refactor-store-and-checkout (bcc96c3)
+- feat: refactor store and checkout services (d474759)
+
+### 🐛 Bug Fixes
+- No bug fixes
+
+### 🔧 Improvements
+- feat: refactor store and checkout services (#171) (e2f7120)
+- Merge branch 'main' into feat/refactor-store-and-checkout (bcc96c3)
+- refactor: remove unused account components and services, simplify orders and profile pages, and update API configurations (b5a83f9)
+- feat: refactor store and checkout services (d474759)
+
+### 📚 Documentation
+- docs: update changelog for 0.4.0 (#169) (a4bfc89)
+- docs: update changelog for 0.4.0 [skip ci] (2ca322c)
+
+### 🔐 Security
+- No security updates
+
+### 🏗️ Infrastructure
+- docs: update changelog for 0.4.0 [skip ci] (2ca322c)
+
+### Other Changes
+- Merge branch 'main' into changelog/0.4.0 (9c1aaca)
+
+## Docker Images
+All services are available as Docker images:
+- 
+- 
+- 
+- 
+- 
+
+## Helm Deployment
+
+
+**Full Changelog**: https://github.com/sloweyyy/cloud-native-ecommerce-platform/compare/v0.4.0...0.5.0
+
 ## [0.4.0] - 2026-01-01
 
 ## What's Changed
