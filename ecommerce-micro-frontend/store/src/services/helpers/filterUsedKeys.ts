@@ -1,19 +1,11 @@
-/**
- * Filter out keys that were used in path construction
- * to avoid sending them as query params
- */
-export function filterUsedKeys(
-  obj: Record<PropertyKey, unknown>,
+export function filterUsedKeys<T extends Record<PropertyKey, unknown>>(
+  data: T,
   usedKeys: Set<string>
-): Record<PropertyKey, unknown> {
-  const filtered: Record<PropertyKey, unknown> = {};
-  
-  for (const [key, value] of Object.entries(obj)) {
+): Partial<T> {
+  return Object.keys(data).reduce((acc, key) => {
     if (!usedKeys.has(key)) {
-      filtered[key] = value;
+      (acc as Record<PropertyKey, any>)[key] = data[key];
     }
-  }
-  
-  return filtered;
+    return acc;
+  }, {} as Partial<T>);
 }
-

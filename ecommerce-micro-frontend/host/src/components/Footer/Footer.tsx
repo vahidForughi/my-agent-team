@@ -270,7 +270,7 @@ const Footer: React.FC = () => {
               >
                 Subscribe to our newsletter
               </Title>
-              <Input.Group compact>
+              <Space.Compact style={{ width: '100%' }}>
                 <Input
                   type="email"
                   placeholder="Your email"
@@ -302,7 +302,7 @@ const Footer: React.FC = () => {
                 >
                   {isSubscribing ? 'Subscribing...' : 'Subscribe'}
                 </Button>
-              </Input.Group>
+              </Space.Compact>
             </div>
           </Col>
         </Row>

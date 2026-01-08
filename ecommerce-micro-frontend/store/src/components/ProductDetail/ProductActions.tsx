@@ -44,7 +44,6 @@ function ProductActions(props: ProductActionsProps) {
         message.success('Link copied to clipboard');
       }
     } catch (error) {
-      // User cancelled or error occurred - only log if not AbortError
       if (error instanceof Error && error.name !== 'AbortError') {
         console.error('Share failed:', error);
         message.error('Failed to share');

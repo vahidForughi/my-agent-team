@@ -3,6 +3,7 @@ export type Callback = (...args: any[]) => void;
 export const EVENT_NAMES = {
   NOTHING: 'nothing',
   API_ERROR: 'apiError',
+  API_ERROR_WITH_STATUS: 'apiErrorWithStatus',
   API_SUCCESS: 'apiSuccess',
   TIME_INTERVAL_CHANGED: 'timeIntervalChanged',
   CART_UPDATED: 'cartUpdated',
@@ -42,7 +43,7 @@ export class TinyEmitter {
       delete this.events[trimmedEvent];
     }
   }
-
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   emit(event: EventName, ...args: any[]): void {
     const trimmedEvent = event.trim();
 

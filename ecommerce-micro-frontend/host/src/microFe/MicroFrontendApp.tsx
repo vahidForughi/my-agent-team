@@ -14,7 +14,7 @@
  * Pattern adapted from console-ui WebKitMicroApp implementation.
  */
 
-import { init, loadRemote } from '@module-federation/enhanced/runtime';
+import { init, loadRemote } from '@module-federation/runtime';
 import { Spin } from 'antd';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
@@ -230,7 +230,9 @@ const MicroFrontendContent: React.FC<{ appName: string }> = ({ appName }) => {
           <Spin
             size="large"
             tip={`Loading ${microFrontendConfig?.displayName || appName}...`}
-          />
+          >
+            <div style={{ padding: 40 }} />
+          </Spin>
         </div>
       )}
       <div

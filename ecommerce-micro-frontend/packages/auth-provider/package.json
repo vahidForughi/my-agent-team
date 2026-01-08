@@ -1,6 +1,6 @@
 {
   "name": "@ecommerce-platform/auth-provider",
-  "version": "1.1.4",
+  "version": "1.2.6",
   "description": "Reusable React authentication provider for ecommerce micro-frontend applications with MSAL support",
   "author": "Ecommerce Platform Team",
   "license": "MIT",
@@ -80,4 +80,3 @@
     "registry": "https://registry.npmjs.org/"
   }
 }
-

@@ -1,7 +1,5 @@
 import MockAdapter from 'axios-mock-adapter';
 import { axiosClient } from '../httpClient';
-import registerCouponMocks from './coupon/apis';
-import registerCartMocks from './cart/apis';
 
 let mockAdapter: MockAdapter | null = null;
 
@@ -20,12 +18,7 @@ export function setupMocks() {
     onNoMatch: 'passthrough', // Allow real API calls to pass through
   });
 
-  registerCouponMocks(mockAdapter);
-  registerCartMocks(mockAdapter);
-
-  console.log(
-    '[Mocks] Checkout mock adapter initialized with coupon and cart endpoints'
-  );
+  console.log('[Mocks] Checkout mock adapter initialized');
 }
 
 /**

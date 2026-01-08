@@ -117,7 +117,7 @@ function App(props: Props) {
   // 3. Main render
   return (
     <ConfigProvider theme={adminThemeConfig}>
-      <AuthConsumerProvider hostAuth={hostAuth}>
+      <AuthConsumerProvider config={hostAuth}>
         <QueryClientProvider client={queryClient}>
           <RouterContext.Provider value={{ hostAuth, config, onLogout }}>
             <InnerApp />

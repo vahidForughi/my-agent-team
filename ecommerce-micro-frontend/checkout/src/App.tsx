@@ -5,7 +5,7 @@ import { ConfigProvider, type ThemeConfig } from 'antd';
 import { AppInjectorProps } from '@ecommerce-platform/app-injector';
 import {
   AuthConsumerProvider,
-  HostAuthContext,
+  useAuth,
 } from '@ecommerce-platform/auth-provider';
 import { themeConfig as sharedThemeConfig } from '@ecommerce-platform/shared-layout';
 import { routeTree } from './routeTree.gen';
@@ -16,7 +16,6 @@ import { createSearchSerializer } from './utils/searchParams';
 type Props = AppInjectorProps;
 
 type RouterContextValue = {
-  hostAuth?: HostAuthContext;
   config?: AppInjectorProps['config'];
 };
 
@@ -25,8 +24,8 @@ const RouterContext = createContext<RouterContextValue>({});
 const searchSerializer = createSearchSerializer([]);
 
 function InnerApp() {
-  const { hostAuth, config } = useContext(RouterContext);
-
+  const { config } = useContext(RouterContext);
+  const { user, isAuthenticated } = useAuth();
   const appContext = config?.appContext;
   const basePath = (appContext?.basePath as string) || getBasepath();
 
@@ -54,17 +53,11 @@ function InnerApp() {
     });
   }, [basePath]);
 
-  const auth = hostAuth
-    ? {
-        user: hostAuth.user,
-        isAuthenticated: hostAuth.isAuthenticated ?? false,
-        logout: () => undefined,
-      }
-    : {
-        user: null,
-        isAuthenticated: false,
-        logout: () => undefined,
-      };
+  const auth = {
+    user,
+    isAuthenticated: isAuthenticated ?? false,
+    logout: () => undefined,
+  };
 
   return (
     <RouterProvider
@@ -72,7 +65,6 @@ function InnerApp() {
       context={{
         queryClient,
         auth,
-        config,
       }}
     />
   );
@@ -88,15 +80,15 @@ function App(props: Props) {
   const { config } = props;
   const { appContext } = config || {};
 
-  const hostAuth = useMemo<HostAuthContext | undefined>(() => {
+  const authConfig = useMemo(() => {
     if (!appContext) {
       return undefined;
     }
 
     return {
-      user: appContext.user as HostAuthContext['user'],
-      token: appContext.token as string | null | undefined,
-      tokenExpiry: appContext.tokenExpiry as number | undefined,
+      user: appContext.user,
+      token: appContext.token,
+      tokenExpiry: appContext.tokenExpiry as number | null | undefined,
       isAuthenticated: appContext.isAuthenticated as boolean | undefined,
       requestTokenRefresh: appContext.requestTokenRefresh as
         | (() => Promise<string | null>)
@@ -104,14 +96,13 @@ function App(props: Props) {
     };
   }, [appContext]);
 
-  // Cast themeConfig to avoid type conflicts between different antd versions
   const themeConfig = sharedThemeConfig as ThemeConfig;
 
   return (
     <ConfigProvider theme={themeConfig}>
-      <AuthConsumerProvider hostAuth={hostAuth}>
+      <AuthConsumerProvider config={authConfig}>
         <QueryClientProvider client={queryClient}>
-          <RouterContext.Provider value={{ hostAuth, config }}>
+          <RouterContext.Provider value={{ config }}>
             <InnerApp />
           </RouterContext.Provider>
         </QueryClientProvider>
@@ -121,4 +112,3 @@ function App(props: Props) {
 }
 
 export default App;
-

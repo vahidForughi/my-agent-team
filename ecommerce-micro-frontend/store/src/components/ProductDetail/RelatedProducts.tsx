@@ -1,7 +1,7 @@
 import React from 'react';
 import { Typography, Row, Col, message } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { Product } from '../../services/products/types';
+import { Product } from '../../services/products/schemas';
 import { ProductCard } from '../ProductCard';
 import { useRelatedProducts } from '../../hooks/useRelatedProducts';
 

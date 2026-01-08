@@ -50,7 +50,7 @@ export function createApiFactory(
     path: `/${string}` | null,
     request?: Request<TParams, TPayload>,
     options?: Options
-  ): Promise<Nullable<ApiResponse<TTransformed>>> {
+  ): Promise<Nullable<TTransformed>> {
     const { params = {}, payload = {} } = request ?? {};
 
     // Process rootEndpoint for placeholders
@@ -118,24 +118,25 @@ export function createApiFactory(
       ...request?.options,
     }).then((res) => res.data); // destructure the data from the axios
 
-    let validResponse: Nullable<ApiResult<TResponse>>;
+    let validResponse: Nullable<TResponse>;
 
     if (isApiErrorResponse(response)) {
       emitter.emit(EVENT_NAMES.API_ERROR, response.error.message);
-      const error = new Error('Something went wrong') as Error & { cause?: unknown };
+      const error = new Error('Something went wrong') as Error & {
+        cause?: unknown;
+      };
       error.cause = response;
       throw error;
     }
 
-    if (options?.responseSchema && isApiResponse(response)) {
-      const apiResponseSchema = createApiResponseSchemaFactory(
-        options.responseSchema
-      );
-      validResponse = parseResponse(response, apiResponseSchema) as Nullable<
-        ApiResult<TResponse>
+    if (options?.responseSchema) {
+      validResponse = parseResponse(response, options.responseSchema) as Nullable<
+        TResponse
       >;
     } else if (response && typeof response === 'object' && 'data' in response) {
-      validResponse = response as ApiResult<TResponse>;
+      validResponse = (response as ApiResponse<TResponse>).data as TResponse;
+    } else {
+      validResponse = response as TResponse;
     }
 
     if (validResponse === null && method !== 'DELETE') {
@@ -143,27 +144,15 @@ export function createApiFactory(
       throw new Error('Parsed response is null or invalid format');
     }
 
-    let transformedData = validResponse as unknown as Nullable<
-      ApiResponse<TTransformed>
-    >;
-
-    if (
-      typeof options?.transformer === 'function' &&
-      validResponse &&
-      isApiResponse(validResponse)
-    ) {
-      const transformed = options.transformer((validResponse as ApiResponse<TResponse>).data);
+    if (typeof options?.transformer === 'function' && validResponse) {
+      const transformed = options.transformer(validResponse);
       if (transformed === null || transformed === undefined) {
         throw new Error('Transformed data cannot be null or undefined');
       }
-
-      transformedData = {
-        data: transformed,
-        meta: (validResponse as ApiResponse<TResponse>).meta,
-      };
+      return transformed;
     }
 
-    return transformedData;
+    return validResponse as Nullable<TTransformed>;
   };
 }
 

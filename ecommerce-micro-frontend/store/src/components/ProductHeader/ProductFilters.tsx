@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Typography, Button, Space, Flex, Select } from 'antd';
 import { ClearOutlined } from '@ant-design/icons';
-import { ProductType, Brand } from '../../services/products/types';
+import { ProductType, Brand } from '../../services/products/schemas';
 import { ProductFilterType, SpecialFilterConfig } from './types';
 
 const { Text } = Typography;

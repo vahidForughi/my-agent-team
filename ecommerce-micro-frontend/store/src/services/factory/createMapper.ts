@@ -1,12 +1,5 @@
-import { Nullable } from '../types';
+import { Nullable } from '@typings/common';
 import { ZodSchema } from 'zod';
-
-/**
- * Create Mapper Factory
- * 
- * Creates type-safe mappers with validation for transforming API responses to DTOs.
- * Based on fdw-iraps pattern.
- */
 
 export type ExtraParams = Record<PropertyKey, unknown>;
 
@@ -14,15 +7,11 @@ export type Mapper<Entity, Dto, ExtraParams> = {
   toDto: (entity: Nullable<Entity>, extraParams?: ExtraParams) => Dto | null;
   toListDto: (
     entities: Nullable<Array<Entity>>,
-    extraParams?: ExtraParams,
+    extraParams?: ExtraParams
   ) => Dto[];
 };
 
-export const createMapper = <
-  Entity,
-  Dto,
-  ExtraParams = Record<string, never>
->(
+export const createMapper = <Entity, Dto, ExtraParams = Record<string, never>>(
   mapFunction: (entity: Entity, extraParams?: ExtraParams) => Dto,
   schema: ZodSchema<Entity>
 ): Mapper<Entity, Dto, ExtraParams> => {
@@ -39,7 +28,7 @@ export const createMapper = <
     },
     toListDto: (
       entities: Nullable<Array<Entity>>,
-      extraParams?: ExtraParams,
+      extraParams?: ExtraParams
     ) => {
       if (!entities || entities.length === 0) {
         return [];
@@ -55,4 +44,3 @@ export const createMapper = <
   };
   return baseMapper;
 };
-

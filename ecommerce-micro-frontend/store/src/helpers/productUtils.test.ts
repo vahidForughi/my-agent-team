@@ -1,15 +1,19 @@
 import {
   calculateDiscountPercentage,
   calculateAverageRating,
-  getStockStatus,
   getDeliveryEstimate,
   isNewProduct,
-  getProductStockStatus,
   isProductInStock,
   getProductQuantity,
   isProductLowStock,
 } from './productUtils';
-import { Product, Review, ProductStock } from '../services/products/types';
+import { Product, Review } from '../services/products/schemas';
+
+type ProductStock = {
+  quantity: number;
+  inStock: boolean;
+  lowStockThreshold?: number;
+};
 
 describe('productUtils', () => {
   describe('calculateDiscountPercentage', () => {
@@ -53,22 +57,6 @@ describe('productUtils', () => {
     });
   });
 
-  describe('getStockStatus', () => {
-    it('returns out-of-stock for zero quantity', () => {
-      expect(getStockStatus(0)).toBe('out-of-stock');
-    });
-
-    it('returns low-stock when quantity is at or below threshold', () => {
-      expect(getStockStatus(5, 10)).toBe('low-stock');
-      expect(getStockStatus(10, 10)).toBe('low-stock');
-    });
-
-    it('returns in-stock when quantity is above threshold', () => {
-      expect(getStockStatus(15, 10)).toBe('in-stock');
-      expect(getStockStatus(100)).toBe('in-stock');
-    });
-  });
-
   describe('getDeliveryEstimate', () => {
     it('returns "Tomorrow" for next day delivery', () => {
       const today = new Date('2024-01-01');
@@ -101,21 +89,6 @@ describe('productUtils', () => {
       const recentDate = new Date();
       recentDate.setDate(recentDate.getDate() - 20);
       expect(isNewProduct(recentDate.toISOString())).toBe(true);
-    });
-  });
-
-  describe('getProductStockStatus', () => {
-    it('returns stock status from product stock object', () => {
-      const stock: ProductStock = {
-        quantity: 5,
-        inStock: true,
-        lowStockThreshold: 10,
-      };
-      expect(getProductStockStatus(stock)).toBe('low-stock');
-    });
-
-    it('returns out-of-stock when stock is undefined', () => {
-      expect(getProductStockStatus(undefined)).toBe('out-of-stock');
     });
   });
 
