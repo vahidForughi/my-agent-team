@@ -154,38 +154,73 @@ setup_port_forwards() {
     log_info "Starting port-forwards for services..."
 
     # Service port-forwards
-    kubectl port-forward -n "$NAMESPACE" svc/eshopping-catalog 8081:80 > /dev/null 2>&1 &
-    sleep 0.5
-    log_info "  ✓ Catalog: localhost:8081"
+    kubectl port-forward -n "$NAMESPACE" svc/eshopping-catalog 8081:80 > /tmp/k6-pf-catalog.log 2>&1 &
+    CATALOG_PID=$!
+    sleep 1
+    if kill -0 $CATALOG_PID 2>/dev/null; then
+        log_info "  ✓ Catalog: localhost:8081 (PID: $CATALOG_PID)"
+    else
+        log_warning "  ✗ Catalog port-forward failed (check /tmp/k6-pf-catalog.log)"
+    fi
 
-    kubectl port-forward -n "$NAMESPACE" svc/eshopping-basket 8082:80 > /dev/null 2>&1 &
-    sleep 0.5
-    log_info "  ✓ Basket: localhost:8082"
+    kubectl port-forward -n "$NAMESPACE" svc/eshopping-basket 8082:80 > /tmp/k6-pf-basket.log 2>&1 &
+    BASKET_PID=$!
+    sleep 1
+    if kill -0 $BASKET_PID 2>/dev/null; then
+        log_info "  ✓ Basket: localhost:8082 (PID: $BASKET_PID)"
+    else
+        log_warning "  ✗ Basket port-forward failed (check /tmp/k6-pf-basket.log)"
+    fi
 
-    kubectl port-forward -n "$NAMESPACE" svc/eshopping-ordering 8083:80 > /dev/null 2>&1 &
-    sleep 0.5
-    log_info "  ✓ Ordering: localhost:8083"
+    kubectl port-forward -n "$NAMESPACE" svc/eshopping-ordering 8083:80 > /tmp/k6-pf-ordering.log 2>&1 &
+    ORDERING_PID=$!
+    sleep 1
+    if kill -0 $ORDERING_PID 2>/dev/null; then
+        log_info "  ✓ Ordering: localhost:8083 (PID: $ORDERING_PID)"
+    else
+        log_warning "  ✗ Ordering port-forward failed to start (check /tmp/k6-pf-ordering.log)"
+    fi
 
     if kubectl get svc -n "$NAMESPACE" eshopping-discount-discount-grpc &> /dev/null; then
-        kubectl port-forward -n "$NAMESPACE" svc/eshopping-discount-discount-grpc 8084:8080 > /dev/null 2>&1 &
-        sleep 0.5
-        log_info "  ✓ Discount: localhost:8084"
+        kubectl port-forward -n "$NAMESPACE" svc/eshopping-discount-discount-grpc 8084:8080 > /tmp/k6-pf-discount.log 2>&1 &
+        DISCOUNT_PID=$!
+        sleep 1
+        if kill -0 $DISCOUNT_PID 2>/dev/null; then
+            log_info "  ✓ Discount: localhost:8084 (PID: $DISCOUNT_PID)"
+        else
+            log_warning "  ✗ Discount port-forward failed (check /tmp/k6-pf-discount.log)"
+        fi
     fi
 
     log_info "Starting port-forwards for monitoring..."
 
     # Monitoring port-forwards
-    kubectl port-forward -n "$MONITORING_NAMESPACE" svc/prometheus-pushgateway 9091:9091 > /dev/null 2>&1 &
-    sleep 0.5
-    log_info "  ✓ PushGateway: localhost:9091"
+    kubectl port-forward -n "$MONITORING_NAMESPACE" svc/prometheus-pushgateway 9091:9091 > /tmp/k6-pf-pushgateway.log 2>&1 &
+    PUSHGATEWAY_PID=$!
+    sleep 1
+    if kill -0 $PUSHGATEWAY_PID 2>/dev/null; then
+        log_info "  ✓ PushGateway: localhost:9091 (PID: $PUSHGATEWAY_PID)"
+    else
+        log_warning "  ✗ PushGateway port-forward failed (check /tmp/k6-pf-pushgateway.log)"
+    fi
 
-    kubectl port-forward -n "$MONITORING_NAMESPACE" svc/prometheus-server 9090:80 > /dev/null 2>&1 &
-    sleep 0.5
-    log_info "  ✓ Prometheus: localhost:9090"
+    kubectl port-forward -n "$MONITORING_NAMESPACE" svc/prometheus-server 9090:80 > /tmp/k6-pf-prometheus.log 2>&1 &
+    PROMETHEUS_PID=$!
+    sleep 1
+    if kill -0 $PROMETHEUS_PID 2>/dev/null; then
+        log_info "  ✓ Prometheus: localhost:9090 (PID: $PROMETHEUS_PID)"
+    else
+        log_warning "  ✗ Prometheus port-forward failed (check /tmp/k6-pf-prometheus.log)"
+    fi
 
-    kubectl port-forward -n "$MONITORING_NAMESPACE" svc/grafana 3000:80 > /dev/null 2>&1 &
-    sleep 0.5
-    log_info "  ✓ Grafana: localhost:3000"
+    kubectl port-forward -n "$MONITORING_NAMESPACE" svc/grafana 3000:80 > /tmp/k6-pf-grafana.log 2>&1 &
+    GRAFANA_PID=$!
+    sleep 1
+    if kill -0 $GRAFANA_PID 2>/dev/null; then
+        log_info "  ✓ Grafana: localhost:3000 (PID: $GRAFANA_PID)"
+    else
+        log_warning "  ✗ Grafana port-forward failed (check /tmp/k6-pf-grafana.log)"
+    fi
 
     # Wait for port-forwards to be ready
     log_info "Waiting for port-forwards to be ready..."
@@ -207,10 +242,11 @@ setup_port_forwards() {
         log_warning "  ✗ Basket may not be ready"
     fi
 
-    if curl -s -o /dev/null -w "%{http_code}" http://localhost:8083/api/v1/Order/testuser | grep -qE "(200|404)"; then
-        log_info "  ✓ Ordering is accessible"
+    ORDERING_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 3 http://localhost:8083/api/v1/Activity 2>&1 || echo "000")
+    if [[ "$ORDERING_STATUS" =~ ^(200|404)$ ]]; then
+        log_info "  ✓ Ordering is accessible (HTTP $ORDERING_STATUS)"
     else
-        log_warning "  ✗ Ordering may not be ready"
+        log_warning "  ✗ Ordering may not be ready (HTTP $ORDERING_STATUS) - check /tmp/k6-pf-ordering.log"
     fi
 
     # Check monitoring services

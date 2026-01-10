@@ -58,7 +58,7 @@ service:
     #   2. Create a self-signed certificate if none exists
     #   3. Update this value with the correct ARN during deployment
     # No manual updates needed - this is just a placeholder!
-    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: ""
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: "arn:aws:acm:us-east-1:589634480766:certificate/ddb1104e-c1eb-4ce0-a909-07687081b1b4"
     service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
     service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"  
 
