@@ -1,4 +1,44 @@
 # Changelog
+## [0.6.1] - 2026-01-10
+
+## What's Changed
+
+### 🚀 Features
+- No new features
+
+### 🐛 Bug Fixes
+- fix: implement complete discount service with gRPC, OpenTelemetry tracing, and observability (#176) (2a1b9a9)
+- Merge branch 'main' into fix/discout-grpc-fix (01fb42b)
+- Merge branch 'main' into fix/discout-grpc-fix (a8b3a79)
+
+### 🔧 Improvements
+- No improvements
+
+### 📚 Documentation
+- No documentation updates
+
+### 🔐 Security
+- No security updates
+
+### 🏗️ Infrastructure
+- fix: implement complete discount service with gRPC, OpenTelemetry tracing, and observability (#176) (2a1b9a9)
+
+### Other Changes
+- Add monitoring scripts for Grafana-Prometheus connectivity and validation (40fe97b)
+
+## Docker Images
+All services are available as Docker images:
+- 
+- 
+- 
+- 
+- 
+
+## Helm Deployment
+
+
+**Full Changelog**: https://github.com/sloweyyy/cloud-native-ecommerce-platform/compare/0.6.0...0.6.1
+
 ## [0.5.0] - 2026-01-08
 
 ## What's Changed
