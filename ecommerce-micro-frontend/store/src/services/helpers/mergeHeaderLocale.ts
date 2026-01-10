@@ -1,22 +1,25 @@
-import { Request, RequestParams, RequestPayload } from '../types';
+import { AxiosRequestConfig } from 'axios';
 
-/**
- * Merge locale header with request options
- */
-export function mergeHeaderLocale<
-  TParams extends RequestParams,
-  TPayload extends RequestPayload
->(request?: Request<TParams, TPayload>): Record<string, string> {
-  const headers: Record<string, string> = {};
+import { Request } from '../types';
 
-  if (request?.options?.locale) {
-    headers['Accept-Language'] = request.options.locale;
+export const mergeHeaderLocale = <R extends Request<any, any>>(
+  request?: R,
+  payload?: AxiosRequestConfig
+) => {
+  if (!request) return {};
+
+  const { options } = request;
+
+  const locale = options?.locale || 'en';
+
+  if (!payload?.headers) {
+    return {
+      'Content-Language': locale,
+    };
   }
 
-  if (request?.options?.headers) {
-    Object.assign(headers, request.options.headers);
-  }
-
-  return headers;
-}
-
+  return {
+    ...payload.headers,
+    'Content-Language': locale,
+  };
+};

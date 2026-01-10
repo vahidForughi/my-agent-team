@@ -1,5 +1,5 @@
 import { createAppInjector, AppInjectorProps } from '@ecommerce-platform/app-injector';
-import AccountModule from './app/Module';
+import App from './App';
 
 /**
  * Account App Injector
@@ -7,7 +7,7 @@ import AccountModule from './app/Module';
  * This creates standardized inject/unmount methods for the Account micro-frontend.
  * Used by the host application to dynamically load and unload this remote app.
  */
-const AccountAppInjector = createAppInjector(AccountModule);
+const AccountAppInjector = createAppInjector(App);
 
 /**
  * Inject the Account app into a DOM element

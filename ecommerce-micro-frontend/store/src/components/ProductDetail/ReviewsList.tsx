@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button, Empty } from 'antd';
-import { Review } from '../../services/products/types';
+import { Review } from '../../services/products/schemas';
 import ReviewCard from './ReviewCard';
 
 type ReviewsListProps = {

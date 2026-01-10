@@ -1,247 +1,361 @@
-/**
- * Basket React Query Hooks
- * Type-safe hooks for basket operations with automatic caching and refetching
- */
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@ecommerce-platform/auth-provider';
+import { checkoutClient } from '../index';
 import {
-  mapShoppingCartItemToBackend,
-  type ShoppingCartItem,
-  type ShoppingCartItemFrontend,
-} from '../../types';
-import {
-  getBasket,
-  createBasket,
-  deleteBasket,
-  checkoutBasket,
-  type CheckoutRequest,
-} from './apis';
+  AddToCartInput,
+  UpdateBasketItemInput,
+  RemoveBasketItemInput,
+  CheckoutInput,
+} from './input';
+import { FilterOptions } from '../types';
+import { basketKeys } from './keys';
+import type { Basket } from './schemas';
 
-/**
- * Get current username from auth hook
- */
-function getUserName(user: ReturnType<typeof useAuth>['user']): string {
-  return user?.email || user?.displayName || user?.id || 'guest';
+export const CART_UPDATED_EVENT = 'ecommerce:cart:updated';
+
+function getUserName(user: ReturnType<typeof useAuth>['user']): string | null {
+  if (!user) {
+    return null;
+  }
+  return user.email || user.displayName || user.id || null;
 }
 
-// Query keys for React Query caching
-export const basketKeys = {
-  all: ['basket'] as const,
-  byUser: (username: string) => ['basket', username] as const,
+function updateBasketCache(
+  queryClient: ReturnType<typeof useQueryClient>,
+  newBasketData: Basket | null,
+  userName: string
+) {
+  if (newBasketData) {
+    queryClient.setQueryData(basketKeys.getBasket.create({ userName }), {
+      data: newBasketData,
+    });
+  } else {
+    queryClient.invalidateQueries({
+      queryKey: basketKeys.getBasket.create({ userName }),
+    });
+  }
+
+  window.dispatchEvent(new CustomEvent(CART_UPDATED_EVENT));
+}
+
+export function useGetBasket() {
+  const { user, isLoading: authLoading } = useAuth();
+  const userName = getUserName(user);
+
+  return useQuery<{ data: Basket } | null>({
+    queryKey: basketKeys.getBasket.create({ userName: userName || 'guest' }),
+    queryFn: async () => {
+      if (!userName) {
+        throw new Error('User must be authenticated to access basket');
+      }
+      const response = await checkoutClient.basket.getBasket({
+        params: { userName },
+      });
+      const basketData = response as Basket | undefined;
+      return basketData ? { data: basketData } : null;
+    },
+    enabled: !authLoading && !!userName,
+    staleTime: 30 * 1000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+  });
+}
+
+type AddToCartPayload = {
+  productId: string;
+  productName: string;
+  price: number;
+  originalPrice: number;
+  quantity: number;
+  imageFile: string | null;
 };
 
-/**
- * Hook to get current user's basket
- *
- * Features:
- * - Automatic caching
- * - Refetches on window focus
- * - Only fetches if user is authenticated
- *
- * @returns React Query result with basket data
- */
-export function useBasket() {
-  const { user, isAuthenticated } = useAuth();
-  const username = getUserName(user);
-
-  return useQuery({
-    queryKey: basketKeys.byUser(username),
-    queryFn: getBasket,
-    enabled: isAuthenticated, // Only fetch if logged in
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    retry: 1, // Only retry once on failure
-  });
-}
-
-/**
- * Hook to create or update basket
- *
- * Features:
- * - Optimistic updates
- * - Automatic cache invalidation
- * - Error rollback
- *
- * @returns Mutation function and status
- */
-export function useCreateBasket() {
+export function useAddToCart(input?: FilterOptions<AddToCartInput>) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const username = getUserName(user);
 
   return useMutation({
-    mutationFn: (items: ShoppingCartItem[]) => createBasket(items, username),
-    onSuccess: (data) => {
-      // Update cache with new basket data
-      queryClient.setQueryData(basketKeys.byUser(username), data);
+    mutationKey: [basketKeys.addToCart.create(input)],
+    mutationFn: (payload: AddToCartPayload) => {
+      const userName = getUserName(user);
+      if (!userName) {
+        throw new Error('User must be authenticated to add items to cart');
+      }
+
+      const command: AddToCartInput = {
+        UserName: userName,
+        Items: [
+          {
+            Quantity: payload.quantity,
+            Price: payload.price,
+            OriginalPrice: payload.originalPrice,
+            DiscountAmount: payload.originalPrice - payload.price,
+            ProductId: payload.productId,
+            ImageFile: payload.imageFile || undefined,
+            ProductName: payload.productName,
+          },
+        ],
+      };
+
+      return checkoutClient.basket.addToCart({
+        payload: command,
+      });
     },
-    onError: (error) => {
-      console.error('Failed to create/update basket:', error);
-      // Invalidate cache to refetch fresh data
-      queryClient.invalidateQueries({ queryKey: basketKeys.byUser(username) });
+    onSuccess: (response) => {
+      const data = (response as Basket | undefined) ?? null;
+      const userName = data?.userName || getUserName(user);
+      if (!userName) {
+        return;
+      }
+
+      updateBasketCache(queryClient, data, userName);
     },
   });
 }
 
-/**
- * Hook to delete basket
- *
- * Features:
- * - Clears cache after deletion
- * - Error handling
- *
- * @returns Mutation function and status
- */
-export function useDeleteBasket() {
+export function useUpdateBasketItem() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const username = getUserName(user);
 
   return useMutation({
-    mutationFn: deleteBasket,
-    onSuccess: () => {
-      // Clear basket cache
-      queryClient.setQueryData(basketKeys.byUser(username), null);
-      queryClient.invalidateQueries({ queryKey: basketKeys.all });
-    },
-    onError: (error) => {
-      console.error('Failed to delete basket:', error);
-    },
-  });
-}
-
-/**
- * Hook to checkout basket (creates order)
- *
- * Features:
- * - Clears basket cache after successful checkout
- * - Error handling
- * - Success callback support
- *
- * @returns Mutation function and status
- */
-export function useCheckoutBasket() {
-  const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const username = getUserName(user);
-
-  return useMutation({
-    mutationFn: (request: CheckoutRequest) => checkoutBasket(request),
-    onSuccess: (result) => {
-      // Clear basket after successful checkout
-      queryClient.setQueryData(basketKeys.byUser(username), null);
-      queryClient.invalidateQueries({ queryKey: basketKeys.all });
-
-      console.log('✅ Checkout successful! Order ID:', result.orderId);
-    },
-    onError: (error) => {
-      console.error('Failed to checkout:', error);
-    },
-  });
-}
-
-/**
- * Hook to add item to basket
- * Convenience wrapper around useCreateBasket
- */
-export function useAddToBasket() {
-  const { data: currentBasket } = useBasket();
-  const createBasketMutation = useCreateBasket();
-
-  const addItem = (item: ShoppingCartItemFrontend) => {
-    const existingItems = currentBasket?.items || [];
-
-    // Check if item already exists - items from basket are in frontend format (camelCase)
-    const existingItemIndex = existingItems.findIndex(
-      (i) => i.productId === item.productId
-    );
-
-    let updatedItems: ShoppingCartItemFrontend[];
-
-    if (existingItemIndex >= 0) {
-      // Update quantity if item exists
-      updatedItems = existingItems.map((i, index) =>
-        index === existingItemIndex
-          ? { ...i, quantity: i.quantity + item.quantity }
-          : i
+    mutationFn: async (input: UpdateBasketItemInput) => {
+      const userName = getUserName(user);
+      if (!userName) {
+        throw new Error('User must be authenticated to update basket');
+      }
+      const basketKey = basketKeys.getBasket.create({ userName });
+      let cachedBasket = queryClient.getQueryData<{ data: Basket } | null>(
+        basketKey
       );
-    } else {
-      // Add new item
-      updatedItems = [...existingItems, item];
-    }
 
-    // Convert to backend format (PascalCase) before sending
-    const backendItems = updatedItems.map(mapShoppingCartItemToBackend);
-    return createBasketMutation.mutateAsync(backendItems);
-  };
+      if (!cachedBasket?.data) {
+        try {
+          const response = await checkoutClient.basket.getBasket({
+            params: { userName },
+          });
+          const basketData = response as Basket | undefined;
+          if (basketData) {
+            cachedBasket = { data: basketData };
+            queryClient.setQueryData(basketKey, cachedBasket);
+          }
+        } catch {
+          cachedBasket = null;
+        }
+      }
 
-  return {
-    addItem,
-    isLoading: createBasketMutation.isPending,
-    error: createBasketMutation.error,
-  };
+      return checkoutClient.basket.updateBasketItem({
+        payload: { ...input, userName },
+        currentBasket: cachedBasket?.data ?? null,
+      });
+    },
+    onMutate: async (input) => {
+      const userName = getUserName(user);
+      if (!userName) {
+        return { previousBasket: null };
+      }
+      const basketKey = basketKeys.getBasket.create({ userName });
+      await queryClient.cancelQueries({ queryKey: basketKey });
+
+      const previousBasket = queryClient.getQueryData<{ data: Basket } | null>(
+        basketKey
+      );
+
+      if (previousBasket?.data) {
+        const updatedItems = previousBasket.data.items.map((item) =>
+          item.productId === input.productId
+            ? { ...item, quantity: input.quantity }
+            : item
+        );
+
+        const updatedBasket: Basket = {
+          ...previousBasket.data,
+          items: updatedItems,
+          totalPrice: updatedItems.reduce(
+            (sum, item) => sum + item.price * item.quantity,
+            0
+          ),
+          itemCount: updatedItems.length,
+          isEmpty: updatedItems.length === 0,
+        };
+
+        queryClient.setQueryData(basketKey, { data: updatedBasket });
+      }
+
+      return { previousBasket };
+    },
+    onError: (err, input, context) => {
+      const userName = getUserName(user);
+      if (!userName || !context?.previousBasket) {
+        return;
+      }
+      const basketKey = basketKeys.getBasket.create({ userName });
+      queryClient.setQueryData(basketKey, context.previousBasket);
+    },
+    onSettled: (response, error, input) => {
+      // Sync cache with server response after mutation completes (success or error)
+      // Only update if mutation succeeded and data is different from optimistic update
+      if (!error && response) {
+        const responseData = response as { data: Basket } | null;
+        const data = responseData?.data ?? null;
+        if (data) {
+          const userName = data.userName || getUserName(user);
+          if (!userName) {
+            return;
+          }
+          const basketKey = basketKeys.getBasket.create({ userName });
+          const currentCache = queryClient.getQueryData<{
+            data: Basket;
+          } | null>(basketKey);
+
+          // Only update if data is actually different from optimistic update
+          if (
+            !currentCache?.data ||
+            JSON.stringify(currentCache.data.items) !==
+              JSON.stringify(data.items)
+          ) {
+            queryClient.setQueryData(basketKey, { data });
+          }
+        }
+      }
+    },
+  });
 }
 
-/**
- * Hook to remove item from basket
- */
-export function useRemoveFromBasket() {
-  const { data: currentBasket } = useBasket();
-  const createBasketMutation = useCreateBasket();
-  const deleteBasketMutation = useDeleteBasket();
+export function useRemoveBasketItem() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
 
-  const removeItem = (productId: string) => {
-    if (!currentBasket) return Promise.resolve(null);
+  return useMutation({
+    mutationFn: async (input: RemoveBasketItemInput) => {
+      const userName = getUserName(user);
+      if (!userName) {
+        throw new Error(
+          'User must be authenticated to remove items from basket'
+        );
+      }
+      const basketKey = basketKeys.getBasket.create({ userName });
+      let cachedBasket = queryClient.getQueryData<{ data: Basket } | null>(
+        basketKey
+      );
 
-    const updatedItems = currentBasket.items.filter(
-      (item) => item.productId !== productId
-    );
+      if (!cachedBasket?.data) {
+        try {
+          const response = await checkoutClient.basket.getBasket({
+            params: { userName },
+          });
+          const basketData = response as Basket | undefined;
+          if (basketData) {
+            cachedBasket = { data: basketData };
+            queryClient.setQueryData(basketKey, cachedBasket);
+          }
+        } catch {
+          cachedBasket = null;
+        }
+      }
 
-    if (updatedItems.length === 0) {
-      // If no items left, delete basket
-      return deleteBasketMutation.mutateAsync();
-    }
+      return checkoutClient.basket.removeBasketItem({
+        payload: { ...input, userName },
+        currentBasket: cachedBasket?.data ?? null,
+      });
+    },
+    onMutate: async (input) => {
+      const userName = getUserName(user);
+      if (!userName) {
+        return { previousBasket: null };
+      }
+      const basketKey = basketKeys.getBasket.create({ userName });
+      await queryClient.cancelQueries({ queryKey: basketKey });
 
-    // Convert to backend format before sending
-    const backendItems = updatedItems.map(mapShoppingCartItemToBackend);
-    return createBasketMutation.mutateAsync(backendItems);
-  };
+      const previousBasket = queryClient.getQueryData<{ data: Basket } | null>(
+        basketKey
+      );
 
-  return {
-    removeItem,
-    isLoading: createBasketMutation.isPending || deleteBasketMutation.isPending,
-    error: createBasketMutation.error || deleteBasketMutation.error,
-  };
+      if (previousBasket?.data) {
+        const updatedItems = previousBasket.data.items.filter(
+          (item) => item.productId !== input.productId
+        );
+
+        const updatedBasket: Basket = {
+          ...previousBasket.data,
+          items: updatedItems,
+          totalPrice: updatedItems.reduce(
+            (sum, item) => sum + item.price * item.quantity,
+            0
+          ),
+          itemCount: updatedItems.length,
+          isEmpty: updatedItems.length === 0,
+        };
+
+        queryClient.setQueryData(basketKey, { data: updatedBasket });
+      }
+
+      return { previousBasket };
+    },
+    onError: (err, input, context) => {
+      const userName = getUserName(user);
+      if (!userName || !context?.previousBasket) {
+        return;
+      }
+      const basketKey = basketKeys.getBasket.create({ userName });
+      queryClient.setQueryData(basketKey, context.previousBasket);
+    },
+    onSettled: (response, error, input) => {
+      // Sync cache with server response after mutation completes (success or error)
+      // Only update if mutation succeeded and data is different from optimistic update
+      if (!error && response) {
+        const responseData = response as { data: Basket } | null;
+        const data = responseData?.data ?? null;
+        if (data) {
+          const userName = data.userName || getUserName(user);
+          if (!userName) {
+            return;
+          }
+          const basketKey = basketKeys.getBasket.create({ userName });
+          const currentCache = queryClient.getQueryData<{
+            data: Basket;
+          } | null>(basketKey);
+
+          // Only update if data is actually different from optimistic update
+          if (
+            !currentCache?.data ||
+            JSON.stringify(currentCache.data.items) !==
+              JSON.stringify(data.items)
+          ) {
+            queryClient.setQueryData(basketKey, { data });
+          }
+        }
+      }
+    },
+  });
 }
 
-/**
- * Hook to update item quantity in basket
- */
-export function useUpdateQuantity() {
-  const { data: currentBasket } = useBasket();
-  const createBasketMutation = useCreateBasket();
-  const { removeItem } = useRemoveFromBasket();
+export function useCheckout() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
 
-  const updateQuantity = (productId: string, quantity: number) => {
-    if (!currentBasket) return Promise.resolve(null);
-
-    if (quantity <= 0) {
-      // Remove item if quantity is 0 or negative
-      return removeItem(productId);
-    }
-
-    const updatedItems = currentBasket.items.map((item) =>
-      item.productId === productId ? { ...item, quantity } : item
-    );
-
-    // Convert to backend format before sending
-    const backendItems = updatedItems.map(mapShoppingCartItemToBackend);
-    return createBasketMutation.mutateAsync(backendItems);
-  };
-
-  return {
-    updateQuantity,
-    isLoading: createBasketMutation.isPending,
-    error: createBasketMutation.error,
-  };
+  return useMutation({
+    mutationFn: async (input: CheckoutInput) => {
+      const userName = getUserName(user);
+      if (!userName) {
+        throw new Error('User must be authenticated to checkout');
+      }
+      return checkoutClient.basket.checkout({
+        payload: { ...input, userName },
+      });
+    },
+    onSuccess: () => {
+      const userName = getUserName(user);
+      if (!userName) {
+        return;
+      }
+      const emptyBasket: Basket = {
+        userName,
+        items: [],
+        totalPrice: 0,
+        itemCount: 0,
+        isEmpty: true,
+      };
+      updateBasketCache(queryClient, emptyBasket, userName);
+    },
+  });
 }

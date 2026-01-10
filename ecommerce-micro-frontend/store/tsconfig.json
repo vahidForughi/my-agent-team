@@ -1,20 +1,43 @@
 {
+  "extends": "../tsconfig.base.json",
   "compilerOptions": {
-    "jsx": "react-jsx",
-    "allowJs": false,
-    "esModuleInterop": false,
+    "sourceMap": true,
+    "allowJs": true,
     "allowSyntheticDefaultImports": true,
-    "strict": true
-  },
-  "files": [],
-  "include": [],
-  "references": [
-    {
-      "path": "./tsconfig.app.json"
+    "baseUrl": ".",
+    "declaration": false,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": false,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "module": "esnext",
+    "moduleResolution": "node",
+    "noEmit": true,
+    "paths": {
+      "@components/*": ["src/components/*"],
+      "@containers/*": ["src/containers/*"],
+      "@constants/*": ["src/constants/*"],
+      "@helpers/*": ["src/helpers/*"],
+      "@hocs/*": ["src/hocs/*"],
+      "@hooks/*": ["src/hooks/*"],
+      "@layouts/*": ["src/layouts/*"],
+      "@libs/*": ["src/libs/*"],
+      "@services/*": ["src/services/*"],
+      "@styles/*": ["src/styles/*"],
+      "@typings/*": ["src/typings/*"],
+      "@utils/*": ["src/utils/*"],
+      "@test/*": ["src/test/*"],
+      "@shared/*": ["src/shared/*"],
+      "@ecommerce-platform/app-injector": ["../packages/app-injector/src/index.ts"]
     },
-    {
-      "path": "./tsconfig.spec.json"
-    }
-  ],
-  "extends": "../tsconfig.base.json"
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "es6",
+    "typeRoots": ["src/typings", "node_modules/@types"],
+    "types": ["node"]
+  },
+  "exclude": ["node_modules"],
+  "include": ["src/**/*", "src/test/**/*"]
 }

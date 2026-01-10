@@ -1,19 +1,15 @@
-// 1. React imports
 import React from 'react';
 
-// 2. Third-party libraries
-import { Row, Col, Space, Divider, Button, Empty } from 'antd';
+import { Row, Col, Space, Divider, Button, Empty, Typography } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import { useNavigate } from '@tanstack/react-router';
 
-// 3. Local types and services
-import { AppInjectorProps } from '@ecommerce-platform/app-injector';
 import { useGetProductById } from '../services/products/hooks';
 import { useProductActions } from '../hooks/useProductActions';
 import { isProductInStock } from '../helpers/productUtils';
+import { Product } from '../services/products/schemas';
 import {
   ProductImageGallery,
-  ProductTitle,
   ProductPrice,
   ProductDescription,
   ProductActions,
@@ -21,13 +17,14 @@ import {
 } from '../components/ProductDetail';
 import ProductDetailSkeleton from '../components/ProductDetail/ProductDetailSkeleton';
 
+const { Title } = Typography;
+
 type ProductDetailProps = {
   productId: string;
-  config?: AppInjectorProps['config'];
 };
 
 function ProductDetail(props: ProductDetailProps) {
-  const { productId, config } = props;
+  const { productId } = props;
   const navigate = useNavigate();
 
   const {
@@ -39,7 +36,7 @@ function ProductDetail(props: ProductDetailProps) {
     enabled: Boolean(productId),
   });
 
-  const product = productData ?? null;
+  const product = (productData ?? null) as Product | null;
 
   const {
     quantity,
@@ -50,7 +47,6 @@ function ProductDetail(props: ProductDetailProps) {
     isAddingToCart,
   } = useProductActions({
     product,
-    config,
   });
 
   const isInStock = product ? isProductInStock(product) : false;
@@ -71,11 +67,7 @@ function ProductDetail(props: ProductDetailProps) {
     try {
       const success = await handleAddToCart();
       if (success) {
-        if (config?.onNavigate) {
-          config.onNavigate('/checkout');
-        } else {
-          navigate({ to: '/checkout' });
-        }
+        window.location.href = '/checkout';
       }
     } catch (error) {
       console.error('Failed to proceed to checkout:', error);
@@ -121,7 +113,6 @@ function ProductDetail(props: ProductDetailProps) {
       </Button>
 
       <Row gutter={[24, 24]}>
-        {/* Left Column - Product Images */}
         <Col xs={24} md={12}>
           <ProductImageGallery
             images={[product.imageFile]}
@@ -129,10 +120,11 @@ function ProductDetail(props: ProductDetailProps) {
           />
         </Col>
 
-        {/* Right Column - Product Info */}
         <Col xs={24} md={12}>
           <Space direction="vertical" size="large" style={{ width: '100%' }}>
-            <ProductTitle name={product.name} />
+            <Title level={2} style={{ marginBottom: 8 }}>
+              {product.name}
+            </Title>
             <ProductPrice price={product.price} />
             <Divider />
             <ProductDescription description={product.description} />
@@ -151,7 +143,6 @@ function ProductDetail(props: ProductDetailProps) {
         </Col>
       </Row>
 
-      {/* Mobile Sticky Buy Bar */}
       <StickyBuyBar
         price={product.price}
         onAddToCart={handleAddToCart}

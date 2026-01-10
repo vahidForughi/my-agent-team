@@ -7,14 +7,12 @@ import type {
   ShoppingCartSchema,
   ShoppingCartItemSchema,
   ShoppingCartResponseSchema,
-  CouponSchema,
 } from './schemas';
 
 // Backend types (PascalCase)
 export type ShoppingCart = z.infer<typeof ShoppingCartSchema>;
 export type ShoppingCartItem = z.infer<typeof ShoppingCartItemSchema>;
 export type ShoppingCartResponse = z.infer<typeof ShoppingCartResponseSchema>;
-export type Coupon = z.infer<typeof CouponSchema>;
 
 // Frontend types (camelCase)
 export interface ShoppingCartItemFrontend {
@@ -33,13 +31,6 @@ export interface ShoppingCartFrontend {
   totalPrice?: number;
 }
 
-export interface CouponFrontend {
-  id: number;
-  productName: string;
-  description: string;
-  amount: number;
-}
-
 // Mappers: Backend PascalCase -> Frontend camelCase
 export const mapShoppingCartToFrontend = (cart: ShoppingCartResponse): ShoppingCartFrontend => ({
   userName: cart.UserName,
@@ -55,13 +46,6 @@ export const mapShoppingCartItemToFrontend = (item: ShoppingCartItem): ShoppingC
   productId: item.ProductId,
   imageFile: item.ImageFile,
   productName: item.ProductName,
-});
-
-export const mapCouponToFrontend = (coupon: Coupon): CouponFrontend => ({
-  id: coupon.Id,
-  productName: coupon.ProductName,
-  description: coupon.Description,
-  amount: coupon.Amount,
 });
 
 // Mappers: Frontend camelCase -> Backend PascalCase
