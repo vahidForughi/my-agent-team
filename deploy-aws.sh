@@ -34,19 +34,19 @@ NC='\033[0m' # No Color
 
 # ==================== Helper Functions ====================
 log_info() {
-    echo -e "${BLUE}[INFO]${NC} $1"
+    echo -e "${BLUE}[INFO]${NC} $1" >&2
 }
 
 log_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
+    echo -e "${GREEN}[SUCCESS]${NC} $1" >&2
 }
 
 log_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
+    echo -e "${YELLOW}[WARNING]${NC} $1" >&2
 }
 
 log_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
+    echo -e "${RED}[ERROR]${NC} $1" >&2
 }
 
 require_bin() {
@@ -321,12 +321,14 @@ setup_oidc_provider() {
         --query "cluster.identity.oidc.issuer" \
         --output text)
 
-    OIDC_ID=$(echo "$OIDC_ISSUER" | cut -d'/' -f5)
+    # Extract the host and path from the issuer URL (remove https://)
+    OIDC_PROVIDER_PATH=$(echo "$OIDC_ISSUER" | sed 's|https://||')
+    OIDC_PROVIDER_ARN="arn:aws:iam::${AWS_ACCOUNT_ID}:oidc-provider/${OIDC_PROVIDER_PATH}"
 
     # Check if already exists
     if aws_cmd iam get-open-id-connect-provider \
-        --open-id-connect-provider-arn "arn:aws:iam::${AWS_ACCOUNT_ID}:oidc-provider/oidc.eks.${REGION}.amazonaws.com/${OIDC_ID}" \
-        --region "$REGION" >/dev/null 2>&1; then
+        --open-id-connect-provider-arn "$OIDC_PROVIDER_ARN" \
+        >/dev/null 2>&1; then
         log_success "OIDC provider already associated"
         return 0
     fi
@@ -337,13 +339,24 @@ setup_oidc_provider() {
         openssl x509 -fingerprint -sha1 -noout | \
         cut -d'=' -f2 | tr -d ':')
 
-    # Create OIDC provider
-    aws_cmd iam create-open-id-connect-provider \
+    # Create OIDC provider (suppress error output as we check for existence)
+    if ! aws_cmd iam create-open-id-connect-provider \
         --url "${OIDC_ISSUER}" \
         --client-id-list sts.amazonaws.com \
         --thumbprint-list "${OIDC_THUMBPRINT}" \
-        --region "$REGION" \
-        --tags Key=Environment,Value="$ENV_NAME" Key=Cluster,Value="$CLUSTER_NAME"
+        --tags Key=Environment,Value="$ENV_NAME" Key=Cluster,Value="$CLUSTER_NAME" \
+        >/dev/null 2>&1; then
+        # Check if error is just because it already exists
+        if aws_cmd iam get-open-id-connect-provider \
+            --open-id-connect-provider-arn "$OIDC_PROVIDER_ARN" \
+            >/dev/null 2>&1; then
+            log_success "OIDC provider already exists"
+            return 0
+        else
+            log_error "Failed to create OIDC provider"
+            return 1
+        fi
+    fi
 
     log_success "OIDC provider associated with EKS cluster"
 }
@@ -431,7 +444,7 @@ setup_irsa_for_ebs_csi() {
 
     # Create or update role
     if ! aws_cmd iam create-role --role-name "$ROLE_NAME" \
-        --assume-role-policy-document "$TRUST_POLICY" --region "$REGION" 2>&1; then
+        --assume-role-policy-document "$TRUST_POLICY" 2>&1; then
         if aws_cmd iam get-role --role-name "$ROLE_NAME" >/dev/null 2>&1; then
             log_info "IAM role already exists: $ROLE_NAME"
         else
@@ -444,7 +457,7 @@ setup_irsa_for_ebs_csi() {
     # Attach AWS managed policy for EBS CSI Driver
     log_info "Attaching AmazonEBSCSIDriverPolicy to role..."
     aws_cmd iam attach-role-policy --role-name "$ROLE_NAME" \
-        --policy-arn "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy" --region "$REGION" 2>/dev/null || \
+        --policy-arn "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy" 2>/dev/null || \
         log_info "Policy already attached to role"
 
     # Annotate the service account
@@ -606,7 +619,7 @@ setup_irsa_for_catalog() {
     # Create or update policy
     POLICY_ARN="arn:aws:iam::${AWS_ACCOUNT_ID}:policy/${POLICY_NAME}"
     if ! aws_cmd iam create-policy --policy-name "$POLICY_NAME" \
-        --policy-document "$POLICY_DOC" --region "$REGION" 2>&1; then
+        --policy-document "$POLICY_DOC" 2>&1; then
         if aws_cmd iam get-policy --policy-arn "$POLICY_ARN" >/dev/null 2>&1; then
             log_info "IAM policy already exists: $POLICY_NAME"
         else
@@ -640,7 +653,7 @@ setup_irsa_for_catalog() {
 
     # Create or update role
     if ! aws_cmd iam create-role --role-name "$ROLE_NAME" \
-        --assume-role-policy-document "$TRUST_POLICY" --region "$REGION" 2>&1; then
+        --assume-role-policy-document "$TRUST_POLICY" 2>&1; then
         if aws_cmd iam get-role --role-name "$ROLE_NAME" >/dev/null 2>&1; then
             log_info "IAM role already exists: $ROLE_NAME"
         else
@@ -653,7 +666,7 @@ setup_irsa_for_catalog() {
     # Attach policy to role
     log_info "Attaching S3 policy to role..."
     aws_cmd iam attach-role-policy --role-name "$ROLE_NAME" \
-        --policy-arn "$POLICY_ARN" --region "$REGION" 2>/dev/null || \
+        --policy-arn "$POLICY_ARN" 2>/dev/null || \
         log_info "Policy already attached to role"
 
     # Update service account annotation
@@ -810,9 +823,12 @@ install_istio_early() {
     ${ISTIO_DIR}/bin/istioctl install --set profile=default -y
 
     # Install Istio addons
-    log_info "Installing Istio addons (Jaeger, Kiali)..."
+    log_info "Installing Istio addons (Jaeger, Kiali, Grafana dashboards)..."
     kubectl apply -f ${ISTIO_DIR}/samples/addons/jaeger.yaml || true
     kubectl apply -f ${ISTIO_DIR}/samples/addons/kiali.yaml || true
+    kubectl apply -f ${ISTIO_DIR}/samples/addons/grafana.yaml || true
+    kubectl delete deployment grafana -n istio-system 2>/dev/null || true
+    kubectl delete svc grafana -n istio-system 2>/dev/null || true
 
     # Wait for Istio to be ready
     log_info "Waiting for Istio control plane to be ready..."
@@ -1054,7 +1070,25 @@ data:
       allowUiUpdates: true
       options:
         path: /var/lib/grafana/dashboards
-    - name: 'Istio'
+    - name: 'K6 Load Testing'
+      orgId: 1
+      folder: 'Performance'
+      type: file
+      disableDeletion: false
+      updateIntervalSeconds: 10
+      allowUiUpdates: true
+      options:
+        path: /var/lib/grafana/dashboards/k6
+    - name: 'Service Metrics'
+      orgId: 1
+      folder: 'Microservices'
+      type: file
+      disableDeletion: false
+      updateIntervalSeconds: 10
+      allowUiUpdates: true
+      options:
+        path: /var/lib/grafana/dashboards/service-requests-dashboard
+    - name: 'Istio Mesh'
       orgId: 1
       folder: 'Istio'
       type: file
@@ -1063,6 +1097,15 @@ data:
       allowUiUpdates: true
       options:
         path: /var/lib/grafana/dashboards/istio
+    - name: 'Istio Services'
+      orgId: 1
+      folder: 'Istio'
+      type: file
+      disableDeletion: false
+      updateIntervalSeconds: 10
+      allowUiUpdates: true
+      options:
+        path: /var/lib/grafana/dashboards/istio-services
 EOF
 
     # 3. Create custom dashboards
@@ -1120,21 +1163,15 @@ EOF
     # 4. Create K6 Load Testing Dashboard ConfigMap
     log_info "Creating K6 load testing dashboard ConfigMap..."
 
-    # Read and create K6 dashboard ConfigMap
-    kubectl apply -f - <<'K6_EOF'
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: k6-dashboard
-  namespace: monitoring
-  labels:
-    grafana_dashboard: "1"
-data:
-  k6-dashboard.json: |-
-K6_EOF
-    cat Deployments/monitoring/grafana-dashboard-k6.json | sed 's/^/    /'
-    cat <<'K6_EOF'
-K6_EOF
+    # Create K6 dashboard ConfigMap directly from file
+    kubectl create configmap k6-dashboard \
+        --namespace monitoring \
+        --from-file=k6-dashboard.json=Deployments/monitoring/grafana-dashboard-k6.json \
+        --dry-run=client -o yaml | \
+        kubectl apply -f -
+    
+    # Label it so Grafana sidecar (if used) or our logic can find it
+    kubectl label configmap k6-dashboard -n monitoring grafana_dashboard="1" --overwrite
 
     log_success "K6 dashboard ConfigMap created"
 
@@ -1189,10 +1226,19 @@ K6_EOF
 
     # Add Istio dashboards if they exist
     if kubectl get configmap istio-grafana-dashboards -n monitoring &>/dev/null; then
+        log_info "Mounting Istio dashboards in Grafana..."
         kubectl patch deployment grafana -n monitoring --type='json' -p='[
           {"op": "add", "path": "/spec/template/spec/volumes/-", "value": {"name": "istio-dashboards", "configMap": {"name": "istio-grafana-dashboards"}}},
           {"op": "add", "path": "/spec/template/spec/containers/0/volumeMounts/-", "value": {"name": "istio-dashboards", "mountPath": "/var/lib/grafana/dashboards/istio"}}
         ]' 2>/dev/null || log_warning "Istio dashboards volume may already exist"
+    fi
+
+    if kubectl get configmap istio-services-grafana-dashboards -n monitoring &>/dev/null; then
+        log_info "Mounting Istio services dashboards in Grafana..."
+        kubectl patch deployment grafana -n monitoring --type='json' -p='[
+          {"op": "add", "path": "/spec/template/spec/volumes/-", "value": {"name": "istio-services-dashboards", "configMap": {"name": "istio-services-grafana-dashboards"}}},
+          {"op": "add", "path": "/spec/template/spec/containers/0/volumeMounts/-", "value": {"name": "istio-services-dashboards", "mountPath": "/var/lib/grafana/dashboards/istio-services"}}
+        ]' 2>/dev/null || log_warning "Istio services dashboards volume may already exist"
     fi
 
     # Restart Grafana to apply changes
@@ -1352,9 +1398,12 @@ select_deployment_mode() {
     echo "   2) Skip image build (use existing images in ECR)"
     echo "   3) Skip images + infrastructure (start from EBS CSI driver)"
     echo "   4) Deploy only Kubernetes workloads (skip infrastructure)"
-    echo "   5) Exit"
+    echo "   5) Deploy only databases (skip API services)"
+    echo "   6) Deploy only API services (skip databases)"
+    echo "   7) Deploy only monitoring (Prometheus + Grafana)"
+    echo "   8) Exit"
     echo ""
-    read -p "Select deployment mode (1-5): " DEPLOY_MODE
+    read -p "Select deployment mode (1-8): " DEPLOY_MODE
 
     case $DEPLOY_MODE in
         1)
@@ -1362,26 +1411,65 @@ select_deployment_mode() {
             SKIP_ECR=false
             SKIP_BUILD=false
             SKIP_INFRA=false
+            SKIP_DATABASES=false
+            SKIP_API_SERVICES=false
+            SKIP_MONITORING=false
             ;;
         2)
             log_info "Skipping image build, using existing images..."
             SKIP_ECR=true
             SKIP_BUILD=true
             SKIP_INFRA=false
+            SKIP_DATABASES=false
+            SKIP_API_SERVICES=false
+            SKIP_MONITORING=false
             ;;
         3)
             log_info "Skipping images and infrastructure, starting from EBS CSI driver..."
             SKIP_ECR=true
             SKIP_BUILD=true
             SKIP_INFRA=true
+            SKIP_DATABASES=false
+            SKIP_API_SERVICES=false
+            SKIP_MONITORING=false
             ;;
         4)
             log_info "Deploying only Kubernetes workloads..."
             SKIP_ECR=true
             SKIP_BUILD=true
             SKIP_INFRA=true
+            SKIP_DATABASES=false
+            SKIP_API_SERVICES=false
+            SKIP_MONITORING=false
             ;;
         5)
+            log_info "Deploying only databases..."
+            SKIP_ECR=true
+            SKIP_BUILD=true
+            SKIP_INFRA=true
+            SKIP_DATABASES=false
+            SKIP_API_SERVICES=true
+            SKIP_MONITORING=true
+            ;;
+        6)
+            log_info "Deploying only API services..."
+            SKIP_ECR=true
+            SKIP_BUILD=true
+            SKIP_INFRA=true
+            SKIP_DATABASES=true
+            SKIP_API_SERVICES=false
+            SKIP_MONITORING=true
+            ;;
+        7)
+            log_info "Deploying only monitoring stack..."
+            SKIP_ECR=true
+            SKIP_BUILD=true
+            SKIP_INFRA=true
+            SKIP_DATABASES=true
+            SKIP_API_SERVICES=true
+            SKIP_MONITORING=false
+            ;;
+        8)
             log_info "Exiting..."
             exit 0
             ;;
@@ -1518,14 +1606,30 @@ EOF
 
     setup_oidc_provider
     install_ebs_csi_driver
-    deploy_databases
-    setup_irsa_for_catalog
     install_istio_early
-    deploy_api_services
-    configure_istio_networking
-    restart_services_for_istio
-    trigger_migration
-    deploy_monitoring
+    
+    if [ "$SKIP_DATABASES" = false ]; then
+        deploy_databases
+    else
+        log_info "[6/10] Skipping database deployment"
+    fi
+    
+    if [ "$SKIP_API_SERVICES" = false ]; then
+        setup_irsa_for_catalog
+        deploy_api_services
+        configure_istio_networking
+        restart_services_for_istio
+        trigger_migration
+    else
+        log_info "[7/10] Skipping API services deployment"
+    fi
+    
+    if [ "$SKIP_MONITORING" = false ]; then
+        deploy_monitoring
+    else
+        log_info "[8/10] Skipping monitoring deployment"
+    fi
+    
     # deploy_alb  # Disabled - ALB not connected to any service (Ocelot uses NLB)
     verify_deployment
     display_access_info

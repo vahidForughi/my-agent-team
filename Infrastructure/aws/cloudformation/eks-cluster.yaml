@@ -90,20 +90,20 @@ Resources:
       Roles: [!Ref NodeRole]
       Path: "/"
 
-  # Launch Template with proper prefix delegation configuration
+  # Launch Template with proper disk configuration for EKS managed nodes
   NodeLaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
     Properties:
       LaunchTemplateData:
+        BlockDeviceMappings:
+          - DeviceName: /dev/xvda
+            Ebs:
+              VolumeSize: !Ref NodeDiskSize
+              VolumeType: gp3
+              DeleteOnTermination: true
         MetadataOptions:
           HttpPutResponseHopLimit: 2
           HttpTokens: optional
-        UserData:
-          Fn::Base64: |
-            #!/bin/bash
-            # Enable AWS VPC CNI prefix delegation for higher pod density
-            export ENABLE_PREFIX_DELEGATION=true
-            export WARM_PREFIX_TARGET=1
 
   ManagedNodeGroup:
     Type: AWS::EKS::Nodegroup
@@ -123,7 +123,6 @@ Resources:
         - t3.large
       CapacityType: ON_DEMAND
       AmiType: AL2023_x86_64_STANDARD
-      DiskSize: !Ref NodeDiskSize
       LaunchTemplate:
         Id: !Ref NodeLaunchTemplate
         Version: !GetAtt NodeLaunchTemplate.LatestVersionNumber
