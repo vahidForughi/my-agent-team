@@ -2,45 +2,48 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: api-ingress
+  namespace: ecommerce
   annotations:
-    kubernetes.io/ingress.class: istio
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/use-regex: "true"
 spec:
   rules:
-  - host: api.local
-    http:
-      paths:
-      - path: /catalog
-        pathType: Prefix
-        backend:
-          service:
-            name: catalog
-            port:
-              number: 80
-      - path: /basket
-        pathType: Prefix
-        backend:
-          service:
-            name: basket
-            port:
-              number: 80
-      - path: /discount
-        pathType: Prefix
-        backend:
-          service:
-            name: discountapi
-            port:
-              number: 80
-      - path: /ordering
-        pathType: Prefix
-        backend:
-          service:
-            name: ordering
-            port:
-              number: 80
-      - path: /gateway
-        pathType: Prefix
-        backend:
-          service:
-            name: ocelotapigw
-            port:
-              number: 8010 
+    - host: localhost
+      http:
+        paths:
+          - path: /catalog
+            pathType: Prefix
+            backend:
+              service:
+                name: catalog-service
+                port:
+                  number: 80
+          - path: /basket
+            pathType: Prefix
+            backend:
+              service:
+                name: basket-service
+                port:
+                  number: 80
+          - path: /discount
+            pathType: Prefix
+            backend:
+              service:
+                name: discount-service
+                port:
+                  number: 80
+          - path: /ordering
+            pathType: Prefix
+            backend:
+              service:
+                name: ordering-service
+                port:
+                  number: 80
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ocelotapigw-service
+                port:
+                  number: 80

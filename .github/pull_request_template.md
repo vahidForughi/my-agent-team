@@ -32,9 +32,9 @@
 
 ## Changes Made
 <!-- Provide a detailed list of changes -->
-- 
-- 
-- 
+-
+-
+-
 
 ## Related Issues
 <!-- Link to related issues -->
@@ -46,15 +46,17 @@ Relates to #(issue_number)
 <!-- Describe the tests you ran and how to reproduce them -->
 
 ### Test Coverage
+
 - [ ] Unit tests added/updated
 - [ ] Integration tests added/updated
 - [ ] E2E tests added/updated
 - [ ] Manual testing completed
 
 ### Test Steps
-1. 
-2. 
-3. 
+
+1.
+2.
+3.
 
 ## Performance Impact
 <!-- Describe any performance implications -->
@@ -72,6 +74,7 @@ Relates to #(issue_number)
 <!-- If this is a breaking change, describe the impact and migration path -->
 
 ## Documentation
+
 - [ ] Code is self-documenting
 - [ ] README updated
 - [ ] API documentation updated
@@ -85,12 +88,14 @@ Relates to #(issue_number)
 <!-- List any new or changed environment variables -->
 
 ### Database Changes
+
 - [ ] No database changes
 - [ ] Migration scripts included
 - [ ] Backward compatible changes
 - [ ] Breaking database changes (migration plan attached)
 
 ### Configuration Changes
+
 - [ ] No configuration changes
 - [ ] Helm values updated
 - [ ] Docker compose updated
@@ -103,6 +108,7 @@ Relates to #(issue_number)
 <!-- Mark completed items with an "x" -->
 
 ### Code Quality
+
 - [ ] My code follows the project's style guidelines
 - [ ] I have performed a self-review of my own code
 - [ ] I have commented my code, particularly in hard-to-understand areas
@@ -110,14 +116,17 @@ Relates to #(issue_number)
 - [ ] New and existing unit tests pass locally with my changes
 
 ### Documentation
+
 - [ ] I have made corresponding changes to the documentation
 - [ ] My changes are covered by tests
 
 ### Dependencies
+
 - [ ] I have checked that my changes don't introduce security vulnerabilities
 - [ ] Any dependent changes have been merged and published
 
 ### Review
+
 - [ ] I have requested review from appropriate team members
 - [ ] This PR is ready for review
 
@@ -129,6 +138,7 @@ Relates to #(issue_number)
 ## For Reviewers
 
 ### Review Checklist
+
 - [ ] Code quality and style
 - [ ] Test coverage is adequate
 - [ ] Documentation is updated
@@ -137,8 +147,9 @@ Relates to #(issue_number)
 - [ ] Breaking changes identified and documented
 
 ### Approval Criteria
+
 - [ ] Functionality works as expected
 - [ ] Tests pass
 - [ ] No security concerns
 - [ ] Documentation is adequate
-- [ ] Ready for deployment 
+- [ ] Ready for deployment
