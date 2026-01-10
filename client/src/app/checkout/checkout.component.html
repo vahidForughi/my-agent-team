@@ -31,6 +31,14 @@
                     <div class="item-type">{{item.productName.split(' ')[0]}}</div>
                     <div class="item-quantity">Qty: {{item.quantity}}</div>
                   </div>
+                  <div class="price-info" *ngIf="item.discountAmount > 0">
+                    <div class="original-price-text">{{item.originalPrice | currency:'VND'}} each</div>
+                    <div class="discount-text">-{{item.discountAmount | currency:'VND'}} discount</div>
+                    <div class="final-price-text">{{item.price | currency:'VND'}} each</div>
+                  </div>
+                  <div class="price-info" *ngIf="item.discountAmount <= 0">
+                    <div class="final-price-text">{{item.price | currency:'VND'}} each</div>
+                  </div>
                 </div>
                 <div class="item-actions">
                   <div class="quantity-control">
@@ -142,10 +150,18 @@
         <div class="checkout-sidebar">
           <div class="order-total-box">
             <h3 class="order-total-header">Order Total</h3>
-            <div class="order-total-body">
+            <div class="order-total-body" *ngIf="(basketService.basketTotal$ | async) as total">
+              <div class="total-row" *ngIf="total.totalSavings > 0">
+                <span>Original Subtotal</span>
+                <span>{{ total.originalTotal | currency: 'VND' }}</span>
+              </div>
+              <div class="total-row discount-row" *ngIf="total.totalSavings > 0">
+                <span><i class="fa fa-tag"></i> Total Savings</span>
+                <span class="savings-value">-{{ total.totalSavings | currency: 'VND' }}</span>
+              </div>
               <div class="total-row">
                 <span>Subtotal</span>
-                <span>{{ (basketService.basketTotal$ | async)?.total | currency: 'VND' }}</span>
+                <span>{{ total.total | currency: 'VND' }}</span>
               </div>
               <div class="total-row">
                 <span>Shipping</span>
@@ -157,7 +173,10 @@
               </div>
               <div class="total-row grand-total">
                 <span>Total</span>
-                <span>{{ (basketService.basketTotal$ | async)?.total | currency: 'VND' }}</span>
+                <span>{{ total.total | currency: 'VND' }}</span>
+              </div>
+              <div class="savings-message" *ngIf="total.totalSavings > 0">
+                <i class="fa fa-star"></i> You're saving {{ total.totalSavings | currency: 'VND' }}!
               </div>
               <button (click)="orderNow(basket)" class="place-order-btn">
                 <i class="fa fa-check"></i> Place Order

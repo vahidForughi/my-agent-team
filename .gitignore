@@ -446,3 +446,4 @@ repomix-output.md
 
 # K6 load testing binary (should be installed locally)
 /k6
+/istio-1.28.2

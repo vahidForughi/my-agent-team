@@ -6,6 +6,8 @@ using Catalog.Infrastructure.Repositories;
 using Common.Logging;
 using EventBus.Messages.Common;
 using MassTransit;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Serilog;
 using System.Reflection;
 
@@ -20,6 +22,20 @@ builder.Services.AddCors(options =>
 
 //Serilog configuration
 builder.Host.UseSerilog(Logging.ConfigureLogger);
+
+// OpenTelemetry Configuration
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracerProviderBuilder =>
+    {
+        tracerProviderBuilder
+            .AddSource("Catalog.API")
+            .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("Catalog.API"))
+            .AddAspNetCoreInstrumentation()
+            .AddOtlpExporter(opts =>
+            {
+                opts.Endpoint = new Uri(builder.Configuration["Otlp:Endpoint"] ?? "http://jaeger-collector.istio-system:4317");
+            });
+    });
 
 builder.Services.AddControllers();
 // Add API Versioning
