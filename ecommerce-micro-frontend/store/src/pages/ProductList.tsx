@@ -1,95 +1,64 @@
 import React, { useMemo, useCallback } from 'react';
-import { message, Pagination } from 'antd';
-import { useNavigate, useSearch } from '@tanstack/react-router';
-import { AppInjectorProps } from '@ecommerce-platform/app-injector';
+import { message, Pagination, Space, Flex } from 'antd';
+import { useNavigate } from '@tanstack/react-router';
 import {
   useGetProducts,
   useGetTypes,
   useGetBrands,
 } from '../services/products/hooks';
-import { StoreParamsInput, Product, ProductType } from '../services/products';
+import {
+  Product,
+  ProductType,
+  Brand,
+  PaginatedProducts,
+} from '../services/products/schemas';
 import { useAddToCart } from '../services/basket';
 import {
   ProductHeader,
   ProductGrid,
   LoadingState,
   ErrorState,
-  ProductFilterType,
-  SortOption,
 } from '../components/ProductList';
+import { ProductFilterType, SortOption } from '../components/ProductList/types';
 import type { ProductListSearch } from '../typings/search';
-
-type ProductListProps = {
-  config?: AppInjectorProps['config'];
-};
+import { useProductListFilters } from '../hooks/useProductListFilters';
 
 const PAGE_SIZE = 10;
 
-const ProductList: React.FC<ProductListProps> = ({ config }) => {
+function ProductList() {
   const navigate = useNavigate();
-  const searchParams = useSearch({ strict: false }) as ProductListSearch;
-  const { onError } = config || {};
 
   const { data: productTypes } = useGetTypes();
   const { data: brands } = useGetBrands();
 
-  // Derive filter values directly from URL (single source of truth)
-  const selectedFilter = (searchParams?.filter ?? 'all') as ProductFilterType;
-  const sortOption = (searchParams?.sort ?? 'default') as SortOption;
-  const currentPage = searchParams?.page ?? 1;
-  const selectedBrandId = searchParams?.brandId;
+  const typedProductTypes = (productTypes ?? null) as ProductType[] | null;
+  const typedBrands = (brands ?? null) as Brand[] | null;
 
-  // Resolve typeId: use typeId directly, or lookup from cat name
-  const selectedTypeId = useMemo(() => {
-    if (searchParams?.typeId) {
-      return searchParams.typeId;
-    }
-    if (searchParams?.cat && productTypes) {
-      const matchingType = productTypes.find(
-        (type: ProductType) =>
-          type.name.toLowerCase() === searchParams.cat?.toLowerCase()
-      );
-      return matchingType?.id;
-    }
-    return undefined;
-  }, [searchParams?.typeId, searchParams?.cat, productTypes]);
-
-  const params = useMemo<StoreParamsInput>(() => {
-    const baseParams: StoreParamsInput = {
-      page: currentPage,
-      limit: PAGE_SIZE,
-    };
-
-    if (selectedBrandId) {
-      baseParams.BrandId = selectedBrandId;
-    }
-
-    if (selectedTypeId) {
-      baseParams.TypeId = selectedTypeId;
-    }
-
-    if (sortOption !== 'default') {
-      baseParams.Sort = sortOption;
-    }
-
-    return baseParams;
-  }, [selectedBrandId, selectedTypeId, sortOption, currentPage]);
+  const {
+    selectedFilter,
+    sortOption,
+    currentPage,
+    selectedBrandId,
+    selectedTypeId,
+    params,
+    updateSearch,
+  } = useProductListFilters({ productTypes: typedProductTypes });
 
   const { data: paginatedProducts, isLoading, error } = useGetProducts(params);
+
+  const typedPaginatedProducts = paginatedProducts as
+    | PaginatedProducts
+    | null
+    | undefined;
 
   const addToCartMutation = useAddToCart();
 
   const products = useMemo(() => {
-    return paginatedProducts?.data || [];
-  }, [paginatedProducts]);
+    return typedPaginatedProducts?.data || [];
+  }, [typedPaginatedProducts]);
 
-  const productCount = useMemo(() => {
-    return products.length;
-  }, [products]);
-
-  const totalCount = useMemo(() => {
-    return paginatedProducts?.count || 0;
-  }, [paginatedProducts]);
+  const productCount = products.length;
+  const totalCount = typedPaginatedProducts?.count || 0;
 
   const handleAddToCart = useCallback(
     async (productId: string, productName: string) => {
@@ -111,87 +80,97 @@ const ProductList: React.FC<ProductListProps> = ({ config }) => {
         });
 
         message.success(`${productName} added to cart!`);
-      } catch (err) {
-        if (onError) {
-          onError(err as Error);
-        } else {
-          message.error('Failed to add item to cart');
-        }
+      } catch {
+        message.error('Failed to add item to cart');
       }
     },
-    [products, addToCartMutation, onError]
+    [products, addToCartMutation]
   );
 
   function handleViewDetails(productId: string) {
-    console.log('Navigating to product:', productId);
     navigate({ to: '/product/$id', params: { id: productId } });
   }
 
-  // Navigate with search params - URL is the source of truth
-  function handleBrandChange(brandId: string | undefined) {
-    navigate({
-      to: '/',
-      search: {
-        brandId,
-        typeId: searchParams?.typeId,
-        cat: searchParams?.cat,
-        filter: searchParams?.filter,
-        sort: searchParams?.sort,
-        page: undefined,
-      },
-    });
-  }
+  const handleBrandChange = useCallback(
+    (brandId: string | undefined) => {
+      updateSearch({ brandId, page: undefined });
+    },
+    [updateSearch]
+  );
 
-  function handleTypeChange(typeId: string | undefined) {
-    navigate({
-      to: '/',
-      search: {
-        brandId: searchParams?.brandId,
-        typeId,
+  const handleTypeChange = useCallback(
+    (typeId: string | undefined) => {
+      updateSearch({ typeId, cat: undefined, page: undefined });
+    },
+    [updateSearch]
+  );
+
+  const handleFilterChange = useCallback(
+    (filter: ProductFilterType) => {
+      const updates: Record<string, unknown> = {
+        brandId: undefined,
+        typeId: undefined,
         cat: undefined,
-        filter: searchParams?.filter,
-        sort: searchParams?.sort,
         page: undefined,
-      },
-    });
-  }
+      };
 
-  function handleFilterChange(filter: ProductFilterType) {
-    // When selecting 'all', clear all filters (including brandId, typeId/cat)
-    navigate({
-      to: '/',
-      search: {
-        filter: filter === 'all' ? undefined : filter,
-        brandId: undefined, // Always clear brandId when changing filter
-        typeId: undefined, // Always clear typeId when changing filter
-        cat: undefined, // Always clear cat when changing filter
-        sort: searchParams?.sort,
-        page: undefined,
-      },
-    });
-  }
+      if (filter === 'all') {
+        updates.filter = undefined;
+      } else {
+        updates.filter = filter;
+      }
 
-  function handleSortChange(sort: SortOption) {
-    navigate({
-      to: '/',
-      search: {
-        ...searchParams,
+      updateSearch(updates as Partial<ProductListSearch>);
+    },
+    [updateSearch]
+  );
+
+  const handleSortChange = useCallback(
+    (sort: SortOption) => {
+      updateSearch({
         sort: sort === 'default' ? undefined : sort,
         page: undefined,
-      },
-    });
-  }
+      });
+    },
+    [updateSearch]
+  );
 
   function handlePageChange(page: number) {
-    navigate({
-      to: '/',
-      search: {
-        ...searchParams,
-        page: page === 1 ? undefined : page,
-      },
-    });
+    updateSearch({ page: page === 1 ? undefined : page });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
+
+  const productHeaderProps = useMemo(
+    () => ({
+      productCount: products.length > 0 ? productCount : 0,
+      totalCount: products.length > 0 ? totalCount : 0,
+      brands: typedBrands || undefined,
+      productTypes: typedProductTypes || undefined,
+      selectedBrandId,
+      selectedTypeId,
+      selectedFilter,
+      sortOption,
+      onBrandChange: handleBrandChange,
+      onTypeChange: handleTypeChange,
+      onFilterChange: handleFilterChange,
+      onSortChange: handleSortChange,
+    }),
+    [
+      productCount,
+      totalCount,
+      typedBrands,
+      typedProductTypes,
+      selectedBrandId,
+      selectedTypeId,
+      selectedFilter,
+      sortOption,
+      handleBrandChange,
+      handleTypeChange,
+      handleFilterChange,
+      handleSortChange,
+      products.length,
+    ]
+  );
 
   if (error) {
     return <ErrorState />;
@@ -203,54 +182,30 @@ const ProductList: React.FC<ProductListProps> = ({ config }) => {
 
   if (!products || products.length === 0) {
     return (
-      <div style={{ padding: '24px' }}>
-        <ProductHeader
-          productCount={0}
-          totalCount={0}
-          brands={brands || undefined}
-          productTypes={productTypes || undefined}
-          selectedBrandId={selectedBrandId}
-          selectedTypeId={selectedTypeId}
-          selectedFilter={selectedFilter}
-          sortOption={sortOption}
-          onBrandChange={handleBrandChange}
-          onTypeChange={handleTypeChange}
-          onFilterChange={handleFilterChange}
-          onSortChange={handleSortChange}
-        />
-      </div>
+      <Space
+        direction="vertical"
+        size="large"
+        style={{ width: '100%', padding: '24px' }}
+      >
+        <ProductHeader {...productHeaderProps} />
+      </Space>
     );
   }
 
   return (
-    <div style={{ padding: '24px' }}>
-      <ProductHeader
-        productCount={productCount}
-        totalCount={totalCount}
-        brands={brands || undefined}
-        productTypes={productTypes || undefined}
-        selectedBrandId={selectedBrandId}
-        selectedTypeId={selectedTypeId}
-        selectedFilter={selectedFilter}
-        sortOption={sortOption}
-        onBrandChange={handleBrandChange}
-        onTypeChange={handleTypeChange}
-        onFilterChange={handleFilterChange}
-        onSortChange={handleSortChange}
-      />
+    <Space
+      direction="vertical"
+      size="large"
+      style={{ width: '100%', padding: '24px' }}
+    >
+      <ProductHeader {...productHeaderProps} />
       <ProductGrid
         products={products}
         onAddToCart={handleAddToCart}
         onViewDetails={handleViewDetails}
       />
       {totalCount > PAGE_SIZE && (
-        <div
-          style={{
-            marginTop: '32px',
-            display: 'flex',
-            justifyContent: 'center',
-          }}
-        >
+        <Flex justify="center" style={{ marginTop: '32px' }}>
           <Pagination
             current={currentPage}
             pageSize={PAGE_SIZE}
@@ -261,10 +216,10 @@ const ProductList: React.FC<ProductListProps> = ({ config }) => {
               `${range[0]}-${range[1]} of ${total} products`
             }
           />
-        </div>
+        </Flex>
       )}
-    </div>
+    </Space>
   );
-};
+}
 
 export default ProductList;

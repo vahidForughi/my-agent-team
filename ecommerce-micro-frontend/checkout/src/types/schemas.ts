@@ -48,11 +48,3 @@ export const CheckoutBasketCommandSchema = z.object({
   PaymentMethod: z.number().optional(),
 });
 
-// Discount Schemas
-export const CouponSchema = z.object({
-  Id: z.number(),
-  ProductName: z.string(),
-  Description: z.string(),
-  Amount: z.number().int().min(0),
-});
-

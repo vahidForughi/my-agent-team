@@ -1,7 +1,6 @@
 import MockAdapter from 'axios-mock-adapter';
 import { axiosClient } from '../httpClient';
 import { env } from '../../config';
-import registerUserMocks from './user/apis';
 import registerOrdersMocks from './orders/apis';
 
 let mockAdapter: MockAdapter | null = null;
@@ -28,11 +27,10 @@ export function setupMocks() {
     onNoMatch: 'passthrough', // Allow real API calls to pass through
   });
 
-  registerUserMocks(mockAdapter);
   registerOrdersMocks(mockAdapter);
 
   console.log(
-    '[Mocks] Account mock adapter initialized with user and orders endpoints'
+    '[Mocks] Account mock adapter initialized with orders endpoints'
   );
 }
 

@@ -1,19 +1,10 @@
 import { z } from 'zod';
 import {
-  getOrdersRequestSchema,
-  getOrderByIdRequestSchema,
   orderItemResponseSchema,
   orderResponseSchema,
   orderItemSchema,
   orderSchema,
 } from './schemas';
-
-// ====================================
-// REQUEST TYPES
-// ====================================
-
-export type GetOrdersRequest = z.infer<typeof getOrdersRequestSchema>;
-export type GetOrderByIdRequest = z.infer<typeof getOrderByIdRequestSchema>;
 
 // ====================================
 // BACKEND RESPONSE TYPES

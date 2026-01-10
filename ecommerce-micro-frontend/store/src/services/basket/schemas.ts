@@ -1,14 +1,6 @@
 import { z } from 'zod';
 
-// ============================================================================
-// Backend Response Schemas (camelCase - matching actual API response)
-// ============================================================================
-
-/**
- * Backend ShoppingCartItem Schema
- * Matches /Basket/GetBasket response item structure
- */
-export const shoppingCartItemResponseSchema = z.object({
+export const basketItemResponseSchema = z.object({
   productId: z.string(),
   productName: z.string(),
   price: z.number(),
@@ -19,23 +11,12 @@ export const shoppingCartItemResponseSchema = z.object({
   finalPrice: z.number().optional(),
 });
 
-/**
- * Backend ShoppingCart Schema
- * Matches /Basket/GetBasket and /Basket/CreateBasket response structure
- */
-export const shoppingCartResponseSchema = z.object({
+export const basketResponseSchema = z.object({
   userName: z.string(),
-  items: z.array(shoppingCartItemResponseSchema).default([]),
+  items: z.array(basketItemResponseSchema).default([]),
   totalPrice: z.number().optional(),
 });
 
-// ============================================================================
-// Frontend DTO Schemas (same as backend since both use camelCase)
-// ============================================================================
-
-/**
- * Frontend BasketItem DTO Schema
- */
 export const basketItemSchema = z.object({
   productId: z.string(),
   productName: z.string(),
@@ -47,9 +28,6 @@ export const basketItemSchema = z.object({
   itemTotal: z.number(),
 });
 
-/**
- * Frontend Basket DTO Schema
- */
 export const basketSchema = z.object({
   userName: z.string(),
   items: z.array(basketItemSchema),
@@ -58,18 +36,8 @@ export const basketSchema = z.object({
   isEmpty: z.boolean(),
 });
 
-// ============================================================================
-// Request Schemas
-// ============================================================================
+export type BasketItemResponse = z.infer<typeof basketItemResponseSchema>;
+export type BasketResponse = z.infer<typeof basketResponseSchema>;
 
-/**
- * Add to cart request schema
- */
-export const addToCartRequestSchema = z.object({
-  productId: z.string(),
-  productName: z.string(),
-  price: z.number(),
-  originalPrice: z.number().optional(),
-  quantity: z.number().min(1),
-  imageFile: z.string().nullable().optional(),
-});
+export type BasketItem = z.infer<typeof basketItemSchema>;
+export type Basket = z.infer<typeof basketSchema>;

@@ -1,125 +1,102 @@
 import { createMapper } from '../factory/createMapper';
+import { ZodSchema } from 'zod';
+
 import {
   Product,
   ProductResponse,
   ProductsResponse,
   ProductDetailResponse,
-  ReviewResponse,
-  ReviewsResponse,
-  Review,
   Brand,
   BrandResponse,
   ProductType,
   ProductTypeResponse,
-} from './types';
-import {
+  PaginatedProducts,
   productResponseSchema,
   productsResponseSchema,
   productDetailResponseSchema,
-  reviewResponseSchema,
   brandResponseSchema,
   productTypeResponseSchema,
   brandArrayResponseSchema,
   productTypeArrayResponseSchema,
-  productSchema,
-  reviewSchema,
 } from './schemas';
 
 export const productMapper = createMapper<ProductResponse, Product>(
-  (response) => {
+  (entity) => {
     return {
-      id: response.id,
-      name: response.name,
-      summary: response.summary,
-      description: response.description,
-      imageFile: response.imageFile,
-      brands: response.brands,
-      types: response.types,
-      price: response.price,
+      id: entity.id,
+      name: entity.name,
+      summary: entity.summary,
+      description: entity.description,
+      imageFile: entity.imageFile,
+      brands: entity.brands,
+      types: entity.types,
+      price: entity.price,
     };
   },
-  productResponseSchema
+  productResponseSchema as ZodSchema<ProductResponse>
 );
 
-export const productsMapper = createMapper<ProductsResponse, import('./types').PaginatedProducts>(
-  (response) => {
+export const productsMapper = createMapper<ProductsResponse, PaginatedProducts>(
+  (entity) => {
     return {
-      pageIndex: response.pageIndex,
-      pageSize: response.pageSize,
-      count: response.count,
-      data: response.data.map((productResponse) =>
-        productMapper.toDto(productResponse)
-      ).filter((product): product is Product => product !== null),
+      pageIndex: entity.pageIndex,
+      pageSize: entity.pageSize,
+      count: entity.count,
+      data: entity.data
+        .map((productResponse) => productMapper.toDto(productResponse))
+        .filter((product): product is Product => product !== null),
     };
   },
-  productsResponseSchema
+  productsResponseSchema as ZodSchema<ProductsResponse>
 );
 
-export const brandMapper = createMapper<BrandResponse, Brand>((response) => {
+export const brandMapper = createMapper<BrandResponse, Brand>((entity) => {
   return {
-    id: response.id,
-    name: response.name,
+    id: entity.id,
+    name: entity.name,
   };
-}, brandResponseSchema);
+}, brandResponseSchema as ZodSchema<BrandResponse>);
 
 export const brandArrayMapper = createMapper<BrandResponse[], Brand[]>(
-  (response) => {
-    return response
+  (entity) => {
+    return entity
       .map((brandResponse) => brandMapper.toDto(brandResponse))
       .filter((brand): brand is Brand => brand !== null);
   },
-  brandArrayResponseSchema
+  brandArrayResponseSchema as ZodSchema<BrandResponse[]>
 );
 
 export const productTypeMapper = createMapper<ProductTypeResponse, ProductType>(
-  (response) => {
+  (entity) => {
     return {
-      id: response.id,
-      name: response.name,
+      id: entity.id,
+      name: entity.name,
     };
   },
-  productTypeResponseSchema
+  productTypeResponseSchema as ZodSchema<ProductTypeResponse>
 );
 
 export const productTypeArrayMapper = createMapper<
   ProductTypeResponse[],
   ProductType[]
->((response) => {
-  return response
+>((entity) => {
+  return entity
     .map((typeResponse) => productTypeMapper.toDto(typeResponse))
     .filter((type): type is ProductType => type !== null);
-}, productTypeArrayResponseSchema);
-
-export const reviewMapper = createMapper<ReviewResponse, Review>((response) => {
-  return {
-    reviewId: response.reviewId,
-    userId: response.userId,
-    userName: response.userName,
-    rating: response.rating,
-    date: response.date,
-    comment: response.comment,
-    helpfulCount: response.helpfulCount ?? 0,
-  };
-}, reviewResponseSchema);
-
-export const reviewsMapper = (reviews: ReviewsResponse): Review[] => {
-  return reviews
-    .map((review) => reviewMapper.toDto(review))
-    .filter((review): review is Review => review !== null);
-};
+}, productTypeArrayResponseSchema as ZodSchema<ProductTypeResponse[]>);
 
 export const productDetailMapper = createMapper<ProductDetailResponse, Product>(
-  (response) => {
+  (entity) => {
     return {
-      id: response.id,
-      name: response.name,
-      summary: response.summary,
-      description: response.description,
-      imageFile: response.imageFile,
-      brands: response.brands,
-      types: response.types,
-      price: response.price,
+      id: entity.id,
+      name: entity.name,
+      summary: entity.summary,
+      description: entity.description,
+      imageFile: entity.imageFile,
+      brands: entity.brands,
+      types: entity.types,
+      price: entity.price,
     };
   },
-  productDetailResponseSchema
+  productDetailResponseSchema as ZodSchema<ProductDetailResponse>
 );

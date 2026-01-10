@@ -1,13 +1,11 @@
 import { useState, useCallback } from 'react';
 import { message } from 'antd';
-import { AppInjectorProps } from '@ecommerce-platform/app-injector';
-import { Product } from '../services/products/types';
+import { Product } from '../services/products/schemas';
 import { isProductInStock, getProductQuantity } from '../helpers/productUtils';
 import { useAddToCart } from '../services/basket';
 
 type UseProductActionsProps = {
   product: Product | null;
-  config?: AppInjectorProps['config'];
 };
 
 type UseProductActionsReturn = {
@@ -23,10 +21,8 @@ type UseProductActionsReturn = {
 
 export function useProductActions({
   product,
-  config,
 }: UseProductActionsProps): UseProductActionsReturn {
   const [quantity, setQuantity] = useState(1);
-  const { onNavigate, onError } = config || {};
 
   // Use the real add to cart mutation
   const addToCartMutation = useAddToCart();
@@ -68,14 +64,10 @@ export function useProductActions({
       message.success(`${product.name} (x${quantity}) added to cart!`);
       return true;
     } catch (error) {
-      if (onError) {
-        onError(error as Error);
-      } else {
-        message.error('Failed to add item to cart');
-      }
+      message.error('Failed to add item to cart');
       return false;
     }
-  }, [product, quantity, canAddToCart, addToCartMutation, onError]);
+  }, [product, quantity, canAddToCart, addToCartMutation]);
 
   const handleBuyNow = useCallback(async () => {
     if (!product) {
@@ -89,21 +81,14 @@ export function useProductActions({
     }
 
     try {
-      // Add to cart first and wait for success
       const success = await handleAddToCart();
-
-      // Only navigate to checkout if cart addition was successful
-      if (success && onNavigate) {
-        onNavigate('/checkout');
+      if (success) {
+        window.location.href = '/checkout';
       }
     } catch (error) {
-      const errorMsg = 'Failed to proceed to checkout';
-      message.error(errorMsg);
-      if (onError) {
-        onError(error as Error);
-      }
+      message.error('Failed to proceed to checkout');
     }
-  }, [product, canAddToCart, handleAddToCart, onNavigate, onError]);
+  }, [product, canAddToCart, handleAddToCart]);
 
   const handleAddToWishlist = useCallback(async () => {
     if (!product) {
@@ -117,14 +102,10 @@ export function useProductActions({
       message.success(`${product.name} added to wishlist!`);
       return true;
     } catch (error) {
-      if (onError) {
-        onError(error as Error);
-      } else {
-        message.error('Failed to add to wishlist');
-      }
+      message.error('Failed to add to wishlist');
       return false;
     }
-  }, [product, onError]);
+  }, [product]);
 
   const handleSetQuantity = useCallback(
     (newQuantity: number) => {

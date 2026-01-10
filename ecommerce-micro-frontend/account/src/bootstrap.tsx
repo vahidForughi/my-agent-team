@@ -10,7 +10,7 @@ import * as ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ConfigProvider, App as AntApp } from 'antd';
-import Module from './app/Module';
+import App from './App';
 
 // Create a query client for standalone mode
 const queryClient = new QueryClient({
@@ -41,8 +41,8 @@ const StandaloneApp: React.FC = () => {
           }}
         >
           <AntApp>
-            {/* Module runs without host config, triggering standalone MSAL mode */}
-            <Module />
+            {/* App runs without host config, triggering standalone MSAL mode */}
+            <App />
           </AntApp>
         </ConfigProvider>
       </BrowserRouter>

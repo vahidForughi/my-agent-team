@@ -1,66 +1,138 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@ecommerce-platform/auth-provider';
-import * as apis from './apis';
+import { storeClient } from '@services/index';
+import { AddToCartInput } from './input';
+import { FilterOptions } from '@services/types';
 import { basketKeys } from './keys';
-import type { AddToCartRequest, Basket } from './types';
+import { Basket } from './schemas';
 
-/**
- * Custom event name for cross-module cart updates
- */
 export const CART_UPDATED_EVENT = 'ecommerce:cart:updated';
 
-/**
- * Get current username from auth hook
- */
-function getUserName(user: ReturnType<typeof useAuth>['user']): string {
-  return user?.email || user?.displayName || user?.id || 'guest';
+function getUserName(user: ReturnType<typeof useAuth>['user']): string | null {
+  if (!user) {
+    return null;
+  }
+  return user.email || user.displayName || user.id || null;
 }
 
-/**
- * Hook to add item to cart
- * 
- * Features:
- * - Calls real Basket API
- * - Invalidates basket cache on success
- * - Dispatches CustomEvent to notify other modules (e.g., host Navbar)
- */
-export function useAddToCart() {
+type AddToCartPayload = {
+  productId: string;
+  productName: string;
+  price: number;
+  originalPrice: number;
+  quantity: number;
+  imageFile: string | null;
+};
+
+export function useAddToCart(input?: FilterOptions<AddToCartInput>) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const userName = getUserName(user);
 
-  return useMutation<Basket, Error, AddToCartRequest>({
-    mutationFn: async (request) => {
-      // Try to get current basket from cache to avoid extra API call
-      const cachedBasket = queryClient.getQueryData<Basket>(
-        basketKeys.detail(userName)
+  return useMutation({
+    mutationKey: [basketKeys.addToCart.create(input)],
+    mutationFn: async (payload: AddToCartPayload) => {
+      const userName = getUserName(user);
+      if (!userName) {
+        throw new Error('User must be authenticated to add items to cart');
+      }
+
+      const basketKey = basketKeys.getBasket.create({ userName });
+      let currentBasket: Basket | undefined =
+        queryClient.getQueryData<Basket>(basketKey);
+
+      if (!currentBasket) {
+        try {
+          const response = await storeClient.basket.getBasket({
+            params: { userName },
+          });
+          if (response && 'itemCount' in response && 'isEmpty' in response) {
+            currentBasket = response as Basket;
+          }
+        } catch (error) {
+          console.error('[useAddToCart] Error fetching basket', error);
+        }
+      }
+
+      if (!currentBasket) {
+        currentBasket = {
+          userName,
+          items: [],
+          totalPrice: 0,
+          itemCount: 0,
+          isEmpty: true,
+        };
+      }
+
+      const existingItems = currentBasket.items;
+      const existingItemIndex = existingItems.findIndex(
+        (item) => item.productId === payload.productId
       );
-      // Pass userName from hook to ensure we use the correct user
-      return apis.addToCart(request, cachedBasket, userName);
-    },
-    onSuccess: (basket) => {
-      // Update cache with new basket data instead of invalidating
-      // This avoids an extra refetch API call
-      queryClient.setQueryData(basketKeys.detail(userName), basket);
 
-      // Dispatch CustomEvent to notify other modules (e.g., host Navbar)
-      // Using window.dispatchEvent for cross-module communication
-      window.dispatchEvent(
-        new CustomEvent(CART_UPDATED_EVENT, {
-          detail: {
-            itemCount: basket.itemCount,
-            totalPrice: basket.totalPrice,
+      let updatedItems: Basket['items'];
+
+      if (existingItemIndex >= 0) {
+        updatedItems = existingItems.map((item, index) => {
+          if (index === existingItemIndex) {
+            return {
+              ...item,
+              quantity: item.quantity + payload.quantity,
+              itemTotal: item.price * (item.quantity + payload.quantity),
+            };
+          }
+          return item;
+        });
+      } else {
+        updatedItems = [
+          ...existingItems,
+          {
+            productId: payload.productId,
+            productName: payload.productName,
+            price: payload.price,
+            originalPrice: payload.originalPrice,
+            discountAmount: payload.originalPrice - payload.price,
+            quantity: payload.quantity,
+            imageFile: payload.imageFile,
+            itemTotal: payload.price * payload.quantity,
           },
-        })
-      );
-    },
-    onError: (error) => {
-      console.error('[useAddToCart] Error:', error);
-      // Invalidate cache on error to ensure fresh data on retry
-      queryClient.invalidateQueries({
-        queryKey: basketKeys.detail(userName),
+        ];
+      }
+
+      const command: AddToCartInput = {
+        UserName: userName,
+        Items: updatedItems.map((item) => ({
+          Quantity: item.quantity,
+          Price: item.price,
+          OriginalPrice: item.originalPrice,
+          DiscountAmount: item.discountAmount,
+          ProductId: item.productId,
+          ImageFile: item.imageFile || undefined,
+          ProductName: item.productName,
+        })),
+      };
+
+      return storeClient.basket.addToCart({
+        payload: command,
       });
+    },
+    onSuccess: (data) => {
+      const userName = getUserName(user);
+      if (!userName) {
+        return;
+      }
+
+      queryClient.invalidateQueries({
+        queryKey: basketKeys.getBasket.create({ userName }),
+      });
+
+      const event = new CustomEvent(CART_UPDATED_EVENT, {
+        detail: {
+          itemCount: data?.items?.length ?? 0,
+          totalPrice: data?.totalPrice ?? 0,
+          userName,
+        },
+      });
+
+      window.dispatchEvent(event);
     },
   });
 }
-

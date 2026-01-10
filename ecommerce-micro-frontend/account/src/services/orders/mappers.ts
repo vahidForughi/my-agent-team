@@ -73,6 +73,11 @@ export function mapOrder(response: OrderResponse): Order | null {
     country: data.country,
     state: data.state,
     zipCode: data.zipCode,
+    cardName: data.cardName,
+    cardNumber: data.cardNumber,
+    expiration: data.expiration,
+    cvv: data.cvv,
+    paymentMethod: data.paymentMethod,
   };
 }
 

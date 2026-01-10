@@ -1,20 +1,6 @@
 import { z } from 'zod';
 
 // ====================================
-// REQUEST SCHEMAS
-// ====================================
-
-export const getOrdersRequestSchema = z.object({
-  userName: z.string().optional(),
-  useMock: z.boolean().optional(),
-});
-
-export const getOrderByIdRequestSchema = z.object({
-  orderId: z.string(),
-  useMock: z.boolean().optional(),
-});
-
-// ====================================
 // BACKEND RESPONSE SCHEMAS (camelCase - actual API response)
 // ====================================
 
@@ -38,9 +24,9 @@ export const orderResponseSchema = z.object({
   id: z.number(),
   userName: z.string(),
   totalPrice: z.number(),
-  orderDate: z.string(),
+  orderDate: z.string().optional().nullable(),
   status: z.string().optional().nullable(),
-  items: z.array(orderItemResponseSchema).default([]),
+  items: z.array(orderItemResponseSchema).optional().default([]),
   firstName: z.string().optional().nullable(),
   lastName: z.string().optional().nullable(),
   emailAddress: z.string().optional().nullable(),
@@ -48,6 +34,11 @@ export const orderResponseSchema = z.object({
   country: z.string().optional().nullable(),
   state: z.string().optional().nullable(),
   zipCode: z.string().optional().nullable(),
+  cardName: z.string().optional().nullable(),
+  cardNumber: z.string().optional().nullable(),
+  expiration: z.string().optional().nullable(),
+  cvv: z.string().optional().nullable(),
+  paymentMethod: z.number().optional().nullable(),
 });
 
 // ====================================
@@ -73,7 +64,7 @@ export const orderSchema = z.object({
   id: z.number(),
   userName: z.string(),
   totalPrice: z.number(),
-  orderDate: z.string(),
+  orderDate: z.string().optional().nullable(),
   status: z.string().optional().nullable(),
   items: z.array(orderItemSchema),
   totalItems: z.number().optional(),
@@ -84,5 +75,10 @@ export const orderSchema = z.object({
   country: z.string().optional().nullable(),
   state: z.string().optional().nullable(),
   zipCode: z.string().optional().nullable(),
+  cardName: z.string().optional().nullable(),
+  cardNumber: z.string().optional().nullable(),
+  expiration: z.string().optional().nullable(),
+  cvv: z.string().optional().nullable(),
+  paymentMethod: z.number().optional().nullable(),
 });
 

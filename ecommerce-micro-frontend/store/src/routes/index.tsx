@@ -10,7 +10,5 @@ export const Route = createFileRoute('/')({
 });
 
 function ProductListRoute() {
-  const { config } = Route.useRouteContext();
-
-  return <ProductList config={config} />;
+  return <ProductList />;
 }

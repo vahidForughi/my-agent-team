@@ -1,4 +1,4 @@
-import { Product, Review, StockStatus } from '../services/products';
+import { Product, Review } from '../services/products/schemas';
 
 /**
  * Type definition for product stock (matching backend response structure)
@@ -24,28 +24,6 @@ export function calculateAverageRating(reviews: Review[]): number {
   }
   const sum = reviews.reduce((acc, review) => acc + review.rating, 0);
   return Math.round(sum / reviews.length);
-}
-
-/**
- * Get stock status based on quantity and threshold
- *
- * @param quantity - Current stock quantity
- * @param threshold - Low stock threshold (default: 10)
- * @returns Stock status
- *
- * @example
- * getStockStatus(0) // 'out-of-stock'
- * getStockStatus(5, 10) // 'low-stock'
- * getStockStatus(20) // 'in-stock'
- */
-export function getStockStatus(quantity: number, threshold = 10): StockStatus {
-  if (quantity === 0) {
-    return 'out-of-stock';
-  }
-  if (quantity <= threshold) {
-    return 'low-stock';
-  }
-  return 'in-stock';
 }
 
 /**
@@ -93,23 +71,6 @@ export function isNewProduct(createdAt: string, thresholdDays = 30): boolean {
   const diffTime = now.getTime() - createdDate.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   return diffDays <= thresholdDays;
-}
-
-/**
- * Get stock status from ProductStock object
- *
- * @param stock - Product stock object
- * @returns Stock status
- *
- * @example
- * getProductStockStatus({ quantity: 5, inStock: true, lowStockThreshold: 10 })
- * // 'low-stock'
- */
-export function getProductStockStatus(stock?: ProductStock): StockStatus {
-  if (!stock) {
-    return 'out-of-stock';
-  }
-  return getStockStatus(stock.quantity, stock.lowStockThreshold);
 }
 
 /**
