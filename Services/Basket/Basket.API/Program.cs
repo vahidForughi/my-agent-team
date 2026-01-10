@@ -7,6 +7,8 @@ using Basket.Infrastructure.Repositories;
 using Common.Logging;
 using Discount.Grpc.Protos;
 using MassTransit;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Serilog;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Reflection;
@@ -22,6 +24,21 @@ builder.Services.AddCors(options =>
 
 // Serilog configuration
 builder.Host.UseSerilog(Logging.ConfigureLogger);
+
+// OpenTelemetry Configuration
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracerProviderBuilder =>
+    {
+        tracerProviderBuilder
+            .AddSource("Basket.API")
+            .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("Basket.API"))
+            .AddAspNetCoreInstrumentation()
+            .AddGrpcClientInstrumentation()
+            .AddOtlpExporter(opts =>
+            {
+                opts.Endpoint = new Uri(builder.Configuration["Otlp:Endpoint"] ?? "http://jaeger-collector.istio-system:4317");
+            });
+    });
 
 builder.Services.AddControllers();
 

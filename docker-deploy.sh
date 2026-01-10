@@ -174,7 +174,7 @@ check_disk_space() {
     log_step "Checking available disk space..."
     
     # macOS-compatible disk space check
-    local available_gb=$(df -h . | tail -1 | awk '{print $4}' | sed 's/Gi\?//')
+    local available_gb=$(df -h . | tail -1 | awk '{print $4}' | sed 's/[A-Za-z]*//g')
     
     # Remove any decimals for comparison
     local available_int=${available_gb%.*}
@@ -236,22 +236,72 @@ start_infrastructure() {
     
     # Wait for PostgreSQL
     log_info "Waiting for PostgreSQL..."
-    docker-compose exec -T discountdb pg_isready -U admin > /dev/null 2>&1
-    while [ $? -ne 0 ]; do
+    local pg_max_retries=30
+    local pg_retry=0
+    local pg_ready=false
+    
+    while [ $pg_retry -lt $pg_max_retries ]; do
+        if docker-compose exec -T discountdb pg_isready -U admin > /dev/null 2>&1; then
+            pg_ready=true
+            break
+        fi
+        pg_retry=$((pg_retry+1))
+        echo -ne "Waiting for PostgreSQL... ($pg_retry/$pg_max_retries)\r"
         sleep 2
-        docker-compose exec -T discountdb pg_isready -U admin > /dev/null 2>&1
     done
-    log_success "PostgreSQL is ready"
+    echo ""
+    
+    if [ "$pg_ready" = true ]; then
+        log_success "PostgreSQL is ready"
+    else
+        log_warning "PostgreSQL check timeout, check logs: docker logs discountdb"
+    fi
     
     # Wait for SQL Server
     log_info "Waiting for SQL Server..."
-    sleep 15
-    log_success "SQL Server should be ready"
+    local sql_max_retries=30
+    local sql_retry=0
+    local sql_ready=false
+    
+    while [ $sql_retry -lt $sql_max_retries ]; do
+        if docker-compose exec -T orderdb /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P SqlPassword123 -Q "SELECT 1" -b -C > /dev/null 2>&1; then
+            sql_ready=true
+            break
+        fi
+        sql_retry=$((sql_retry+1))
+        echo -ne "Waiting for SQL Server... ($sql_retry/$sql_max_retries)\r"
+        sleep 2
+    done
+    echo ""
+    
+    if [ "$sql_ready" = true ]; then
+        log_success "SQL Server is ready"
+    else
+        log_warning "SQL Server check timeout, check logs: docker logs orderdb"
+    fi
     
     # Wait for MongoDB
     log_info "Waiting for MongoDB..."
-    sleep 5
-    log_success "MongoDB should be ready"
+    local mongo_max_retries=30
+    local mongo_retry=0
+    local mongo_ready=false
+    
+    while [ $mongo_retry -lt $mongo_max_retries ]; do
+        if docker-compose exec -T catalogdb mongosh --eval "db.adminCommand('ping')" -u admin -p admin1234 --authenticationDatabase admin --quiet > /dev/null 2>&1; then
+            mongo_ready=true
+            break
+        fi
+        mongo_retry=$((mongo_retry+1))
+        echo -ne "Waiting for MongoDB... ($mongo_retry/$mongo_max_retries)\r"
+        sleep 2
+    done
+    echo ""
+    
+    if [ "$mongo_ready" = true ]; then
+        log_success "MongoDB is ready"
+    else
+        log_warning "MongoDB check timeout, check logs: docker logs catalogdb"
+    fi
     
     # Start message broker, logging, and LocalStack
     log_info "Starting RabbitMQ, Elasticsearch, and LocalStack..."
