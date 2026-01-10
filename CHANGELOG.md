@@ -1,4 +1,48 @@
 # Changelog
+## [0.7.0] - 2026-01-10
+
+## What's Changed
+
+### 🚀 Features
+- feat: add certificate generation tools and istioctl bash completion (#179) (77782c1)
+
+### 🐛 Bug Fixes
+- No bug fixes
+
+### 🔧 Improvements
+- No improvements
+
+### 📚 Documentation
+- docs: update changelog for 0.6.1 (#178) (c0ee91f)
+- docs: update changelog for 0.6.1 [skip ci] (37c6e0c)
+- docs: update changelog for 0.6.0 (#177) (08ca351)
+- docs: update changelog for 0.6.0 [skip ci] (e815501)
+
+### 🔐 Security
+- No security updates
+
+### 🏗️ Infrastructure
+- docs: update changelog for 0.6.1 [skip ci] (37c6e0c)
+- docs: update changelog for 0.6.0 [skip ci] (e815501)
+
+### Other Changes
+- Add certificate generation tools and istioctl bash completion (d5ce9a9)
+- Merge branch 'main' into changelog/0.6.1 (83874da)
+- Merge branch 'main' into changelog/0.6.0 (4b2a8a4)
+
+## Docker Images
+All services are available as Docker images:
+- 
+- 
+- 
+- 
+- 
+
+## Helm Deployment
+
+
+**Full Changelog**: https://github.com/sloweyyy/cloud-native-ecommerce-platform/compare/0.6.1...0.7.0
+
 ## [0.6.1] - 2026-01-10
 
 ## What's Changed
