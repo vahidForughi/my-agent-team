@@ -1,82 +1,30 @@
 # Changelog
-## [0.6.0] - 2026-01-10
+## [0.6.1] - 2026-01-10
 
 ## What's Changed
 
 ### 🚀 Features
-- feat: Add Kubernetes deployment manifests for e-commerce platform (#40) (49bc368)
-- feat: Align Kubernetes manifests with Helm deployments and add Istio/Jaeger support (6151635)
-- feat: Complete Kubernetes deployment manifests for all services (e15efc8)
-- feat: Update YAML configurations for Kubernetes manifests with improved formatting, increased line length, and enhanced environment variable handling (b806bc6)
-- feat: Enhance Kubernetes manifests with security best practices, version pinning, and improved validation scripts (143be6c)
-- feat: Update Kubernetes manifests for catalog and basket APIs with security enhancements, resource limits, and new network policies (dccfb0c)
-- feat: Implement comprehensive validation for Kubernetes manifests with YAML syntax and schema checks (ffee653)
-- feat: Enhance CI/CD workflows with Kubernetes deployment tests and validations (e1b9372)
-- feat: Add Kubernetes deployment manifests for e-commerce platform (0988059)
+- No new features
 
 ### 🐛 Bug Fixes
-- fix: Correct YAML indentation for environment variables in ocelot-gateway deployment (5d0da1b)
-- fix: Refactor ocelot.json routes for improved clarity and consistency (ca801fd)
-- fix: Update YAML files for PostgreSQL and SQL Server PVCs and add ocelot-gateway configuration (69b952f)
-- fix: Correct YAML indentation in PostgreSQL and SQL Server PersistentVolumeClaim definitions (ee71403)
-- fix: Resolve YAML syntax errors in Kubernetes manifests (449e02d)
-- fix: Correct YAML indentation in k8s deployment test workflow (2edb366)
-- fix: Add cleanup step to CI workflow before deployment to ensure clean state (1b0290e)
-- fix: Update k8s manifests to use correct Docker image names matching CI builds (3e76c67)
-- fix: Update k8s deployment scripts and CI to use correct namespaces and labels (c64161e)
-- fix: Update k8s deployment test workflow to match new manifest naming (52970ef)
-- fix: Update health probes and configuration settings for multiple services (297bb5d)
-- fix: Update security context and resource requests for multiple services (b67bcf4)
-- fix: Reduce replica count and update image pull policy for multiple services (fd0202f)
-- fix: Increase Kibana readiness probe tolerance for CI stability (9aace9f)
-- fix: Improve health probe configurations for CI stability (6b5572f)
-- fix: Resolve SQL Server deployment issues in CI (8140ad3)
+- fix: implement complete discount service with gRPC, OpenTelemetry tracing, and observability (#176) (2a1b9a9)
+- Merge branch 'main' into fix/discout-grpc-fix (01fb42b)
+- Merge branch 'main' into fix/discout-grpc-fix (a8b3a79)
 
 ### 🔧 Improvements
-- fix: Refactor ocelot.json routes for improved clarity and consistency (ca801fd)
-- Enhance Kubernetes Deployment Configuration (141f8cf)
-- fix: Improve health probe configurations for CI stability (6b5572f)
-- feat: Update YAML configurations for Kubernetes manifests with improved formatting, increased line length, and enhanced environment variable handling (b806bc6)
-- feat: Enhance Kubernetes manifests with security best practices, version pinning, and improved validation scripts (143be6c)
-- feat: Update Kubernetes manifests for catalog and basket APIs with security enhancements, resource limits, and new network policies (dccfb0c)
-- feat: Enhance CI/CD workflows with Kubernetes deployment tests and validations (e1b9372)
-- chore: Update pull request template for improved clarity and organization (84ece00)
+- No improvements
 
 ### 📚 Documentation
-- docs: update changelog for 0.5.0 (#173) (743cd3c)
-- docs: update changelog for 0.5.0 [skip ci] (ed4c7ff)
-- fix: Update k8s manifests to use correct Docker image names matching CI builds (3e76c67)
+- No documentation updates
 
 ### 🔐 Security
-- fix: Update security context and resource requests for multiple services (b67bcf4)
-- feat: Enhance Kubernetes manifests with security best practices, version pinning, and improved validation scripts (143be6c)
-- feat: Update Kubernetes manifests for catalog and basket APIs with security enhancements, resource limits, and new network policies (dccfb0c)
+- No security updates
 
 ### 🏗️ Infrastructure
-- Merge branch 'main' into deployment/k8s (422e798)
-- docs: update changelog for 0.5.0 (#173) (743cd3c)
-- docs: update changelog for 0.5.0 [skip ci] (ed4c7ff)
-- fix: Correct YAML indentation in k8s deployment test workflow (2edb366)
-- fix: Add cleanup step to CI workflow before deployment to ensure clean state (1b0290e)
-- fix: Update k8s manifests to use correct Docker image names matching CI builds (3e76c67)
-- fix: Update k8s deployment scripts and CI to use correct namespaces and labels (c64161e)
-- fix: Update k8s deployment test workflow to match new manifest naming (52970ef)
-- feat: Align Kubernetes manifests with Helm deployments and add Istio/Jaeger support (6151635)
-- Merge branch 'main' into deployment/k8s (76589bd)
-- Merge branch 'main' into deployment/k8s (73065fb)
-- Merge branch 'main' into deployment/k8s (660e342)
-- fix: Increase Kibana readiness probe tolerance for CI stability (9aace9f)
-- fix: Improve health probe configurations for CI stability (6b5572f)
-- fix: Resolve SQL Server deployment issues in CI (8140ad3)
-- Merge branch 'deployment/k8s' into claude/review-pr-40-01AQF3Jd8upT3pu5NHp7bT43 (1affe54)
-- feat: Update Kubernetes manifests for catalog and basket APIs with security enhancements, resource limits, and new network policies (dccfb0c)
-- feat: Enhance CI/CD workflows with Kubernetes deployment tests and validations (e1b9372)
+- fix: implement complete discount service with gRPC, OpenTelemetry tracing, and observability (#176) (2a1b9a9)
 
 ### Other Changes
-- Merge pull request #102 from sloweyyy/claude/review-pr-40-01AQF3Jd8upT3pu5NHp7bT43 (01d0221)
-- Merge pull request #101 from sloweyyy/claude/review-pr-40-01AQF3Jd8upT3pu5NHp7bT43 (e10cc97)
-- Merge pull request #96 from sloweyyy/claude/review-pr-40-01AQF3Jd8upT3pu5NHp7bT43 (a72f627)
-- Merge pull request #95 from sloweyyy/claude/review-pr-40-01AQF3Jd8upT3pu5NHp7bT43 (1300cec)
+- Add monitoring scripts for Grafana-Prometheus connectivity and validation (40fe97b)
 
 ## Docker Images
 All services are available as Docker images:
@@ -89,7 +37,7 @@ All services are available as Docker images:
 ## Helm Deployment
 
 
-**Full Changelog**: https://github.com/sloweyyy/cloud-native-ecommerce-platform/compare/0.5.0...0.6.0
+**Full Changelog**: https://github.com/sloweyyy/cloud-native-ecommerce-platform/compare/0.6.0...0.6.1
 
 ## [0.5.0] - 2026-01-08
 
