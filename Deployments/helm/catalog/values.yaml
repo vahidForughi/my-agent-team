@@ -127,7 +127,7 @@ configmap:
   DatabaseSettings__BrandsCollection: "Brands"
   DatabaseSettings__TypesCollection: "Types"
   ElasticConfiguration__Uri: "http://eshopping-elasticsearch:9200"
-  EventBusSettings__HostAddress: "eshopping-rabbitmq:5672"
+  EventBusSettings__HostAddress: "amqp://guest:guest@eshopping-rabbitmq:5672"
   AWS__S3__BucketName: "ecommerce-product-images"
   AWS__S3__Region: "us-east-1"
   AWS__S3__ImagePrefix: "products/"

@@ -4,6 +4,8 @@ using Discount.Application.Handlers;
 using Discount.Core.Repositories;
 using Discount.Infrastructure.Extensions;
 using Discount.Infrastructure.Repositories;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Serilog;
 using System.Reflection;
 
@@ -13,6 +15,20 @@ var builder = WebApplication.CreateBuilder(args);
 
 //Serilog configuration
 builder.Host.UseSerilog(Logging.ConfigureLogger);
+
+// OpenTelemetry Configuration
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracerProviderBuilder =>
+    {
+        tracerProviderBuilder
+            .AddSource("Discount.API")
+            .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("Discount.API"))
+            .AddAspNetCoreInstrumentation()
+            .AddOtlpExporter(opts =>
+            {
+                opts.Endpoint = new Uri(builder.Configuration["Otlp:Endpoint"] ?? "http://jaeger-collector.istio-system:4317");
+            });
+    });
 
 //Register AutoMapper
 builder.Services.AddAutoMapper(typeof(Program).Assembly);

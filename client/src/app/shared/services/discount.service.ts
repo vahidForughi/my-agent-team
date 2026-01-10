@@ -27,28 +27,13 @@ export class DiscountService {
 
   // This would require a new endpoint on the backend, but for now we'll simulate it
   getDiscountForProduct(productName: string): Observable<IDiscount> {
-    // Since we don't have a direct discount endpoint, we'll create a mock response
-    // In a real implementation, you'd call the discount service endpoint
+    // Return no discount for the store page as per system design (gRPC only via Basket)
     return of({
       id: 0,
       productName: productName,
       description: 'No Discount',
-      amount: this.getKnownDiscountAmount(productName),
+      amount: 0,
     });
-  }
-
-  // Simulate known discounts based on product names
-  private getKnownDiscountAmount(productName: string): number {
-    const knownDiscounts: { [key: string]: number } = {
-      'ASUS ZenBook 13 OLED Ultrabook': 500,
-      'ASUS ROG Zephyrus G14 Gaming Laptop': 700,
-      'Samsung Galaxy S23 Ultra': 300,
-      'iPhone 15 Pro Max': 1000,
-      'MacBook Pro M3': 1500,
-      'AirPods Pro': 200,
-    };
-
-    return knownDiscounts[productName] || 0;
   }
 
   // Enrich a single product with discount information

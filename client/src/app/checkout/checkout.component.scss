@@ -248,6 +248,31 @@
     text-align: right;
 }
 
+.price-info {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.original-price-text {
+    font-size: 0.85rem;
+    color: #999;
+    text-decoration: line-through;
+}
+
+.discount-text {
+    font-size: 0.85rem;
+    color: #28a745;
+    font-weight: 600;
+}
+
+.final-price-text {
+    font-size: 0.95rem;
+    color: #3048a5;
+    font-weight: 600;
+}
+
 /* Shipping Form */
 .shipping-form {
     display: flex;
@@ -449,6 +474,34 @@
         font-size: 1.4rem;
         font-weight: 700;
         color: #252B42;
+    }
+
+    &.discount-row {
+        color: #28a745;
+        font-weight: 600;
+
+        .savings-value {
+            color: #28a745;
+        }
+    }
+}
+
+.savings-message {
+    margin-top: 15px;
+    padding: 12px;
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    i {
+        font-size: 1rem;
     }
 }
 

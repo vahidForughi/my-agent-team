@@ -98,4 +98,4 @@ env:
 configmap:
   DatabaseSettings__ConnectionString: "Server=eshopping-discountdb;Port=5432;Database=DiscountDb;User Id=admin;Password=admin1234;Pooling=true;SSL Mode=Disable;"
   ElasticConfiguration__Uri: "http://eshopping-elasticsearch:9200"
-  EventBusSettings__HostAddress: "eshopping-rabbitmq:5672"
+  EventBusSettings__HostAddress: "amqp://guest:guest@eshopping-rabbitmq:5672"

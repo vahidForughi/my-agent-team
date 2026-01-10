@@ -191,12 +191,13 @@ export class BasketService {
     item: IProduct | IProductWithDiscount
   ): IBasketItem {
     const hasDiscount = 'hasDiscount' in item && item.hasDiscount;
+    const originalPrice = hasDiscount ? item.originalPrice! : item.price;
     return {
       productId: item.id,
       productName: item.name,
-      price: item.price,
-      originalPrice: hasDiscount ? item.originalPrice! : item.price,
-      discountAmount: hasDiscount ? item.discountAmount! : 0,
+      price: originalPrice,
+      originalPrice: originalPrice,
+      discountAmount: 0,
       imageFile: item.imageFile,
       quantity: 0,
     };
