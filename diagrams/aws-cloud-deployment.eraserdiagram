@@ -1,0 +1,143 @@
+// AWS Cloud Deployment Architecture
+// Cloud-native e-commerce platform on AWS EKS
+
+// ==================== INTERNET ====================
+Internet [icon: globe, color: blue] {
+  End Users [icon: users]
+  Developers [icon: user-check]
+}
+
+// ==================== CI/CD ====================
+CI/CD Pipeline [icon: github, color: gray] {
+  GitHub Actions [icon: git-merge]
+  Amazon ECR [icon: aws-ecr]
+  CloudFormation [icon: aws-cloudformation]
+}
+
+// ==================== FRONTEND ====================
+Frontend [icon: aws-amplify, color: orange] {
+  AWS Amplify [icon: react]
+  Micro Frontends [icon: react]
+}
+
+// ==================== AWS CLOUD ====================
+AWS Cloud [icon: aws, color: orange] {
+
+  Route 53 [icon: aws-route53]
+
+  VPC [icon: aws-vpc, color: green] {
+
+    Public Subnets [color: yellow] {
+      Internet Gateway [icon: aws-internet-gateway]
+      NAT Gateway [icon: aws-nat-gateway]
+      Application Load Balancer [icon: aws-application-load-balancer]
+    }
+
+    Private Subnets [color: cyan] {
+
+      EKS Cluster [icon: aws-eks, color: blue] {
+
+        Control Plane [icon: k8s-control-plane]
+
+        Node Group [icon: aws-ec2] {
+
+          Istio Service Mesh [icon: istio, color: purple]
+
+          Ocelot Gateway [icon: aws-api-gateway]
+
+          Microservices [icon: k8s-pod, color: green] {
+            Catalog API [icon: dotnet]
+            Basket API [icon: dotnet]
+            Discount API [icon: dotnet]
+            Ordering API [icon: dotnet]
+          }
+
+          Databases [icon: database, color: purple] {
+            MongoDB [icon: mongodb]
+            Redis [icon: redis]
+            PostgreSQL [icon: postgresql]
+            SQL Server [icon: mssql]
+            RabbitMQ [icon: rabbitmq]
+          }
+
+          Observability [icon: prometheus, color: yellow] {
+            Prometheus [icon: prometheus]
+            Grafana [icon: grafana]
+            Jaeger [icon: jaeger]
+            Elasticsearch [icon: elasticsearch]
+          }
+
+          EBS Volumes [icon: aws-ebs]
+        }
+      }
+    }
+  }
+
+  S3 Bucket [icon: aws-simple-storage-service, color: orange]
+
+  IAM Roles [icon: aws-iam, color: red]
+
+  Security Groups [icon: aws-security-group, color: red]
+}
+
+// =====================================================
+// TRAFFIC FLOW
+// =====================================================
+
+// CI/CD
+Developers > CI/CD Pipeline : Push Code
+CI/CD Pipeline > Amazon ECR : Build & Push
+CloudFormation > VPC : Provision
+Amazon ECR > EKS Cluster : Deploy
+
+// User Traffic
+End Users > Route 53 : DNS
+Route 53 > Frontend : Amplify
+Frontend > Application Load Balancer : API Calls
+Application Load Balancer > Istio Service Mesh : Route
+Istio Service Mesh > Ocelot Gateway : Forward
+Ocelot Gateway > Microservices : Proxy
+
+// Services
+Microservices > Databases : Persist
+Microservices > S3 Bucket : Images
+Microservices > RabbitMQ : Messages
+
+// Observability
+Microservices > Observability : Metrics/Logs/Traces
+
+// Security
+CI/CD Pipeline > IAM Roles : Auth
+Node Group > IAM Roles : Assume
+Security Groups > EKS Cluster : Policies
+
+// =====================================================
+// CALLOUTS
+// =====================================================
+// Infrastructure:
+// • VPC: 10.0.0.0/16, 2 AZs (public + private subnets)
+// • EKS v1.30: 2x m7i-flex.large nodes
+// • Auto-scaling: 1-3 nodes, HPA 1-3 pods/service
+// • Storage: EBS gp3 (MongoDB 10Gi, PostgreSQL 10Gi, SQL Server 15Gi, Redis 5Gi)
+//
+// Deployment:
+// • CloudFormation: vpc.yaml, eks-cluster.yaml, alb-ingress.yaml, s3-bucket.yaml
+// • Script: ./deploy-aws.sh (automated deployment)
+// • CI/CD: GitHub Actions → ECR → EKS (Helm)
+//
+// Services:
+// • 4 Microservices: Catalog, Basket, Discount, Ordering (ASP.NET 8.0)
+// • API Gateway: Ocelot (routing, rate limiting)
+// • Service Mesh: Istio 1.28.2 (mTLS, traffic management)
+//
+// Observability:
+// • Metrics: Prometheus (15s) + Grafana
+// • Tracing: Jaeger + Kiali
+// • Logging: Elasticsearch + Kibana
+//
+// Security:
+// • IAM: IRSA (pod permissions), OIDC (GitHub)
+// • Network: Security groups, private subnets
+// • Storage: Private S3, EBS encryption
+//
+// Cost: ~$217/month (dev, ap-southeast-1)
