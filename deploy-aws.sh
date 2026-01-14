@@ -228,32 +228,66 @@ deploy_s3_bucket() {
     # Check if bucket already exists
     if aws_cmd s3 ls "s3://${S3_BUCKET}" 2>/dev/null; then
         log_success "S3 bucket already exists: ${S3_BUCKET}"
-        return 0
+    else
+        # Bucket doesn't exist, create it via CloudFormation
+        log_info "Creating S3 bucket via CloudFormation..."
+        aws_cmd cloudformation deploy \
+            --region "$REGION" \
+            --stack-name "$STACK_S3" \
+            --template-file Infrastructure/aws/cloudformation/s3-bucket.yaml \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --parameter-overrides EnvName="$ENV_NAME"
+
+        # Retrieve S3 bucket outputs from CloudFormation
+        log_info "Retrieving S3 bucket outputs..."
+        S3_BUCKET=$(aws_cmd cloudformation describe-stacks \
+            --region "$REGION" \
+            --stack-name "$STACK_S3" \
+            --query "Stacks[0].Outputs[?OutputKey=='BucketName'].OutputValue" \
+            --output text)
+        S3_BUCKET_ARN=$(aws_cmd cloudformation describe-stacks \
+            --region "$REGION" \
+            --stack-name "$STACK_S3" \
+            --query "Stacks[0].Outputs[?OutputKey=='BucketArn'].OutputValue" \
+            --output text)
+
+        log_success "S3 bucket deployed: ${S3_BUCKET}"
     fi
 
-    # Bucket doesn't exist, create it via CloudFormation
-    log_info "Creating S3 bucket via CloudFormation..."
-    aws_cmd cloudformation deploy \
-        --region "$REGION" \
-        --stack-name "$STACK_S3" \
-        --template-file Infrastructure/aws/cloudformation/s3-bucket.yaml \
-        --capabilities CAPABILITY_NAMED_IAM \
-        --parameter-overrides EnvName="$ENV_NAME"
+    # Upload product images to S3
+    upload_product_images
+}
 
-    # Retrieve S3 bucket outputs from CloudFormation
-    log_info "Retrieving S3 bucket outputs..."
-    S3_BUCKET=$(aws_cmd cloudformation describe-stacks \
-        --region "$REGION" \
-        --stack-name "$STACK_S3" \
-        --query "Stacks[0].Outputs[?OutputKey=='BucketName'].OutputValue" \
-        --output text)
-    S3_BUCKET_ARN=$(aws_cmd cloudformation describe-stacks \
-        --region "$REGION" \
-        --stack-name "$STACK_S3" \
-        --query "Stacks[0].Outputs[?OutputKey=='BucketArn'].OutputValue" \
-        --output text)
+# ==================== Upload Product Images to S3 ====================
+upload_product_images() {
+    log_info "Uploading product images to S3 bucket..."
 
-    log_success "S3 bucket deployed: ${S3_BUCKET}"
+    PRODUCT_IMAGES_DIR="client/src/images/products"
+    if [ -d "$PRODUCT_IMAGES_DIR" ]; then
+        aws_cmd s3 sync "$PRODUCT_IMAGES_DIR/" "s3://${S3_BUCKET}/products/" --quiet
+        IMAGE_COUNT=$(aws_cmd s3 ls "s3://${S3_BUCKET}/products/" --recursive | wc -l | tr -d ' ')
+        log_success "Uploaded ${IMAGE_COUNT} product images to S3"
+    else
+        log_warning "Product images directory not found: $PRODUCT_IMAGES_DIR"
+    fi
+}
+
+# ==================== Update Seed Data with Correct S3 URLs ====================
+update_seed_data_urls() {
+    log_info "Updating seed data with correct S3 bucket URLs..."
+
+    SEED_FILE="Services/Catalog/Catalog.Infrastructure/Data/SeedData/products.json"
+    S3_URL_PATTERN="https://${S3_BUCKET}.s3.${REGION}.amazonaws.com/products/"
+
+    if [ -f "$SEED_FILE" ]; then
+        # Replace any existing S3 bucket URLs with the correct one
+        # This handles both old account IDs and different regions
+        sed -i.bak -E "s|https://ecommerce-product-images-[0-9]+\.s3\.[a-z0-9-]+\.amazonaws\.com/products/|${S3_URL_PATTERN}|g" "$SEED_FILE"
+        rm -f "${SEED_FILE}.bak"
+        log_success "Seed data updated with S3 URL: ${S3_URL_PATTERN}"
+    else
+        log_warning "Seed file not found: $SEED_FILE"
+    fi
 }
 
 # ==================== EKS Deployment ====================
@@ -416,7 +450,7 @@ setup_irsa_for_ebs_csi() {
     # Get OIDC provider URL
     OIDC_ID=$(aws_cmd eks describe-cluster --region "$REGION" --name "$CLUSTER_NAME" \
         --query "cluster.identity.oidc.issuer" --output text | cut -d'/' -f5)
-    OIDC_PROVIDER="${OIDC_ID}.oidc.eks.${REGION}.amazonaws.com"
+    OIDC_PROVIDER="oidc.eks.${REGION}.amazonaws.com/id/${OIDC_ID}"
 
     log_info "OIDC Provider: $OIDC_PROVIDER"
 
@@ -590,7 +624,7 @@ setup_irsa_for_catalog() {
     # Get OIDC provider URL
     OIDC_ID=$(aws_cmd eks describe-cluster --region "$REGION" --name "$CLUSTER_NAME" \
         --query "cluster.identity.oidc.issuer" --output text | cut -d'/' -f5)
-    OIDC_PROVIDER="${OIDC_ID}.oidc.eks.${REGION}.amazonaws.com"
+    OIDC_PROVIDER="oidc.eks.${REGION}.amazonaws.com/id/${OIDC_ID}"
 
     log_info "OIDC Provider: $OIDC_PROVIDER"
 
@@ -803,6 +837,90 @@ trigger_migration() {
         log_info "  kubectl port-forward -n $NAMESPACE svc/eshopping-catalog 8000:80"
         log_info "  curl -X POST http://localhost:8000/Admin/MigrateImagesToS3"
     fi
+
+    # Update existing MongoDB data with correct S3 bucket URLs
+    update_mongodb_s3_urls
+}
+
+# ==================== Update MongoDB S3 URLs ====================
+update_mongodb_s3_urls() {
+    log_info "Updating MongoDB product URLs to use correct S3 bucket..."
+
+    # Get the catalogdb pod
+    MONGO_POD=$(kubectl get pods -n "$NAMESPACE" -l app.kubernetes.io/instance=eshopping-catalogdb -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+    if [ -z "$MONGO_POD" ]; then
+        MONGO_POD=$(kubectl get pods -n "$NAMESPACE" | grep catalogdb | awk '{print $1}' | head -1)
+    fi
+
+    if [ -z "$MONGO_POD" ]; then
+        log_warning "MongoDB catalogdb pod not found, skipping URL update"
+        return 0
+    fi
+
+    # S3 URL pattern for this deployment
+    S3_URL_PATTERN="https://${S3_BUCKET}.s3.${REGION}.amazonaws.com/products/"
+
+    # Create MongoDB update script
+    cat > /tmp/mongo-update-s3-urls.js << EOF
+db = db.getSiblingDB('CatalogDb');
+
+// Update products with old S3 bucket URLs to use the new bucket
+var result = db.Products.updateMany(
+    { "ImageFile": { \$regex: "ecommerce-product-images-" } },
+    [{
+        \$set: {
+            "ImageFile": {
+                \$replaceOne: {
+                    input: "\$ImageFile",
+                    find: { \$regexFind: { input: "\$ImageFile", regex: /https:\/\/ecommerce-product-images-[0-9]+\.s3\.[a-z0-9-]+\.amazonaws\.com\/products\// } },
+                    replacement: "${S3_URL_PATTERN}"
+                }
+            }
+        }
+    }]
+);
+
+// Simpler approach: just replace the bucket name pattern
+var result2 = db.Products.updateMany(
+    { "ImageFile": { \$regex: "ecommerce-product-images-(?!${AWS_ACCOUNT_ID})" } },
+    [{
+        \$set: {
+            "ImageFile": {
+                \$replaceAll: {
+                    input: "\$ImageFile",
+                    find: /ecommerce-product-images-[0-9]+/,
+                    replacement: "${S3_BUCKET}"
+                }
+            }
+        }
+    }]
+);
+
+print("Products updated");
+EOF
+
+    # Execute the update - try without auth first, then with auth
+    kubectl cp /tmp/mongo-update-s3-urls.js "${NAMESPACE}/${MONGO_POD}:/tmp/mongo-update-s3-urls.js" 2>/dev/null
+
+    # Try with auth (common in production)
+    RESULT=$(kubectl exec -n "$NAMESPACE" "$MONGO_POD" -- mongo CatalogDb \
+        -u admin -p admin1234 --authenticationDatabase admin \
+        --quiet --eval "
+        db = db.getSiblingDB('CatalogDb');
+        var result = db.Products.updateMany(
+            { 'ImageFile': { \$regex: 'ecommerce-product-images-(?!${AWS_ACCOUNT_ID})' } },
+            [{ \$set: { 'ImageFile': { \$replaceAll: { input: '\$ImageFile', find: /ecommerce-product-images-[0-9]+/, replacement: '${S3_BUCKET}' } } } }]
+        );
+        print('Matched: ' + result.matchedCount + ', Modified: ' + result.modifiedCount);
+        " 2>/dev/null) || true
+
+    if [ -n "$RESULT" ]; then
+        log_success "MongoDB product URLs updated: $RESULT"
+    else
+        log_info "MongoDB URL update completed (no changes needed or auth issue)"
+    fi
+
+    rm -f /tmp/mongo-update-s3-urls.js
 }
 
 # ==================== Install Istio Early ====================
@@ -834,7 +952,21 @@ install_istio_early() {
     log_info "Waiting for Istio control plane to be ready..."
     kubectl wait --for=condition=ready pod -l app=istiod -n istio-system --timeout=300s || log_warning "Istio may need more time"
 
-    log_success "Istio service mesh installed"
+    # Configure Jaeger extension provider in mesh config
+    log_info "Configuring Jaeger tracing extension provider..."
+    kubectl patch configmap istio -n istio-system --type merge -p '
+{
+  "data": {
+    "mesh": "defaultConfig:\n  discoveryAddress: istiod.istio-system.svc:15012\ndefaultProviders:\n  metrics:\n  - prometheus\nenablePrometheusMerge: true\nextensionProviders:\n- name: jaeger\n  opentelemetry:\n    port: 4317\n    service: jaeger-collector.istio-system.svc.cluster.local\nrootNamespace: istio-system\ntrustDomain: cluster.local"
+  }
+}' || log_warning "Failed to patch Istio mesh config for Jaeger"
+
+    # Restart istiod to pick up the new configuration
+    log_info "Restarting istiod to apply tracing configuration..."
+    kubectl rollout restart deployment istiod -n istio-system
+    kubectl rollout status deployment istiod -n istio-system --timeout=120s || log_warning "Istiod restart taking longer"
+
+    log_success "Istio service mesh installed with Jaeger tracing"
 }
 
 # ==================== Configure Istio Networking & Tracing ====================
@@ -1249,6 +1381,55 @@ EOF
     log_success "Grafana configured with production dashboards"
 }
 
+# ==================== Deploy Kubernetes Dashboard ====================
+deploy_kubernetes_dashboard() {
+    log_info "[8.5/10] Deploying Kubernetes Dashboard..."
+
+    # Check if dashboard is already installed
+    if kubectl get namespace kubernetes-dashboard &>/dev/null; then
+        log_info "Kubernetes Dashboard namespace already exists, checking deployment..."
+        if kubectl get deployment kubernetes-dashboard -n kubernetes-dashboard &>/dev/null; then
+            log_success "Kubernetes Dashboard already installed"
+            return 0
+        fi
+    fi
+
+    # Install Kubernetes Dashboard
+    log_info "Installing Kubernetes Dashboard v2.7.0..."
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
+
+    # Wait for dashboard to be ready
+    log_info "Waiting for Kubernetes Dashboard to be ready..."
+    kubectl wait --for=condition=ready pod -l k8s-app=kubernetes-dashboard \
+        -n kubernetes-dashboard --timeout=300s || log_warning "Dashboard may need more time"
+
+    # Create admin service account and cluster role binding
+    log_info "Creating admin user for dashboard access..."
+    kubectl apply -f - <<EOF
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: admin-user
+  namespace: kubernetes-dashboard
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: admin-user
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: admin-user
+  namespace: kubernetes-dashboard
+EOF
+
+    log_success "Kubernetes Dashboard deployed successfully"
+    log_info "Generate access token with: kubectl -n kubernetes-dashboard create token admin-user"
+}
+
 # ==================== Deploy ALB ====================
 # NOTE: ALB deployment is currently disabled as it's not connected to any service
 # Ocelot API Gateway uses NLB (LoadBalancer service type) instead
@@ -1343,6 +1524,12 @@ display_access_info() {
     echo "     kubectl port-forward -n istio-system svc/kiali 20001:20001"
     echo "     Then open: http://localhost:20001"
     echo "     View traffic flow, service dependencies, and mesh health"
+    echo ""
+    echo "🎛️  KUBERNETES DASHBOARD:"
+    echo "     kubectl port-forward -n kubernetes-dashboard svc/kubernetes-dashboard 8443:443"
+    echo "     Then open: https://localhost:8443"
+    echo "     Generate token: kubectl -n kubernetes-dashboard create token admin-user"
+    echo "     Login with the generated token"
     echo ""
     echo "📈 LOGGING:"
     echo "   Kibana:"
@@ -1506,6 +1693,15 @@ main() {
     check_prerequisites
     select_deployment_mode
 
+    # Pre-calculate S3 bucket name (needed for updating seed data before Docker build)
+    S3_BUCKET="ecommerce-product-images-${AWS_ACCOUNT_ID}"
+    S3_BUCKET_ARN="arn:aws:s3:::${S3_BUCKET}"
+
+    # Update seed data with correct S3 URLs BEFORE building Docker images
+    # This ensures the Docker images contain the correct S3 URLs
+    log_info "[0/10] Updating seed data with correct S3 bucket URLs..."
+    update_seed_data_urls
+
     # Step 1-2: ECR and Images
     if [ "$SKIP_ECR" = false ]; then
         setup_ecr_repositories
@@ -1545,18 +1741,22 @@ main() {
             --query "Stacks[0].Outputs[?ExportName=='${ENV_NAME}-public-subnet-ids'].OutputValue" \
             --output text)
 
-        # Get S3 bucket outputs for catalog IRSA
+        # Get S3 bucket outputs for catalog IRSA (if not already set)
         STACK_S3="${ENV_NAME}-s3-bucket"
-        S3_BUCKET=$(aws_cmd cloudformation describe-stacks \
-            --region "$REGION" \
-            --stack-name "$STACK_S3" \
-            --query "Stacks[0].Outputs[?OutputKey=='BucketName'].OutputValue" \
-            --output text)
-        S3_BUCKET_ARN=$(aws_cmd cloudformation describe-stacks \
-            --region "$REGION" \
-            --stack-name "$STACK_S3" \
-            --query "Stacks[0].Outputs[?OutputKey=='BucketArn'].OutputValue" \
-            --output text)
+        if [ -z "$S3_BUCKET" ]; then
+            S3_BUCKET=$(aws_cmd cloudformation describe-stacks \
+                --region "$REGION" \
+                --stack-name "$STACK_S3" \
+                --query "Stacks[0].Outputs[?OutputKey=='BucketName'].OutputValue" \
+                --output text)
+        fi
+        if [ -z "$S3_BUCKET_ARN" ]; then
+            S3_BUCKET_ARN=$(aws_cmd cloudformation describe-stacks \
+                --region "$REGION" \
+                --stack-name "$STACK_S3" \
+                --query "Stacks[0].Outputs[?OutputKey=='BucketArn'].OutputValue" \
+                --output text)
+        fi
 
         # Validate infrastructure outputs
         if [ -z "$VPC_ID" ] || [ "$VPC_ID" = "None" ]; then
@@ -1626,10 +1826,11 @@ EOF
     
     if [ "$SKIP_MONITORING" = false ]; then
         deploy_monitoring
+        deploy_kubernetes_dashboard
     else
         log_info "[8/10] Skipping monitoring deployment"
     fi
-    
+
     # deploy_alb  # Disabled - ALB not connected to any service (Ocelot uses NLB)
     verify_deployment
     display_access_info
