@@ -89,7 +89,7 @@ export function useAddToCart(input?: FilterOptions<AddToCartInput>) {
             productName: payload.productName,
             price: payload.price,
             originalPrice: payload.originalPrice,
-            discountAmount: payload.originalPrice - payload.price,
+            discountAmount: 0, // Backend calculates discount via gRPC
             quantity: payload.quantity,
             imageFile: payload.imageFile,
             itemTotal: payload.price * payload.quantity,

@@ -95,6 +95,28 @@ function BasketItemRow(props: BasketItemRowProps) {
         <Text type="secondary" style={{ fontSize: 12 }}>
           Qty: {localQuantity}
         </Text>
+        {item.discountAmount > 0 && (
+          <Space direction="vertical" size={2}>
+            <Text
+              delete
+              type="secondary"
+              style={{ fontSize: 12 }}
+            >
+              ${item.originalPrice.toFixed(2)} each
+            </Text>
+            <Text
+              type="success"
+              style={{ fontSize: 12, fontWeight: 600 }}
+            >
+              -${item.discountAmount.toFixed(2)} discount
+            </Text>
+            <Text
+              style={{ fontSize: 13, fontWeight: 600, color: '#1890ff' }}
+            >
+              ${item.price.toFixed(2)} each
+            </Text>
+          </Space>
+        )}
       </Space>
       <Space direction="vertical" align="end" size="small">
         <Space size="small">
