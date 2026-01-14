@@ -1,4 +1,52 @@
 # Changelog
+## [0.8.0] - 2026-01-14
+
+## What's Changed
+
+### 🚀 Features
+- feat: gRPC/Istio fix, AWS deployment improvements, checkout discounts display & build optimizations (#184) (709ad63)
+- feat: enhance DiscountGrpcService with logging and error handling for unavailable service (f6d1d2a)
+- feat(checkout): display discount information in basket and checkout (1b56d9e)
+- feat(aws): improve S3 bucket deployment and MongoDB URL migration (c4ad415)
+
+### 🐛 Bug Fixes
+- feat: gRPC/Istio fix, AWS deployment improvements, checkout discounts display & build optimizations (#184) (709ad63)
+- fix: regenerate package-lock.json to fix CI npm ci failure (049ea0c)
+- fix(k6): add noAPIServer option to prevent port conflicts (67dea71)
+- fix(grpc): update Discount service port name for Istio gRPC compatibility (f2e7031)
+
+### 🔧 Improvements
+- feat: gRPC/Istio fix, AWS deployment improvements, checkout discounts display & build optimizations (#184) (709ad63)
+- feat: enhance DiscountGrpcService with logging and error handling for unavailable service (f6d1d2a)
+- feat(aws): improve S3 bucket deployment and MongoDB URL migration (c4ad415)
+
+### 📚 Documentation
+- docs(deploy-aws): clarify login instructions for Kubernetes dashboard access (494103a)
+- docs(diagrams): add AWS cloud deployment architecture diagrams (4da99c6)
+
+### 🔐 Security
+- No security updates
+
+### 🏗️ Infrastructure
+- fix: regenerate package-lock.json to fix CI npm ci failure (049ea0c)
+- chore(deps): update package-lock.json with peer dependency markers (f2fcd4e)
+
+### Other Changes
+- perf(amplify): optimize build process for faster deployments (0b5fa77)
+
+## Docker Images
+All services are available as Docker images:
+- 
+- 
+- 
+- 
+- 
+
+## Helm Deployment
+
+
+**Full Changelog**: https://github.com/sloweyyy/cloud-native-ecommerce-platform/compare/0.7.0...0.8.0
+
 ## [0.6.1] - 2026-01-10
 
 ## What's Changed
