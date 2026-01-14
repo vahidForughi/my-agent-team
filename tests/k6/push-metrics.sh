@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # K6 Test Runner with Prometheus PushGateway Integration
-# This script runs k6 tests and pushes metrics to Prometheus via PushGateway
+# NOTE: Always use AWS Gateway for all test runs. Do NOT use local port-forwards.
+# Metrics should be collected from the AWS Gateway endpoint.
 
 set -e
 
@@ -36,7 +37,7 @@ fi
 
 # Function to extract metrics from k6 JSON output and push to PushGateway
 push_metrics_to_gateway() {
-    local service_name=$1
+    local test_name=$1
     local json_file=$2
 
     log_info "Extracting metrics from ${json_file}..."
@@ -58,51 +59,69 @@ push_metrics_to_gateway() {
     local data_received=$(jq -r '.metrics.data_received.count // 0' "$json_file")
     local data_sent=$(jq -r '.metrics.data_sent.count // 0' "$json_file")
 
-    log_info "Pushing metrics to PushGateway for service: ${service_name}..."
+    # Determine label strategy
+    # For individual service tests: use service label
+    # For load tests: use test_type label (note: detailed per-service metrics available via real-time approach)
+    local service_label=""
+    local test_type_label=""
 
-    # Create Prometheus-formatted metrics
-    cat <<EOF | curl -X POST --data-binary @- "${PUSHGATEWAY_URL}/metrics/job/${JOB_NAME}/instance/${service_name}"
+    if [[ "$test_name" =~ ^(catalog|basket|ordering|discount)$ ]]; then
+        # Individual service test
+        service_label="service=\"${test_name}\""
+        test_type_label="test_type=\"load\""
+    else
+        # Load test (stress, spike, soak)
+        # Summary metrics are aggregated across all services
+        # For per-service metrics during load tests, use run-load-test.sh with real-time metrics
+        service_label="service=\"multi\""
+        test_type_label="test_type=\"${test_name}\""
+    fi
+
+    log_info "Pushing metrics to PushGateway for test: ${test_name}..."
+
+    # Create Prometheus-formatted metrics with both service and test_type labels
+    cat <<EOF | curl -X POST --data-binary @- "${PUSHGATEWAY_URL}/metrics/job/${JOB_NAME}/instance/${test_name}"
 # TYPE k6_http_req_duration_avg gauge
 # HELP k6_http_req_duration_avg Average HTTP request duration in milliseconds
-k6_http_req_duration_avg{service="${service_name}",namespace="${NAMESPACE}"} ${http_req_duration_avg}
+k6_http_req_duration_avg{${service_label},${test_type_label},namespace="${NAMESPACE}"} ${http_req_duration_avg}
 
 # TYPE k6_http_req_duration_p95 gauge
 # HELP k6_http_req_duration_p95 95th percentile HTTP request duration in milliseconds
-k6_http_req_duration_p95{service="${service_name}",namespace="${NAMESPACE}"} ${http_req_duration_p95}
+k6_http_req_duration_p95{${service_label},${test_type_label},namespace="${NAMESPACE}"} ${http_req_duration_p95}
 
 # TYPE k6_http_req_duration_max gauge
 # HELP k6_http_req_duration_max Maximum HTTP request duration in milliseconds
-k6_http_req_duration_max{service="${service_name}",namespace="${NAMESPACE}"} ${http_req_duration_max}
+k6_http_req_duration_max{${service_label},${test_type_label},namespace="${NAMESPACE}"} ${http_req_duration_max}
 
 # TYPE k6_http_reqs_total counter
 # HELP k6_http_reqs_total Total number of HTTP requests
-k6_http_reqs_total{service="${service_name}",namespace="${NAMESPACE}"} ${http_reqs}
+k6_http_reqs_total{${service_label},${test_type_label},namespace="${NAMESPACE}"} ${http_reqs}
 
 # TYPE k6_http_req_failed_total counter
 # HELP k6_http_req_failed_total Total number of failed HTTP requests
-k6_http_req_failed_total{service="${service_name}",namespace="${NAMESPACE}"} ${http_req_failed}
+k6_http_req_failed_total{${service_label},${test_type_label},namespace="${NAMESPACE}"} ${http_req_failed}
 
 # TYPE k6_vus gauge
 # HELP k6_vus Number of virtual users
-k6_vus{service="${service_name}",namespace="${NAMESPACE}"} ${vus}
+k6_vus{${service_label},${test_type_label},namespace="${NAMESPACE}"} ${vus}
 
 # TYPE k6_iterations_total counter
 # HELP k6_iterations_total Total number of iterations
-k6_iterations_total{service="${service_name}",namespace="${NAMESPACE}"} ${iterations}
+k6_iterations_total{${service_label},${test_type_label},namespace="${NAMESPACE}"} ${iterations}
 
 # TYPE k6_data_received_bytes counter
 # HELP k6_data_received_bytes Total bytes received
-k6_data_received_bytes{service="${service_name}",namespace="${NAMESPACE}"} ${data_received}
+k6_data_received_bytes{${service_label},${test_type_label},namespace="${NAMESPACE}"} ${data_received}
 
 # TYPE k6_data_sent_bytes counter
 # HELP k6_data_sent_bytes Total bytes sent
-k6_data_sent_bytes{service="${service_name}",namespace="${NAMESPACE}"} ${data_sent}
+k6_data_sent_bytes{${service_label},${test_type_label},namespace="${NAMESPACE}"} ${data_sent}
 EOF
 
     if [ $? -eq 0 ]; then
-        log_info "✓ Metrics pushed successfully for ${service_name}"
+        log_info "✓ Metrics pushed successfully for ${test_name}"
     else
-        log_error "✗ Failed to push metrics for ${service_name}"
+        log_error "✗ Failed to push metrics for ${test_name}"
     fi
 }
 
@@ -127,12 +146,33 @@ run_k6_test() {
     fi
 }
 
+# Show usage
+usage() {
+    echo "Usage: $0 [test-type]"
+    echo ""
+    echo "Test types:"
+    echo "  service    Run service tests (catalog, basket, ordering) - default"
+    echo "  spike      Run spike test"
+    echo "  soak       Run soak test"
+    echo "  stress     Run stress test"
+    echo "  all        Run all tests"
+    echo ""
+    echo "Examples:"
+    echo "  $0              # Run service tests"
+    echo "  $0 spike        # Run spike test"
+    echo "  $0 stress       # Run stress test"
+    echo "  $0 all          # Run all tests"
+}
+
 # Main execution
 main() {
+    local test_type="${1:-service}"
+
     log_info "Starting k6 load tests with PushGateway integration..."
     log_info "PushGateway URL: ${PUSHGATEWAY_URL}"
     log_info "Job Name: ${JOB_NAME}"
     log_info "Namespace: ${NAMESPACE}"
+    log_info "Test Type: ${test_type}"
     echo ""
 
     # Check if PushGateway is accessible
@@ -146,24 +186,56 @@ main() {
     log_info "✓ PushGateway is accessible"
     echo ""
 
-    # Run tests for all services
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-    run_k6_test "${SCRIPT_DIR}/catalog-test.js" "catalog"
-    echo ""
+    case "${test_type}" in
+        service)
+            run_k6_test "${SCRIPT_DIR}/catalog-test.js" "catalog"
+            echo ""
+            run_k6_test "${SCRIPT_DIR}/basket-test.js" "basket"
+            echo ""
+            run_k6_test "${SCRIPT_DIR}/ordering-test.js" "ordering"
+            echo ""
+            log_warning "Skipping discount service test (gRPC-only service)"
+            ;;
+        spike)
+            run_k6_test "${SCRIPT_DIR}/spike-test.js" "spike"
+            ;;
+        soak)
+            run_k6_test "${SCRIPT_DIR}/soak-test.js" "soak"
+            ;;
+        stress)
+            run_k6_test "${SCRIPT_DIR}/stress-test.js" "stress"
+            ;;
+        all)
+            log_info "Running ALL tests..."
+            echo ""
+            run_k6_test "${SCRIPT_DIR}/catalog-test.js" "catalog"
+            echo ""
+            run_k6_test "${SCRIPT_DIR}/basket-test.js" "basket"
+            echo ""
+            run_k6_test "${SCRIPT_DIR}/ordering-test.js" "ordering"
+            echo ""
+            run_k6_test "${SCRIPT_DIR}/spike-test.js" "spike"
+            echo ""
+            run_k6_test "${SCRIPT_DIR}/stress-test.js" "stress"
+            echo ""
+            log_warning "Skipping soak test (long duration - run separately)"
+            ;;
+        -h|--help|help)
+            usage
+            exit 0
+            ;;
+        *)
+            log_error "Unknown test type: ${test_type}"
+            usage
+            exit 1
+            ;;
+    esac
 
-    run_k6_test "${SCRIPT_DIR}/basket-test.js" "basket"
     echo ""
-
-    run_k6_test "${SCRIPT_DIR}/ordering-test.js" "ordering"
-    echo ""
-
-    # Skip discount test - it's a gRPC service, not HTTP REST
-    log_warning "Skipping discount service test (gRPC-only service)"
-    echo ""
-
     log_info "================================================"
-    log_info "All tests completed!"
+    log_info "Tests completed!"
     log_info "================================================"
     log_info "Metrics are now available in Prometheus."
     log_info ""
@@ -176,4 +248,4 @@ main() {
 }
 
 # Run main function
-main
+main "$@"
