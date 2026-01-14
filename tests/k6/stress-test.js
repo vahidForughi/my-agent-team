@@ -1,5 +1,6 @@
 import http from 'k6/http';
 import { check, sleep } from 'k6';
+import { TEST_TYPES, getEndpoint, createTags, getTestableServices } from './config.js';
 
 /**
  * Stress Test - Gradually increase load to find breaking point
@@ -9,46 +10,41 @@ import { check, sleep } from 'k6';
  * - At what point response times degrade
  * - When errors start appearing
  *
- * Stages:
- * 1. Ramp up to 10 users over 1 minute
- * 2. Stay at 10 users for 2 minutes
- * 3. Ramp up to 50 users over 2 minutes
- * 4. Stay at 50 users for 2 minutes
- * 5. Ramp up to 100 users over 2 minutes
- * 6. Stay at 100 users for 2 minutes
- * 7. Ramp down to 0 over 1 minute
+ * Stages (5 minutes total, 5000 max VUs):
+ * 1. Ramp up to 1000 users over 1 minute
+ * 2. Ramp up to 3000 users over 1 minute
+ * 3. Ramp up to 5000 users over 1 minute
+ * 4. Stay at 5000 users for 1 minute
+ * 5. Ramp down to 0 over 1 minute
  */
 
 export let options = {
-  stages: [
-    { duration: '1m', target: 10 },   // Warm up
-    { duration: '2m', target: 10 },   // Stay at 10
-    { duration: '2m', target: 50 },   // Ramp to 50
-    { duration: '2m', target: 50 },   // Stay at 50
-    { duration: '2m', target: 100 },  // Ramp to 100
-    { duration: '2m', target: 100 },  // Stay at 100
-    { duration: '1m', target: 0 },    // Ramp down
-  ],
-  thresholds: {
-    'http_req_duration': ['p(95)<1000'], // 95% of requests should be below 1s
-    'http_req_failed': ['rate<0.05'],     // Error rate should be below 5%
-  },
-  // Disable k6 API server to avoid port 6565 conflicts when running multiple tests
-  noAPIServer: true,
+  stages: TEST_TYPES.stress.stages,
+  thresholds: TEST_TYPES.stress.thresholds,
+  // Batch requests to reduce overhead
+  batch: 10,
+  batchPerHost: 10,
 };
 
 export default function () {
-  // Test multiple endpoints to stress different parts of the system
-  const endpoints = [
-    'http://localhost:8081/api/v1/Catalog/GetAllProducts',
-    'http://localhost:8082/api/v1/Basket/GetBasket/stresstest',
-    'http://localhost:8083/api/v1/Order/testuser',
-  ];
+  // Test multiple services to stress different parts of the system
+  const services = getTestableServices();
+  const serviceName = services[Math.floor(Math.random() * services.length)];
 
-  // Randomly pick an endpoint
-  const url = endpoints[Math.floor(Math.random() * endpoints.length)];
+  let url;
+  // Build appropriate URL based on service
+  if (serviceName === 'catalog') {
+    url = getEndpoint('catalog', 'getAllProducts');
+  } else if (serviceName === 'basket') {
+    url = getEndpoint('basket', 'getBasket', 'stresstest');
+  } else if (serviceName === 'ordering') {
+    url = getEndpoint('ordering', 'getOrders', 'testuser');
+  }
 
-  const response = http.get(url);
+  // Tag each request with the ACTUAL service name being tested
+  const response = http.get(url, {
+    tags: createTags(serviceName, 'stress'),
+  });
 
   check(response, {
     'status is 200 or 204 or 404': (r) => r.status === 200 || r.status === 204 || r.status === 404,
