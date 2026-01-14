@@ -14,11 +14,12 @@ Resources:
       BucketName: !Sub ecommerce-product-images-${AWS::AccountId}
       VersioningConfiguration:
         Status: Enabled
+      # Allow public access for product images (read-only via bucket policy)
       PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
       Tags:
         - Key: Name
           Value: !Sub ${EnvName}-product-images
@@ -34,6 +35,15 @@ Resources:
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
+          # Allow public read access to product images
+          - Sid: PublicReadGetObject
+            Effect: Allow
+            Principal: '*'
+            Action:
+              - s3:GetObject
+            Resource:
+              - !Sub ${ProductImagesBucket.Arn}/products/*
+          # Allow EKS pods to read/write for image uploads
           - Sid: AllowEKSPodsReadWrite
             Effect: Allow
             Principal:

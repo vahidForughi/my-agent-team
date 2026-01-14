@@ -33,6 +33,8 @@ export let options = {
     'http_req_duration': ['p(95)<1000'], // 95% of requests should be below 1s
     'http_req_failed': ['rate<0.05'],     // Error rate should be below 5%
   },
+  // Disable k6 API server to avoid port 6565 conflicts when running multiple tests
+  noAPIServer: true,
 };
 
 export default function () {

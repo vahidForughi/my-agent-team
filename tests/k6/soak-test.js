@@ -33,6 +33,8 @@ export let options = {
     ],
     'http_req_failed': ['rate<0.01'], // Less than 1% errors
   },
+  // Disable k6 API server to avoid port 6565 conflicts when running multiple tests
+  noAPIServer: true,
 };
 
 const SERVICES = [
@@ -116,10 +118,11 @@ export function handleSummary(data) {
   }
 
   // Analyze performance degradation
+  let degradation = 0;
   if (performanceSnapshots.length > 2) {
     const firstSnapshot = performanceSnapshots[0];
     const lastSnapshot = performanceSnapshots[performanceSnapshots.length - 1];
-    const degradation = ((lastSnapshot.duration - firstSnapshot.duration) / firstSnapshot.duration * 100).toFixed(2);
+    degradation = ((lastSnapshot.duration - firstSnapshot.duration) / firstSnapshot.duration * 100).toFixed(2);
 
     console.log(`\nPerformance Stability:`);
     console.log(`  Initial Response Time: ${firstSnapshot.duration.toFixed(2)}ms`);
