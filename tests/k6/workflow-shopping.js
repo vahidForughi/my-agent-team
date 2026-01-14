@@ -36,6 +36,9 @@ export let options = {
     'http_req_failed': ['rate<0.01'],     // Less than 1% error rate
     'workflow_success': ['count>0'],      // At least some workflows succeed
   },
+  // Disable k6 API server to avoid port 6565 conflicts when running multiple tests
+  // If needed, set via env: K6_API_HOST=localhost:0 k6 run tests/k6/workflow-shopping.js
+  noAPIServer: true,
 };
 
 const BASE_URLS = {
@@ -47,6 +50,11 @@ const BASE_URLS = {
 export function setup() {
   // Setup phase - could initialize test data
   console.log('Starting E-Commerce Workflow Test...');
+
+  // Initialize counters to ensure they always exist in metrics
+  workflowSuccess.add(0);
+  workflowFailed.add(0);
+
   return { timestamp: Date.now() };
 }
 

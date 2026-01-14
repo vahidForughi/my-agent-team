@@ -173,8 +173,15 @@ else
     log_success "S3 bucket created"
 fi
 
+# Disable S3 Block Public Access to allow public bucket policy
+log_info "Disabling S3 Block Public Access..."
+aws s3api put-public-access-block \
+    --bucket "${S3_BUCKET}" \
+    --public-access-block-configuration "BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false" \
+    --region "${AWS_REGION}"
+
 # Set bucket policy for public read access to product images
-log_info "Configuring S3 bucket policy..."
+log_info "Configuring S3 bucket policy for public read access..."
 cat > /tmp/s3-bucket-policy.json <<EOF
 {
   "Version": "2012-10-17",
@@ -194,7 +201,17 @@ aws s3api put-bucket-policy \
     --bucket "${S3_BUCKET}" \
     --policy file:///tmp/s3-bucket-policy.json
 
-log_success "S3 bucket configured"
+log_success "S3 bucket configured with public read access"
+
+# Update seed data with correct S3 URLs before building Docker images
+log_info "Updating product seed data with correct S3 bucket URLs..."
+SEED_FILE="Services/Catalog/Catalog.Infrastructure/Data/SeedData/products.json"
+S3_URL_PATTERN="https://${S3_BUCKET}.s3.${AWS_REGION}.amazonaws.com/products/"
+if [ -f "$SEED_FILE" ]; then
+    sed -i.bak -E "s|https://ecommerce-product-images-[0-9]+\.s3\.[a-z0-9-]+\.amazonaws\.com/products/|${S3_URL_PATTERN}|g" "$SEED_FILE"
+    rm -f "${SEED_FILE}.bak"
+    log_success "Seed data updated with S3 URL: ${S3_URL_PATTERN}"
+fi
 
 # Upload product images if they exist
 if [ -d "client/src/images/products" ]; then
@@ -446,6 +463,30 @@ helm upgrade --install eshopping-ocelotapigw \
 log_success "API Gateway deployed"
 
 cd ../..
+
+# ============================================================================
+# POST-DEPLOYMENT: Update MongoDB S3 URLs
+# ============================================================================
+log_info "Updating MongoDB product URLs to use correct S3 bucket..."
+
+MONGO_POD=$(kubectl get pods -n "${NAMESPACE}" | grep catalogdb | awk '{print $1}' | head -1)
+
+if [ -n "$MONGO_POD" ]; then
+    S3_URL="https://${S3_BUCKET}.s3.${AWS_REGION}.amazonaws.com/products/"
+    
+    # Update any products with old S3 bucket URLs
+    kubectl exec -n "${NAMESPACE}" "$MONGO_POD" -- mongo CatalogDb \
+        -u admin -p admin1234 --authenticationDatabase admin \
+        --quiet --eval "
+        var result = db.Products.updateMany(
+            { 'ImageFile': { \$regex: 'ecommerce-product-images-(?!${AWS_ACCOUNT_ID})' } },
+            [{ \$set: { 'ImageFile': { \$replaceAll: { input: '\$ImageFile', find: /ecommerce-product-images-[0-9]+\.s3\.[a-z0-9-]+\.amazonaws\.com/, replacement: '${S3_BUCKET}.s3.${AWS_REGION}.amazonaws.com' } } } }]
+        );
+        print('Products updated - Matched: ' + result.matchedCount + ', Modified: ' + result.modifiedCount);
+        " 2>/dev/null && log_success "MongoDB URLs updated" || log_info "MongoDB URL update skipped (no changes needed)"
+else
+    log_warning "MongoDB catalogdb pod not found, skipping URL update"
+fi
 
 # ============================================================================
 # DEPLOYMENT SUMMARY

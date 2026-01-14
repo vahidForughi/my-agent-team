@@ -20,7 +20,7 @@ NC='\033[0m'
 detect_namespaces() {
     # Check which namespaces are available
     AVAILABLE_NAMESPACES=()
-    for ns in dev default ecommerce monitoring istio-system; do
+    for ns in dev default ecommerce monitoring istio-system kubernetes-dashboard; do
         if kubectl get namespace "$ns" &>/dev/null; then
             AVAILABLE_NAMESPACES+=("$ns")
         fi
@@ -109,6 +109,11 @@ start_port_forward() {
     case "$svc_name" in
         *rabbitmq*) echo -e "${YELLOW}  🔑 Username: guest | Password: guest${NC}" ;;
         *grafana*) echo -e "${YELLOW}  🔑 Username: admin | Password: admin${NC}" ;;
+        *kubernetes-dashboard*)
+            echo -e "${YELLOW}  🔑 Token authentication required${NC}"
+            echo -e "${CYAN}  → Generate token: kubectl -n kubernetes-dashboard create token admin-user${NC}"
+            echo -e "${CYAN}  → Access: https://localhost:$first_port${NC}"
+            ;;
     esac
     echo ""
 }
@@ -398,6 +403,7 @@ declare -a SERVICES=(
     "grafana|3000:80|Grafana Dashboards"
     "kiali|20001:20001|Kiali Service Mesh"
     "tracing|16686:80|Jaeger Tracing"
+    "kubernetes-dashboard|8443:443|Kubernetes Dashboard"
     "kibana|5601:5601|Kibana Logs"
     "elasticsearch|9200:9200|Elasticsearch"
     "pgadmin|5050:80|pgAdmin"

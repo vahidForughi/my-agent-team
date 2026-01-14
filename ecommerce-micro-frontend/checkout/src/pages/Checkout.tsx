@@ -23,6 +23,8 @@ import {
   DollarOutlined,
   ArrowLeftOutlined,
   CheckOutlined,
+  TagOutlined,
+  StarOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from '@tanstack/react-router';
 
@@ -93,6 +95,24 @@ export default function Checkout(props: CheckoutProps) {
     () =>
       basket?.items?.reduce(
         (sum: number, item: BasketItem) => sum + item.price * item.quantity,
+        0
+      ) ?? 0,
+    [basket?.items]
+  );
+
+  const originalTotal = useMemo(
+    () =>
+      basket?.items?.reduce(
+        (sum: number, item: BasketItem) => sum + item.originalPrice * item.quantity,
+        0
+      ) ?? 0,
+    [basket?.items]
+  );
+
+  const totalSavings = useMemo(
+    () =>
+      basket?.items?.reduce(
+        (sum: number, item: BasketItem) => sum + item.discountAmount * item.quantity,
         0
       ) ?? 0,
     [basket?.items]
@@ -361,6 +381,22 @@ export default function Checkout(props: CheckoutProps) {
         <Col xs={24} lg={8}>
           <Card title="Order Total" style={{ position: 'sticky', top: 24 }}>
             <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+              {totalSavings > 0 && (
+                <Flex justify="space-between" style={{ width: '100%' }}>
+                  <Text>Original Subtotal</Text>
+                  <Text>${originalTotal.toFixed(2)}</Text>
+                </Flex>
+              )}
+              {totalSavings > 0 && (
+                <Flex justify="space-between" style={{ width: '100%' }}>
+                  <Text type="success" style={{ fontWeight: 600 }}>
+                    <TagOutlined /> Total Savings
+                  </Text>
+                  <Text type="success" style={{ fontWeight: 600 }}>
+                    -${totalSavings.toFixed(2)}
+                  </Text>
+                </Flex>
+              )}
               <Flex justify="space-between" style={{ width: '100%' }}>
                 <Text>Subtotal</Text>
                 <Text>${subtotal.toFixed(2)}</Text>
@@ -382,6 +418,23 @@ export default function Checkout(props: CheckoutProps) {
                   ${total.toFixed(2)}
                 </Text>
               </Flex>
+              {totalSavings > 0 && (
+                <Card
+                  size="small"
+                  style={{
+                    background: 'linear-gradient(135deg, #52c41a 0%, #73d13d 100%)',
+                    border: 'none',
+                    color: 'white',
+                  }}
+                >
+                  <Flex align="center" justify="center" gap="small">
+                    <StarOutlined style={{ fontSize: 16 }} />
+                    <Text strong style={{ color: 'white', fontSize: 14 }}>
+                      You're saving ${totalSavings.toFixed(2)}!
+                    </Text>
+                  </Flex>
+                </Card>
+              )}
               <Button
                 type="primary"
                 size="large"

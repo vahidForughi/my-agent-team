@@ -1,0 +1,104 @@
+// AWS Deployment Architecture (EKS)
+// Cloud infrastructure boundaries and runtime topology
+
+// ==================== INTERNET ====================
+Internet [icon: globe, color: blue] {
+  Users [icon: users]
+}
+
+// ==================== FRONTEND (AWS AMPLIFY) ====================
+AWS Amplify [icon: aws-amplify, color: orange] {
+  Micro Frontends (React) [icon: react]
+}
+
+// ==================== CI/CD ====================
+CI/CD [icon: git-merge, color: gray] {
+  GitHub Actions [icon: github]
+  Amazon ECR [icon: aws-ecr]
+}
+
+// ==================== AWS CLOUD ====================
+AWS Cloud [icon: aws, color: orange] {
+  
+  // ========== VPC ==========
+  VPC (10.0.0.0/16) [icon: aws-vpc, color: green] {
+    
+    // Public Subnets
+    Public Subnets [color: yellow] {
+      ALB [icon: aws-application-load-balancer]
+      NAT Gateway [icon: aws-nat-gateway]
+    }
+    
+    // Private Subnets
+    Private Subnets [color: blue] {
+      
+      // EKS Cluster
+      EKS Cluster [icon: aws-eks, color: cyan] {
+        
+        // Control Plane (Managed)
+        Control Plane [icon: k8s-control-plane]
+        
+        // Worker Nodes
+        Node Group (EC2) [icon: aws-ec2] {
+          
+          // Istio + Gateway
+          Istio Gateway [icon: istio]
+          Ocelot Gateway [icon: aws-api-gateway]
+          
+          // Microservices (HPA)
+          Microservices [icon: k8s-pod] {
+            Catalog API [icon: dotnet]
+            Basket API [icon: dotnet]
+            Discount API [icon: dotnet]
+            Ordering API [icon: dotnet]
+          }
+          
+          // Databases (StatefulSets)
+          Databases [icon: database, color: purple] {
+            MongoDB [icon: mongodb]
+            PostgreSQL [icon: postgresql]
+            SQL Server [icon: mssql]
+            Redis [icon: redis]
+            RabbitMQ [icon: rabbitmq]
+          }
+          
+          // Observability
+          Observability [icon: prometheus, color: yellow] {
+            Prometheus [icon: prometheus]
+            Grafana [icon: grafana]
+            Jaeger [icon: jaeger]
+            Elasticsearch [icon: elasticsearch]
+          }
+        }
+      }
+    }
+  }
+  
+  // S3 Bucket (Product Images)
+  S3 Bucket [icon: aws-simple-storage-service]
+}
+
+// ==================== TRAFFIC FLOW ====================
+Users > AWS Amplify : HTTPS (Frontend)
+AWS Amplify > ALB : API Calls
+ALB > Istio Gateway : Route
+Istio Gateway > Ocelot Gateway : VirtualService
+Ocelot Gateway > Microservices : Proxy
+Microservices > Databases : Persist
+Catalog API > S3 Bucket : Product Images
+
+// ==================== CI/CD FLOW ====================
+GitHub Actions > Amazon ECR : Build & Push
+Amazon ECR > EKS Cluster : Helm Upgrade
+
+// ==================== OBSERVABILITY ====================
+Microservices > Observability : Metrics/Logs/Traces
+
+// ==================== CALLOUTS ====================
+// ─────────────────────────────────────────────────────
+// • Public: ALB only (internet-facing)
+// • Private: Worker nodes + all services
+// • Autoscaling: HPA (pods) + Node Group scaling
+// • Databases: Self-managed StatefulSets in-cluster
+// • Frontend: AWS Amplify (separate from EKS)
+
