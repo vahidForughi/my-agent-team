@@ -1529,7 +1529,7 @@ display_access_info() {
     echo "     kubectl port-forward -n kubernetes-dashboard svc/kubernetes-dashboard 8443:443"
     echo "     Then open: https://localhost:8443"
     echo "     Generate token: kubectl -n kubernetes-dashboard create token admin-user"
-    echo "     Login with the generated token"
+    echo "     Use generated token to login (admin access)"
     echo ""
     echo "📈 LOGGING:"
     echo "   Kibana:"
