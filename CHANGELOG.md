@@ -1,4 +1,50 @@
 # Changelog
+## [0.8.1] - 2026-01-14
+
+## What's Changed
+
+### 🚀 Features
+- Merge branch 'main' into feat/sample-grafana-dashboard (683c425)
+
+### 🐛 Bug Fixes
+- fix(deps): revert package-lock.json (#186) (6c7dd5c)
+- Revert "fix: regenerate package-lock.json to fix CI npm ci failure" (a60d7dc)
+
+### 🔧 Improvements
+- No improvements
+
+### 📚 Documentation
+- docs: update changelog for 0.8.0 (#185) (9174b0b)
+- docs: update changelog for 0.7.0 (#180) (9205a54)
+- docs: update changelog for 0.8.0 [skip ci] (022e88a)
+- docs: update changelog for 0.7.0 [skip ci] (087cc31)
+
+### 🔐 Security
+- No security updates
+
+### 🏗️ Infrastructure
+- Revert "fix: regenerate package-lock.json to fix CI npm ci failure" (a60d7dc)
+- docs: update changelog for 0.8.0 [skip ci] (022e88a)
+- docs: update changelog for 0.7.0 [skip ci] (087cc31)
+
+### Other Changes
+- Revert "chore(deps): update package-lock.json with peer dependency markers" (c716905)
+- Merge branch 'main' into changelog/0.8.0 (9f486b3)
+- Merge branch 'main' into changelog/0.7.0 (55ef0a7)
+
+## Docker Images
+All services are available as Docker images:
+- 
+- 
+- 
+- 
+- 
+
+## Helm Deployment
+
+
+**Full Changelog**: https://github.com/sloweyyy/cloud-native-ecommerce-platform/compare/0.8.0...0.8.1
+
 
 ## [0.8.0] - 2026-01-14
 
