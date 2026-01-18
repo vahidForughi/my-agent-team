@@ -22,6 +22,10 @@ STACK_EKS="${ENV_NAME}-eks"
 STACK_ALB="${ENV_NAME}-alb"
 CLUSTER_NAME="${ENV_NAME}-eks"
 K8S_VERSION="1.30"
+NODE_INSTANCE_TYPE="${NODE_INSTANCE_TYPE:-m7i.large}"
+NODE_DESIRED_CAPACITY="${NODE_DESIRED_CAPACITY:-5}"
+NODE_MIN_SIZE="${NODE_MIN_SIZE:-5}"
+NODE_MAX_SIZE="${NODE_MAX_SIZE:-5}"
 NODE_DISK_SIZE="80"
 NAMESPACE="${ENV_NAME}"
 
@@ -319,6 +323,10 @@ deploy_eks() {
                     ClusterName="$CLUSTER_NAME" \
                     KubernetesVersion="$K8S_VERSION" \
                     PrivateSubnetIds="$PRIV_SUBNETS" \
+                    NodeInstanceType="$NODE_INSTANCE_TYPE" \
+                    NodeDesiredCapacity="$NODE_DESIRED_CAPACITY" \
+                    NodeMinSize="$NODE_MIN_SIZE" \
+                    NodeMaxSize="$NODE_MAX_SIZE" \
                     NodeDiskSize="$NODE_DISK_SIZE"
         fi
     else
@@ -333,6 +341,10 @@ deploy_eks() {
                 ClusterName="$CLUSTER_NAME" \
                 KubernetesVersion="$K8S_VERSION" \
                 PrivateSubnetIds="$PRIV_SUBNETS" \
+                NodeInstanceType="$NODE_INSTANCE_TYPE" \
+                NodeDesiredCapacity="$NODE_DESIRED_CAPACITY" \
+                NodeMinSize="$NODE_MIN_SIZE" \
+                NodeMaxSize="$NODE_MAX_SIZE" \
                 NodeDiskSize="$NODE_DISK_SIZE"
     fi
 
@@ -928,13 +940,31 @@ install_istio_early() {
     log_info "[7.5/10] Installing Istio service mesh..."
 
     # Find or download Istio
-    ISTIO_DIR=$(find . -maxdepth 1 -name "istio-*" -type d | head -n 1)
+    local istio_version="${ISTIO_VERSION:-1.28.1}"
+    local istio_dir=""
 
-    if [ -z "$ISTIO_DIR" ]; then
-        log_info "Downloading Istio..."
-        curl -L https://istio.io/downloadIstio | ISTIO_VERSION=1.28.1 sh -
-        ISTIO_DIR=$(find . -maxdepth 1 -name "istio-*" -type d | head -n 1)
+    shopt -s nullglob
+    for dir in ./istio-*; do
+        if [ -x "${dir}/bin/istioctl" ]; then
+            istio_dir="$dir"
+            break
+        fi
+    done
+    shopt -u nullglob
+
+    if [ -z "$istio_dir" ]; then
+        log_info "Downloading Istio ${istio_version}..."
+        rm -rf "./istio-${istio_version}"
+        curl -L https://istio.io/downloadIstio | ISTIO_VERSION="${istio_version}" sh -
+        istio_dir="./istio-${istio_version}"
     fi
+
+    if [ ! -x "${istio_dir}/bin/istioctl" ]; then
+        log_error "Istioctl not found at ${istio_dir}/bin/istioctl"
+        exit 1
+    fi
+
+    ISTIO_DIR="$istio_dir"
 
     # Install Istio
     log_info "Installing Istio control plane..."
@@ -1797,16 +1827,20 @@ main() {
     if [ -n "$CERT_ARN" ]; then
         # Use Python for safer string replacement with special characters
         python3 << EOF
-import sys
+import re
 cert_arn = "$CERT_ARN"
 with open("Deployments/helm/ocelotapigw/values.yaml", "r") as f:
     content = f.read()
-content = content.replace(
-    "service.beta.kubernetes.io/aws-load-balancer-ssl-cert: \"\"",
-    f"service.beta.kubernetes.io/aws-load-balancer-ssl-cert: \"{cert_arn}\""
-)
+pattern = r'service\.beta\.kubernetes\.io/aws-load-balancer-ssl-cert: ".*"'
+replacement = f'service.beta.kubernetes.io/aws-load-balancer-ssl-cert: "{cert_arn}"'
+updated = re.sub(pattern, replacement, content)
+if updated == content:
+    updated = content.replace(
+        "service.beta.kubernetes.io/aws-load-balancer-ssl-cert: \"\"",
+        replacement
+    )
 with open("Deployments/helm/ocelotapigw/values.yaml", "w") as f:
-    f.write(content)
+    f.write(updated)
 print("Certificate updated successfully")
 EOF
     else

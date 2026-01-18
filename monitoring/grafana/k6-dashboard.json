@@ -1,0 +1,302 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k6-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  k6-load-testing-dashboard.json: |
+    {
+      "dashboard": {
+        "id": null,
+        "title": "K6 Load Testing Metrics",
+        "tags": ["k6", "load-testing", "performance", "api"],
+        "timezone": "browser",
+        "panels": [
+          {
+            "id": 1,
+            "title": "Virtual Users (VUs)",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "k6_vus_active",
+                "legendFormat": "Active VUs"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "mappings": [],
+                "thresholds": {
+                  "steps": [
+                    {"color": "green", "value": null},
+                    {"color": "yellow", "value": 80},
+                    {"color": "red", "value": 95}
+                  ]
+                },
+                "unit": "short"
+              }
+            }
+          },
+          {
+            "id": 2,
+            "title": "Request Rate (RPS)",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "sum(rate(k6_http_reqs[5m]))",
+                "legendFormat": "Total RPS"
+              },
+              {
+                "expr": "sum(rate(k6_http_reqs{status=~\"2..\"}[5m]))",
+                "legendFormat": "2xx RPS"
+              },
+              {
+                "expr": "sum(rate(k6_http_reqs{status=~\"4..\"}[5m]))",
+                "legendFormat": "4xx RPS"
+              },
+              {
+                "expr": "sum(rate(k6_http_reqs{status=~\"5..\"}[5m]))",
+                "legendFormat": "5xx RPS"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "unit": "reqps"
+              }
+            }
+          },
+          {
+            "id": 3,
+            "title": "Response Time (P95, P99)",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, sum(rate(k6_http_req_duration_seconds_bucket[5m])) by (le))",
+                "legendFormat": "P95 Response Time"
+              },
+              {
+                "expr": "histogram_quantile(0.99, sum(rate(k6_http_req_duration_seconds_bucket[5m])) by (le))",
+                "legendFormat": "P99 Response Time"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "unit": "s"
+              }
+            }
+          },
+          {
+            "id": 4,
+            "title": "Error Rate",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "sum(rate(k6_http_req_failed[5m])) / sum(rate(k6_http_reqs[5m])) * 100",
+                "legendFormat": "Error Rate %"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "unit": "percentunit",
+                "thresholds": {
+                  "steps": [
+                    {"color": "green", "value": null},
+                    {"color": "yellow", "value": 5},
+                    {"color": "red", "value": 10}
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "id": 5,
+            "title": "Response Time Distribution",
+            "type": "heatmap",
+            "targets": [
+              {
+                "expr": "sum(rate(k6_http_req_duration_seconds_bucket[5m])) by (le)",
+                "legendFormat": "{{ le }}"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "custom": {
+                  "axisLabel": "",
+                  "axisPlacement": "auto",
+                  "barAlignment": 0,
+                  "drawStyle": "line",
+                  "fillOpacity": 0,
+                  "gradientMode": "none",
+                  "hideFrom": {
+                    "legend": false,
+                    "tooltip": false,
+                    "viz": false
+                  },
+                  "lineInterpolation": "linear",
+                  "lineWidth": 1,
+                  "pointSize": 5,
+                  "scaleDistribution": {
+                    "type": "linear"
+                  },
+                  "showPoints": "auto",
+                  "spanNulls": false,
+                  "stacking": {
+                    "group": "A",
+                    "mode": "none"
+                  },
+                  "thresholdsStyle": {
+                    "mode": "line"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": 6,
+            "title": "Data Transfer",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "sum(rate(k6_data_sent[5m]))",
+                "legendFormat": "Data Sent (bytes/s)"
+              },
+              {
+                "expr": "sum(rate(k6_data_received[5m]))",
+                "legendFormat": "Data Received (bytes/s)"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "unit": "Bps"
+              }
+            }
+          },
+          {
+            "id": 7,
+            "title": "HTTP Status Codes",
+            "type": "piechart",
+            "targets": [
+              {
+                "expr": "sum(k6_http_reqs) by (status)",
+                "legendFormat": "{{ status }}"
+              }
+            ]
+          },
+          {
+            "id": 8,
+            "title": "Check Pass Rate",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "sum(k6_checks) - sum(k6_checks_failed)",
+                "legendFormat": "Passed Checks"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "mappings": [],
+                "thresholds": {
+                  "steps": [
+                    {"color": "green", "value": null},
+                    {"color": "yellow", "value": 90},
+                    {"color": "red", "value": 80}
+                  ]
+                },
+                "unit": "short"
+              }
+            }
+          },
+          {
+            "id": 9,
+            "title": "Iteration Duration",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "sum(rate(k6_iteration_duration_seconds_sum[5m])) / sum(rate(k6_iteration_duration_seconds_count[5m]))",
+                "legendFormat": "Avg Iteration Duration"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "unit": "s"
+              }
+            }
+          },
+          {
+            "id": 10,
+            "title": "System Resource Usage",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(container_cpu_usage_seconds_total{container=\"grafana\"}[5m])",
+                "legendFormat": "CPU Usage"
+              },
+              {
+                "expr": "container_memory_usage_bytes{container=\"grafana\"}",
+                "legendFormat": "Memory Usage"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "unit": "bytes"
+              }
+            }
+          },
+          {
+            "id": 11,
+            "title": "Load Test Summary",
+            "type": "table",
+            "targets": [
+              {
+                "expr": "sum(k6_http_reqs)",
+                "legendFormat": "Total Requests"
+              },
+              {
+                "expr": "sum(k6_checks_failed)",
+                "legendFormat": "Failed Checks"
+              },
+              {
+                "expr": "histogram_quantile(0.95, sum(rate(k6_http_req_duration_seconds_bucket[5m])) by (le))",
+                "legendFormat": "P95 Response Time"
+              }
+            ],
+            "transformations": [
+              {
+                "id": "filterFieldsByName",
+                "options": {
+                  "include": {"names": ["Time", "Total Requests", "Failed Checks", "P95 Response Time"]}
+                }
+              }
+            ]
+          },
+          {
+            "id": 12,
+            "title": "API Endpoint Performance",
+            "type": "table",
+            "targets": [
+              {
+                "expr": "sum(rate(k6_http_reqs[5m])) by (method)",
+                "legendFormat": "Requests by Method"
+              }
+            ],
+            "transformations": [
+              {
+                "id": "filterFieldsByName",
+                "options": {
+                  "include": {"names": ["method", "Value"]}
+                }
+              }
+            ]
+          }
+        ],
+        "time": {
+          "from": "now-1h",
+          "to": "now"
+        },
+        "refresh": "30s"
+      }
+    }
