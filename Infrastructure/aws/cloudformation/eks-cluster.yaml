@@ -20,7 +20,7 @@ Parameters:
     Description: Private subnets for EKS data plane
   NodeInstanceType:
     Type: String
-    Default: m7i.large
+    Default: m7i-flex.large
   NodeDesiredCapacity:
     Type: Number
     Default: 5
