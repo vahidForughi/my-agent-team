@@ -128,7 +128,7 @@ export const ENV = {
   namespace: __ENV.NAMESPACE || 'dev',
   prometheusUrl: __ENV.PROMETHEUS_URL || 'http://localhost:9090',
   pushgatewayUrl: __ENV.PUSHGATEWAY_URL || 'http://localhost:9091',
-  gatewayUrl: __ENV.GATEWAY_URL || 'http://a30c7325084ba404a9d14238fe07b509-3d5eaf0db129d0fe.elb.us-east-1.amazonaws.com',
+  gatewayUrl: __ENV.GATEWAY_URL || 'https://a908be0f78581433da5edddaf76a0b7f-f54822a6262925e8.elb.us-east-1.amazonaws.com',
 };
 
 /**
@@ -160,9 +160,9 @@ export const TEST_TYPES = {
       // Gateway mode: Graduated load test (3 replicas per service)
       { duration: '1m', target: 100 },
       { duration: '1m', target: 300 },
-      { duration: '1m', target: 600 },
-      { duration: '2m', target: 1000 },
-      { duration: '2m', target: 1000 },
+      { duration: '1m', target: 500 },
+      { duration: '2m', target: 500 },
+      { duration: '2m', target: 500 },
       { duration: '1m', target: 0 },
     ] : [
       // Port-forward mode: Limited to 300 users

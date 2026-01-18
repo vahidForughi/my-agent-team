@@ -832,7 +832,7 @@ trigger_migration() {
 
     # Trigger migration
     log_info "Calling migration endpoint: POST /Admin/MigrateImagesToS3"
-    MIGRATION_RESPONSE=$(curl -s -X POST http://localhost:8000/Admin/MigrateImagesToS3)
+    MIGRATION_RESPONSE=$(curl -s -X POST http://localhost:8000/Admin/MigrateImagesToS3 --max-time 30 2>&1 || echo "TIMEOUT")
 
     # Cleanup
     cleanup_portforward
@@ -842,6 +842,9 @@ trigger_migration() {
     if echo "$MIGRATION_RESPONSE" | grep -q "TotalProducts"; then
         log_success "Migration triggered successfully"
         log_info "Migration response: $MIGRATION_RESPONSE"
+    elif echo "$MIGRATION_RESPONSE" | grep -q "TIMEOUT"; then
+        log_warning "Migration endpoint timed out (30s) - this is normal if the endpoint doesn't exist"
+        log_info "This is optional - products will work with S3 URLs from seed data"
     else
         log_warning "Migration endpoint may not have responded properly"
         log_info "Response: $MIGRATION_RESPONSE"
@@ -1524,9 +1527,19 @@ display_access_info() {
     echo "   Region: ${REGION}"
     echo "   Environment: ${ENV_NAME}"
     echo ""
-    echo "🔗 API GATEWAY:"
-    echo "   ALB DNS: http://${ALB_DNS}"
-    echo "   Note: Configure Kubernetes Ingress or Service to route to ALB"
+    echo "🔗 API GATEWAYS:"
+    # Get Ocelot Gateway DNS
+    OCELOT_DNS=$(kubectl get svc -n ${NAMESPACE} eshopping-ocelotapigw -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "pending")
+    # Get Istio Gateway DNS
+    ISTIO_DNS=$(kubectl get svc -n istio-system istio-ingressgateway -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "pending")
+
+    echo "   Ocelot API Gateway (Primary):"
+    echo "     HTTP:  http://${OCELOT_DNS}"
+    echo "     HTTPS: https://${OCELOT_DNS}"
+    echo ""
+    echo "   Istio Ingress Gateway:"
+    echo "     HTTP:  http://${ISTIO_DNS}"
+    echo "     HTTPS: https://${ISTIO_DNS}"
     echo ""
     echo "📊 MONITORING STACK (use kubectl port-forward):"
     echo "   Prometheus:"

@@ -22,6 +22,7 @@ import { TEST_TYPES, getEndpoint, createTags, getTestableServices } from './conf
 export let options = {
   stages: TEST_TYPES.spike.stages,
   thresholds: TEST_TYPES.spike.thresholds,
+  insecureSkipTLSVerify: true,
   // HTTP configuration for high concurrency
   http: {
     timeout: '90s',

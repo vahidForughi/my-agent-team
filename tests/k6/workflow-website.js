@@ -44,6 +44,7 @@ export let options = {
     'workflow_success': ['count>0'],         // At least some workflows succeed
     'vus': ['value>0'],                      // Ensure virtual users are active
   },
+  insecureSkipTLSVerify: true,
 };
 
 // Helper function to generate realistic browser headers
@@ -87,7 +88,7 @@ export function setup() {
 
   return { 
     timestamp: Date.now(),
-    gatewayUrl: 'https://a30c7325084ba404a9d14238fe07b509-3d5eaf0db129d0fe.elb.us-east-1.amazonaws.com',
+    gatewayUrl: 'https://a908be0f78581433da5edddaf76a0b7f-f54822a6262925e8.elb.us-east-1.amazonaws.com',
     websiteOrigin: 'https://main.d239j34e2bshzo.amplifyapp.com',
     userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36'
   };
@@ -348,6 +349,9 @@ export default function (data) {
       const cartResponse = http.get(cartUrl, {
         tags: createTags('basket', 'checkout-prep'),
         headers: getWebsiteHeaders(data),
+        tls: {
+          rejectUnauthorized: false
+        }
       });
 
       let totalPrice = 0;

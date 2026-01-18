@@ -18,7 +18,7 @@ log_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
 
 # Always use AWS Gateway for all test runs
 USE_GATEWAY=true
-GATEWAY_URL="http://a30c7325084ba404a9d14238fe07b509-3d5eaf0db129d0fe.elb.us-east-1.amazonaws.com"
+GATEWAY_URL="https://a908be0f78581433da5edddaf76a0b7f-f54822a6262925e8.elb.us-east-1.amazonaws.com"
 PROMETHEUS_URL="${PROMETHEUS_URL:-http://localhost:9090}"
 TEST_TYPE="${1:-stress}"
 

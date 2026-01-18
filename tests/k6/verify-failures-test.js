@@ -17,6 +17,7 @@ export let options = {
     'http_req_duration': ['p(95)<5000'],
     'http_req_failed': ['rate<0.50'], // Allow up to 50% failures for testing
   },
+  insecureSkipTLSVerify: true,
   batch: 10,
   batchPerHost: 10,
 };

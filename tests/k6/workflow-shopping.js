@@ -37,6 +37,7 @@ export let options = {
     'http_req_failed': ['rate<0.01'],     // Less than 1% error rate
     'workflow_success': ['count>0'],      // At least some workflows succeed
   },
+  insecureSkipTLSVerify: true,
   // Disable k6 API server to avoid port 6565 conflicts when running multiple tests
   // If needed, set via env: K6_API_HOST=localhost:0 k6 run tests/k6/workflow-shopping.js
   noAPIServer: true,

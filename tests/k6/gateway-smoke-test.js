@@ -14,6 +14,7 @@ import { getEndpoint, createTags, getTestableServices } from './config.js';
 export let options = {
   vus: 10,
   duration: '30s',
+  insecureSkipTLSVerify: true,
   thresholds: {
     'http_req_duration': ['p(95)<2000'],
     'http_req_failed': ['rate<0.05'],

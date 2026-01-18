@@ -10,6 +10,7 @@ import { SERVICES, getEndpoint, createTags } from './config.js';
 export let options = {
   vus: 10,  // 10 virtual users
   duration: '30s',  // Test duration
+  insecureSkipTLSVerify: true,
   tags: createTags(SERVICES.ordering.name),
 };
 

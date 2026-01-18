@@ -30,7 +30,7 @@ log_success() {
 
 # Check if AWS gateway is accessible
 check_gateway() {
-    if ! curl -s http://a30c7325084ba404a9d14238fe07b509-3d5eaf0db129d0fe.elb.us-east-1.amazonaws.com/Catalog/GetAllProducts >/dev/null 2>&1; then
+    if ! curl -s --insecure https://a908be0f78581433da5edddaf76a0b7f-f54822a6262925e8.elb.us-east-1.amazonaws.com/Catalog/GetAllProducts >/dev/null 2>&1; then
         log_error "AWS Gateway not accessible"
         log_info "Please check your network connection and gateway status"
         exit 1

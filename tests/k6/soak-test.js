@@ -24,6 +24,7 @@ import { TEST_TYPES, getEndpoint, createTags, getTestableServices } from './conf
 export let options = {
   stages: TEST_TYPES.soak.stages,
   thresholds: TEST_TYPES.soak.thresholds,
+  insecureSkipTLSVerify: true,
 };
 
 // Service rotation for load distribution

@@ -21,6 +21,7 @@ import { TEST_TYPES, getEndpoint, createTags, getTestableServices } from './conf
 export let options = {
   stages: TEST_TYPES.stress.stages,
   thresholds: TEST_TYPES.stress.thresholds,
+  insecureSkipTLSVerify: true,
   // Batch requests to reduce overhead
   batch: 10,
   batchPerHost: 10,
