@@ -1,4 +1,44 @@
 # Changelog
+## [0.8.2] - 2026-01-18
+
+## What's Changed
+
+### 🚀 Features
+- No new features
+
+### 🐛 Bug Fixes
+- No bug fixes
+
+### 🔧 Improvements
+- refactor: simplify checkout page layout and reduce unnecessary imports (#188) (3699c92)
+- refactor: simplify checkout page layout and reduce unnecessary imports (4632bc1)
+
+### 📚 Documentation
+- docs: update changelog for 0.8.1 (#187) (6c40949)
+- docs: update changelog for 0.8.1 [skip ci] (58d12c1)
+
+### 🔐 Security
+- No security updates
+
+### 🏗️ Infrastructure
+- docs: update changelog for 0.8.1 [skip ci] (58d12c1)
+
+### Other Changes
+- No other changes
+
+## Docker Images
+All services are available as Docker images:
+- 
+- 
+- 
+- 
+- 
+
+## Helm Deployment
+
+
+**Full Changelog**: https://github.com/sloweyyy/cloud-native-ecommerce-platform/compare/0.8.1...0.8.2
+
 ## [0.8.1] - 2026-01-14
 
 ## What's Changed
