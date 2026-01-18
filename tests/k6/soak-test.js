@@ -1,5 +1,6 @@
 import http from 'k6/http';
 import { check, sleep } from 'k6';
+import { TEST_TYPES, getEndpoint, createTags, getTestableServices } from './config.js';
 
 /**
  * Soak Test - Long-running stability test
@@ -11,7 +12,7 @@ import { check, sleep } from 'k6';
  * - Database connection pool issues
  * - Cache efficiency
  *
- * Duration: 10 minutes (can be extended for real soak testing)
+ * Duration: 11 minutes (can be extended for real soak testing)
  * Load: Steady 20 VUs
  *
  * For production soak testing, consider running for:
@@ -21,27 +22,13 @@ import { check, sleep } from 'k6';
  */
 
 export let options = {
-  stages: [
-    { duration: '2m', target: 20 },   // Ramp up
-    { duration: '8m', target: 20 },   // Soak period
-    { duration: '1m', target: 0 },    // Ramp down
-  ],
-  thresholds: {
-    'http_req_duration': [
-      'p(95)<800',  // 95% of requests should stay under 800ms
-      'p(99)<1200', // 99% should stay under 1.2s
-    ],
-    'http_req_failed': ['rate<0.01'], // Less than 1% errors
-  },
-  // Disable k6 API server to avoid port 6565 conflicts when running multiple tests
-  noAPIServer: true,
+  stages: TEST_TYPES.soak.stages,
+  thresholds: TEST_TYPES.soak.thresholds,
+  insecureSkipTLSVerify: true,
 };
 
-const SERVICES = [
-  { name: 'catalog', url: 'http://localhost:8081/api/v1/Catalog/GetAllProducts' },
-  { name: 'basket', url: 'http://localhost:8082/api/v1/Basket/GetBasket/soaktest' },
-  { name: 'ordering', url: 'http://localhost:8083/api/v1/Order/testuser' },
-];
+// Service rotation for load distribution
+const services = getTestableServices();
 
 // Track performance over time
 let requestCount = 0;
@@ -51,11 +38,24 @@ const performanceSnapshots = [];
 export default function () {
   requestCount++;
 
-  // Distribute load across services
-  const service = SERVICES[requestCount % SERVICES.length];
+  // Distribute load across services (round-robin)
+  const serviceName = services[requestCount % services.length];
+
+  let url;
+  // Build appropriate URL based on service
+  if (serviceName === 'catalog') {
+    url = getEndpoint('catalog', 'getAllProducts');
+  } else if (serviceName === 'basket') {
+    url = getEndpoint('basket', 'getBasket', 'soaktest');
+  } else if (serviceName === 'ordering') {
+    url = getEndpoint('ordering', 'getOrders', 'testuser');
+  }
 
   const startTime = Date.now();
-  const response = http.get(service.url);
+  // Tag each request with the ACTUAL service name being tested
+  const response = http.get(url, {
+    tags: createTags(serviceName, 'soak'),
+  });
   const duration = Date.now() - startTime;
 
   const success = check(response, {
@@ -74,6 +74,7 @@ export default function () {
       duration: duration,
       errors: errorCount,
       timestamp: Date.now(),
+      service: serviceName,
     });
   }
 

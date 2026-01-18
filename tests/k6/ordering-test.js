@@ -1,5 +1,6 @@
 import http from 'k6/http';
 import { check } from 'k6';
+import { SERVICES, getEndpoint, createTags } from './config.js';
 
 /**
  * Ordering Service Load Test
@@ -9,12 +10,17 @@ import { check } from 'k6';
 export let options = {
   vus: 10,  // 10 virtual users
   duration: '30s',  // Test duration
+  insecureSkipTLSVerify: true,
+  tags: createTags(SERVICES.ordering.name),
 };
 
 export default function () {
   // Test with a common test username
   const userName = 'testuser';
-  const response = http.get(`http://localhost:8083/api/v1/Order/${userName}`);
+  const url = getEndpoint('ordering', 'getOrders', userName);
+  const response = http.get(url, {
+    tags: createTags(SERVICES.ordering.name),
+  });
 
   check(response, {
     'status is 200 or 404': (r) => r.status === 200 || r.status === 404, // 404 if user has no orders

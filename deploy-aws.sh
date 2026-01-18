@@ -22,6 +22,10 @@ STACK_EKS="${ENV_NAME}-eks"
 STACK_ALB="${ENV_NAME}-alb"
 CLUSTER_NAME="${ENV_NAME}-eks"
 K8S_VERSION="1.30"
+NODE_INSTANCE_TYPE="${NODE_INSTANCE_TYPE:-m7i-flex.large}"
+NODE_DESIRED_CAPACITY="${NODE_DESIRED_CAPACITY:-5}"
+NODE_MIN_SIZE="${NODE_MIN_SIZE:-5}"
+NODE_MAX_SIZE="${NODE_MAX_SIZE:-5}"
 NODE_DISK_SIZE="80"
 NAMESPACE="${ENV_NAME}"
 
@@ -319,6 +323,10 @@ deploy_eks() {
                     ClusterName="$CLUSTER_NAME" \
                     KubernetesVersion="$K8S_VERSION" \
                     PrivateSubnetIds="$PRIV_SUBNETS" \
+                    NodeInstanceType="$NODE_INSTANCE_TYPE" \
+                    NodeDesiredCapacity="$NODE_DESIRED_CAPACITY" \
+                    NodeMinSize="$NODE_MIN_SIZE" \
+                    NodeMaxSize="$NODE_MAX_SIZE" \
                     NodeDiskSize="$NODE_DISK_SIZE"
         fi
     else
@@ -333,6 +341,10 @@ deploy_eks() {
                 ClusterName="$CLUSTER_NAME" \
                 KubernetesVersion="$K8S_VERSION" \
                 PrivateSubnetIds="$PRIV_SUBNETS" \
+                NodeInstanceType="$NODE_INSTANCE_TYPE" \
+                NodeDesiredCapacity="$NODE_DESIRED_CAPACITY" \
+                NodeMinSize="$NODE_MIN_SIZE" \
+                NodeMaxSize="$NODE_MAX_SIZE" \
                 NodeDiskSize="$NODE_DISK_SIZE"
     fi
 
@@ -820,7 +832,7 @@ trigger_migration() {
 
     # Trigger migration
     log_info "Calling migration endpoint: POST /Admin/MigrateImagesToS3"
-    MIGRATION_RESPONSE=$(curl -s -X POST http://localhost:8000/Admin/MigrateImagesToS3)
+    MIGRATION_RESPONSE=$(curl -s -X POST http://localhost:8000/Admin/MigrateImagesToS3 --max-time 30 2>&1 || echo "TIMEOUT")
 
     # Cleanup
     cleanup_portforward
@@ -830,6 +842,9 @@ trigger_migration() {
     if echo "$MIGRATION_RESPONSE" | grep -q "TotalProducts"; then
         log_success "Migration triggered successfully"
         log_info "Migration response: $MIGRATION_RESPONSE"
+    elif echo "$MIGRATION_RESPONSE" | grep -q "TIMEOUT"; then
+        log_warning "Migration endpoint timed out (30s) - this is normal if the endpoint doesn't exist"
+        log_info "This is optional - products will work with S3 URLs from seed data"
     else
         log_warning "Migration endpoint may not have responded properly"
         log_info "Response: $MIGRATION_RESPONSE"
@@ -928,13 +943,31 @@ install_istio_early() {
     log_info "[7.5/10] Installing Istio service mesh..."
 
     # Find or download Istio
-    ISTIO_DIR=$(find . -maxdepth 1 -name "istio-*" -type d | head -n 1)
+    local istio_version="${ISTIO_VERSION:-1.28.1}"
+    local istio_dir=""
 
-    if [ -z "$ISTIO_DIR" ]; then
-        log_info "Downloading Istio..."
-        curl -L https://istio.io/downloadIstio | ISTIO_VERSION=1.28.1 sh -
-        ISTIO_DIR=$(find . -maxdepth 1 -name "istio-*" -type d | head -n 1)
+    shopt -s nullglob
+    for dir in ./istio-*; do
+        if [ -x "${dir}/bin/istioctl" ]; then
+            istio_dir="$dir"
+            break
+        fi
+    done
+    shopt -u nullglob
+
+    if [ -z "$istio_dir" ]; then
+        log_info "Downloading Istio ${istio_version}..."
+        rm -rf "./istio-${istio_version}"
+        curl -L https://istio.io/downloadIstio | ISTIO_VERSION="${istio_version}" sh -
+        istio_dir="./istio-${istio_version}"
     fi
+
+    if [ ! -x "${istio_dir}/bin/istioctl" ]; then
+        log_error "Istioctl not found at ${istio_dir}/bin/istioctl"
+        exit 1
+    fi
+
+    ISTIO_DIR="$istio_dir"
 
     # Install Istio
     log_info "Installing Istio control plane..."
@@ -947,6 +980,15 @@ install_istio_early() {
     kubectl apply -f ${ISTIO_DIR}/samples/addons/grafana.yaml || true
     kubectl delete deployment grafana -n istio-system 2>/dev/null || true
     kubectl delete svc grafana -n istio-system 2>/dev/null || true
+
+    # Configure Kiali to use Prometheus from monitoring namespace
+    log_info "Configuring Kiali to connect to Prometheus..."
+    sleep 5  # Wait for Kiali ConfigMap to be created
+    kubectl get configmap kiali -n istio-system &>/dev/null && \
+    kubectl patch configmap kiali -n istio-system --type merge -p '{"data":{"config.yaml":"additional_display_details:\n- annotation: kiali.io/api-spec\n  icon_annotation: kiali.io/api-type\n  title: API Documentation\nauth:\n  openid: {}\n  openshift:\n    client_id_prefix: kiali\n  strategy: anonymous\nclustering:\n  autodetect_secrets:\n    enabled: true\n    label: kiali.io/multiCluster=true\n  clusters: []\ndeployment:\n  additional_service_yaml: {}\n  affinity:\n    node: {}\n    pod: {}\n    pod_anti: {}\n  cluster_wide_access: true\n  configmap_annotations: {}\n  custom_envs: []\n  custom_secrets: []\n  dns:\n    config: {}\n    policy: \"\"\n  extra_labels: {}\n  host_aliases: []\n  hpa:\n    api_version: autoscaling/v2\n    spec: {}\n  image_digest: \"\"\n  image_name: quay.io/kiali/kiali\n  image_pull_policy: IfNotPresent\n  image_pull_secrets: []\n  image_version: v2.17\n  ingress:\n    additional_labels: {}\n    class_name: nginx\n    override_yaml:\n      metadata: {}\n  ingress_enabled: false\n  instance_name: kiali\n  logger:\n    log_format: text\n    log_level: info\n    sampler_rate: \"1\"\n    time_field_format: 2006-01-02T15:04:05Z07:00\n  namespace: istio-system\n  network_policy:\n    enabled: false\n  node_selector: {}\n  pod_annotations:\n    proxy.istio.io/config: '"'"'{ \"holdApplicationUntilProxyStarts\": true }'"'"'\n  pod_labels:\n    sidecar.istio.io/inject: \"false\"\n  priority_class_name: \"\"\n  probes:\n    liveness:\n      initial_delay_seconds: 5\n      period_seconds: 30\n    readiness:\n      initial_delay_seconds: 5\n      period_seconds: 30\n    startup:\n      failure_threshold: 6\n      initial_delay_seconds: 30\n      period_seconds: 10\n  remote_cluster_resources_only: false\n  replicas: 1\n  resources:\n    limits:\n      memory: 1Gi\n    requests:\n      cpu: 10m\n      memory: 64Mi\n  secret_name: kiali\n  security_context: {}\n  service_annotations: {}\n  service_type: \"\"\n  tolerations: []\n  topology_spread_constraints: []\n  version_label: v2.17.0\n  view_only_mode: false\nexternal_services:\n  custom_dashboards:\n    enabled: true\n  istio:\n    root_namespace: istio-system\n  prometheus:\n    url: http://prometheus-server.monitoring:80\n  tracing:\n    enabled: false\nidentity:\n  cert_file: \"\"\n  private_key_file: \"\"\nkiali_feature_flags:\n  custom_workload_types: []\n  disabled_features: []\n  validations:\n    ignore:\n    - KIA1301\nlogin_token:\n  signing_key: CHANGEME00000000\nserver:\n  observability:\n    metrics:\n      enabled: true\n      port: 9090\n  port: 20001\n  web_root: /kiali\nskipResources: []\n"}}' || log_warning "Failed to patch Kiali config for Prometheus"
+
+    # Restart Kiali to pick up Prometheus configuration
+    kubectl rollout restart deployment kiali -n istio-system 2>/dev/null || log_warning "Kiali restart may need manual action"
 
     # Wait for Istio to be ready
     log_info "Waiting for Istio control plane to be ready..."
@@ -1485,9 +1527,19 @@ display_access_info() {
     echo "   Region: ${REGION}"
     echo "   Environment: ${ENV_NAME}"
     echo ""
-    echo "🔗 API GATEWAY:"
-    echo "   ALB DNS: http://${ALB_DNS}"
-    echo "   Note: Configure Kubernetes Ingress or Service to route to ALB"
+    echo "🔗 API GATEWAYS:"
+    # Get Ocelot Gateway DNS
+    OCELOT_DNS=$(kubectl get svc -n ${NAMESPACE} eshopping-ocelotapigw -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "pending")
+    # Get Istio Gateway DNS
+    ISTIO_DNS=$(kubectl get svc -n istio-system istio-ingressgateway -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "pending")
+
+    echo "   Ocelot API Gateway (Primary):"
+    echo "     HTTP:  http://${OCELOT_DNS}"
+    echo "     HTTPS: https://${OCELOT_DNS}"
+    echo ""
+    echo "   Istio Ingress Gateway:"
+    echo "     HTTP:  http://${ISTIO_DNS}"
+    echo "     HTTPS: https://${ISTIO_DNS}"
     echo ""
     echo "📊 MONITORING STACK (use kubectl port-forward):"
     echo "   Prometheus:"
@@ -1788,16 +1840,20 @@ main() {
     if [ -n "$CERT_ARN" ]; then
         # Use Python for safer string replacement with special characters
         python3 << EOF
-import sys
+import re
 cert_arn = "$CERT_ARN"
 with open("Deployments/helm/ocelotapigw/values.yaml", "r") as f:
     content = f.read()
-content = content.replace(
-    "service.beta.kubernetes.io/aws-load-balancer-ssl-cert: \"\"",
-    f"service.beta.kubernetes.io/aws-load-balancer-ssl-cert: \"{cert_arn}\""
-)
+pattern = r'service\.beta\.kubernetes\.io/aws-load-balancer-ssl-cert: ".*"'
+replacement = f'service.beta.kubernetes.io/aws-load-balancer-ssl-cert: "{cert_arn}"'
+updated = re.sub(pattern, replacement, content)
+if updated == content:
+    updated = content.replace(
+        "service.beta.kubernetes.io/aws-load-balancer-ssl-cert: \"\"",
+        replacement
+    )
 with open("Deployments/helm/ocelotapigw/values.yaml", "w") as f:
-    f.write(content)
+    f.write(updated)
 print("Certificate updated successfully")
 EOF
     else

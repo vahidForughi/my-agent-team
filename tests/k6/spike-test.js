@@ -1,5 +1,6 @@
 import http from 'k6/http';
 import { check } from 'k6';
+import { TEST_TYPES, getEndpoint, createTags, getTestableServices } from './config.js';
 
 /**
  * Spike Test - Sudden traffic surge
@@ -19,36 +20,35 @@ import { check } from 'k6';
  */
 
 export let options = {
-  stages: [
-    { duration: '1m', target: 2 },    // Baseline
-    { duration: '30s', target: 100 }, // Spike!
-    { duration: '2m', target: 100 },  // Maintain spike
-    { duration: '30s', target: 2 },   // Drop
-    { duration: '1m', target: 2 },    // Recovery
-  ],
-  thresholds: {
-    'http_req_duration': [
-      'p(95)<2000',  // 95% under 2s (more lenient during spike)
-      'p(99)<5000',  // 99% under 5s
-    ],
-    'http_req_failed': ['rate<0.1'], // Allow up to 10% errors during spike
+  stages: TEST_TYPES.spike.stages,
+  thresholds: TEST_TYPES.spike.thresholds,
+  insecureSkipTLSVerify: true,
+  // HTTP configuration for high concurrency
+  http: {
+    timeout: '90s',
   },
-};
-
-const SERVICES = {
-  catalog: 'http://localhost:8081/api/v1/Catalog/GetAllProducts',
-  basket: 'http://localhost:8082/api/v1/Basket/GetBasket/spiketest',
-  ordering: 'http://localhost:8083/api/v1/Order/testuser',
+  batch: 10,
+  batchPerHost: 10,
 };
 
 export default function () {
   // During spike, hit all services
-  const serviceKeys = Object.keys(SERVICES);
-  const randomService = serviceKeys[Math.floor(Math.random() * serviceKeys.length)];
-  const url = SERVICES[randomService];
+  const services = getTestableServices();
+  const serviceName = services[Math.floor(Math.random() * services.length)];
 
+  let url;
+  // Build appropriate URL based on service
+  if (serviceName === 'catalog') {
+    url = getEndpoint('catalog', 'getAllProducts');
+  } else if (serviceName === 'basket') {
+    url = getEndpoint('basket', 'getBasket', 'spiketest');
+  } else if (serviceName === 'ordering') {
+    url = getEndpoint('ordering', 'getOrders', 'testuser');
+  }
+
+  // Tag each request with the ACTUAL service name being tested
   const response = http.get(url, {
-    tags: { service: randomService }, // Tag for analysis
+    tags: createTags(serviceName, 'spike'),
   });
 
   check(response, {

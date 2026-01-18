@@ -1,0 +1,26 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "Test K6 Dashboard",
+    "tags": ["k6", "test"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Test K6 Metrics",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "k6_http_reqs_total",
+            "legendFormat": "Total K6 Requests"
+          }
+        ]
+      }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "refresh": "30s"
+  }
+}

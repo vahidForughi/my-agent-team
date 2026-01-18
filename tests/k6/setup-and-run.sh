@@ -143,88 +143,75 @@ check_monitoring() {
     fi
 }
 
+# Helper function to start port-forward with retry
+start_port_forward() {
+    local namespace=$1
+    local service=$2
+    local local_port=$3
+    local remote_port=$4
+    local log_file=$5
+    local max_retries=3
+    local retry=0
+
+    while [ $retry -lt $max_retries ]; do
+        kubectl port-forward -n "$namespace" "svc/$service" "${local_port}:${remote_port}" > "$log_file" 2>&1 &
+        local pid=$!
+        sleep 3  # Give it time to establish
+
+        if kill -0 $pid 2>/dev/null; then
+            echo "$pid"
+            return 0
+        else
+            retry=$((retry + 1))
+            if [ $retry -lt $max_retries ]; then
+                log_warning "  Retry $retry/$max_retries for $service..."
+                sleep 2
+            fi
+        fi
+    done
+
+    return 1
+}
+
 # Setup port forwards
 setup_port_forwards() {
     log_step "Setting up port forwards..."
 
-    # Clean up any existing port-forwards
-    pkill -f "kubectl port-forward" 2>/dev/null || true
-    sleep 3
+    # Get script directory
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-    log_info "Starting port-forwards for services..."
-
-    # Service port-forwards
-    kubectl port-forward -n "$NAMESPACE" svc/eshopping-catalog 8081:80 > /tmp/k6-pf-catalog.log 2>&1 &
-    CATALOG_PID=$!
-    sleep 1
-    if kill -0 $CATALOG_PID 2>/dev/null; then
-        log_info "  ✓ Catalog: localhost:8081 (PID: $CATALOG_PID)"
-    else
-        log_warning "  ✗ Catalog port-forward failed (check /tmp/k6-pf-catalog.log)"
+    # Use smart port forwarding for services
+    log_info "Starting smart port-forwards for services..."
+    if ! bash "${SCRIPT_DIR}/smart-port-forward.sh"; then
+        log_error "Failed to setup service port-forwards"
+        return 1
     fi
-
-    kubectl port-forward -n "$NAMESPACE" svc/eshopping-basket 8082:80 > /tmp/k6-pf-basket.log 2>&1 &
-    BASKET_PID=$!
-    sleep 1
-    if kill -0 $BASKET_PID 2>/dev/null; then
-        log_info "  ✓ Basket: localhost:8082 (PID: $BASKET_PID)"
-    else
-        log_warning "  ✗ Basket port-forward failed (check /tmp/k6-pf-basket.log)"
-    fi
-
-    kubectl port-forward -n "$NAMESPACE" svc/eshopping-ordering 8083:80 > /tmp/k6-pf-ordering.log 2>&1 &
-    ORDERING_PID=$!
-    sleep 1
-    if kill -0 $ORDERING_PID 2>/dev/null; then
-        log_info "  ✓ Ordering: localhost:8083 (PID: $ORDERING_PID)"
-    else
-        log_warning "  ✗ Ordering port-forward failed to start (check /tmp/k6-pf-ordering.log)"
-    fi
-
-    if kubectl get svc -n "$NAMESPACE" eshopping-discount-discount-grpc &> /dev/null; then
-        kubectl port-forward -n "$NAMESPACE" svc/eshopping-discount-discount-grpc 8084:8080 > /tmp/k6-pf-discount.log 2>&1 &
-        DISCOUNT_PID=$!
-        sleep 1
-        if kill -0 $DISCOUNT_PID 2>/dev/null; then
-            log_info "  ✓ Discount: localhost:8084 (PID: $DISCOUNT_PID)"
-        else
-            log_warning "  ✗ Discount port-forward failed (check /tmp/k6-pf-discount.log)"
-        fi
-    fi
+    echo ""
 
     log_info "Starting port-forwards for monitoring..."
 
-    # Monitoring port-forwards
-    kubectl port-forward -n "$MONITORING_NAMESPACE" svc/prometheus-pushgateway 9091:9091 > /tmp/k6-pf-pushgateway.log 2>&1 &
-    PUSHGATEWAY_PID=$!
-    sleep 1
-    if kill -0 $PUSHGATEWAY_PID 2>/dev/null; then
+    # Monitoring port-forwards with retry
+    if PUSHGATEWAY_PID=$(start_port_forward "$MONITORING_NAMESPACE" "prometheus-pushgateway" 9091 9091 "/tmp/k6-pf-pushgateway.log"); then
         log_info "  ✓ PushGateway: localhost:9091 (PID: $PUSHGATEWAY_PID)"
     else
-        log_warning "  ✗ PushGateway port-forward failed (check /tmp/k6-pf-pushgateway.log)"
+        log_error "  ✗ PushGateway port-forward failed after retries"
     fi
 
-    kubectl port-forward -n "$MONITORING_NAMESPACE" svc/prometheus-server 9090:80 > /tmp/k6-pf-prometheus.log 2>&1 &
-    PROMETHEUS_PID=$!
-    sleep 1
-    if kill -0 $PROMETHEUS_PID 2>/dev/null; then
+    if PROMETHEUS_PID=$(start_port_forward "$MONITORING_NAMESPACE" "prometheus-server" 9090 80 "/tmp/k6-pf-prometheus.log"); then
         log_info "  ✓ Prometheus: localhost:9090 (PID: $PROMETHEUS_PID)"
     else
-        log_warning "  ✗ Prometheus port-forward failed (check /tmp/k6-pf-prometheus.log)"
+        log_error "  ✗ Prometheus port-forward failed after retries"
     fi
 
-    kubectl port-forward -n "$MONITORING_NAMESPACE" svc/grafana 3000:80 > /tmp/k6-pf-grafana.log 2>&1 &
-    GRAFANA_PID=$!
-    sleep 1
-    if kill -0 $GRAFANA_PID 2>/dev/null; then
+    if GRAFANA_PID=$(start_port_forward "$MONITORING_NAMESPACE" "grafana" 3000 80 "/tmp/k6-pf-grafana.log"); then
         log_info "  ✓ Grafana: localhost:3000 (PID: $GRAFANA_PID)"
     else
-        log_warning "  ✗ Grafana port-forward failed (check /tmp/k6-pf-grafana.log)"
+        log_warning "  ✗ Grafana port-forward failed (may already be running)"
     fi
 
-    # Wait for port-forwards to be ready
-    log_info "Waiting for port-forwards to be ready..."
-    sleep 5
+    # Wait for port-forwards to stabilize
+    log_info "Waiting for port-forwards to stabilize..."
+    sleep 3
 
     # Verify port-forwards
     log_info "Verifying connectivity..."
@@ -242,11 +229,14 @@ setup_port_forwards() {
         log_warning "  ✗ Basket may not be ready"
     fi
 
-    ORDERING_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 3 http://localhost:8083/api/v1/Activity 2>&1 || echo "000")
+    ORDERING_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 http://localhost:8083/api/v1/Order/testuser 2>&1 || echo "000")
     if [[ "$ORDERING_STATUS" =~ ^(200|404)$ ]]; then
         log_info "  ✓ Ordering is accessible (HTTP $ORDERING_STATUS)"
     else
-        log_warning "  ✗ Ordering may not be ready (HTTP $ORDERING_STATUS) - check /tmp/k6-pf-ordering.log"
+        log_error "  ✗ Ordering is NOT accessible (HTTP $ORDERING_STATUS)"
+        log_error "    Port-forward may have failed. Logs:"
+        tail -10 /tmp/k6-pf-ordering.log
+        log_warning "Continuing anyway, but tests may fail..."
     fi
 
     # Check monitoring services

@@ -46,54 +46,87 @@ tests/k6/
 
 ## Quick Start
 
-### 1. Set Up Port Forwarding
+### Important: AWS Gateway vs Port-Forward Mode
 
-First, port-forward the services you want to test:
+**By default, all tests now use the AWS Gateway** for better reliability and performance:
+
+- ✅ **AWS Gateway Mode** (Default - Recommended)
+  - Supports unlimited concurrent users
+  - No port-forward crashes under high load
+  - Production-like testing environment
+  - Automatically enabled unless `USE_GATEWAY=false` is set
+  - Gateway URL: `https://a908be0f78581433da5edddaf76a0b7f-f54822a6262925e8.elb.us-east-1.amazonaws.com`
+
+- ⚠️ **Port-Forward Mode** (Legacy)
+  - Limited to ~300 concurrent users
+  - Port-forwards can crash under stress
+  - Only for local development testing
+  - Enable with: `USE_GATEWAY=false`
+
+### 1. Set Up Monitoring Port-Forwards
+
+You only need to port-forward the monitoring services:
 
 ```bash
-# Port-forward all services (run in separate terminals or use & for background)
-kubectl port-forward -n dev svc/eshopping-catalog 8081:80 &
-kubectl port-forward -n dev svc/eshopping-basket 8082:80 &
-kubectl port-forward -n dev svc/eshopping-ordering 8083:80 &
-kubectl port-forward -n dev svc/eshopping-discount-discount-grpc 8084:8080 &
-
-# Port-forward monitoring services
+# Port-forward monitoring services only (services tested via AWS Gateway)
 kubectl port-forward -n monitoring svc/prometheus-pushgateway 9091:9091 &
 kubectl port-forward -n monitoring svc/prometheus-server 9090:80 &
 kubectl port-forward -n monitoring svc/grafana 3000:80 &
 ```
 
-### 2. Run All Tests with Automated Metrics Push
-
+**Optional: For local port-forward testing only:**
 ```bash
-# Make the script executable (first time only)
-chmod +x tests/k6/push-metrics.sh
-
-# Run all tests
-cd /path/to/project
-./tests/k6/push-metrics.sh
+# Only needed if USE_GATEWAY=false
+kubectl port-forward -n dev svc/eshopping-catalog 8081:80 &
+kubectl port-forward -n dev svc/eshopping-basket 8082:80 &
+kubectl port-forward -n dev svc/eshopping-ordering 8083:80 &
 ```
 
-The script will:
+### 2. Run All Tests (Recommended)
 
-1. Run k6 tests for all services
-2. Extract metrics from test results
-3. Push metrics to Prometheus via PushGateway
-4. Display test summary
-
-### 3. Run Individual Tests
-
-If you want to run tests individually:
+The easiest way to run all tests with AWS Gateway:
 
 ```bash
-# Run individual test
-./k6 run tests/k6/catalog-test.js
+# Run all tests with AWS Gateway (default)
+GATEWAY_URL="https://a908be0f78581433da5edddaf76a0b7f-f54822a6262925e8.elb.us-east-1.amazonaws.com" ./run-all-tests.sh
 
-# Run with custom options
-./k6 run --vus 20 --duration 60s tests/k6/catalog-test.js
+# Run all tests with port-forwards
+USE_GATEWAY=false ./run-all-tests.sh
+```
 
-# Run and export summary
-./k6 run --summary-export=/tmp/k6-summary.json tests/k6/catalog-test.js
+**Current Gateway URL:**
+`https://a908be0f78581433da5edddaf76a0b7f-f54822a6262925e8.elb.us-east-1.amazonaws.com`
+
+
+This script will:
+1. Automatically use AWS Gateway (no service port-forwards needed)
+2. Run all service tests (catalog, basket, ordering)
+3. Run all workflow tests (gateway-smoke, workflow-shopping)
+4. Run all load tests (stress, spike, soak)
+5. Push metrics to PushGateway
+6. Save results to `/tmp/k6-results-<timestamp>/`
+
+**To use port-forward mode instead:**
+```bash
+USE_GATEWAY=false ./run-all-tests.sh
+```
+
+### 3. Run Individual Tests with Load Test Script
+
+For running specific test types:
+
+```bash
+# Stress test (via AWS Gateway)
+GATEWAY_URL="https://a908be0f78581433da5edddaf76a0b7f-f54822a6262925e8.elb.us-east-1.amazonaws.com" ./run-load-test.sh stress
+
+# Spike test (via AWS Gateway)
+GATEWAY_URL="https://a908be0f78581433da5edddaf76a0b7f-f54822a6262925e8.elb.us-east-1.amazonaws.com" ./run-load-test.sh spike
+
+# Soak test (via AWS Gateway)
+GATEWAY_URL="https://a908be0f78581433da5edddaf76a0b7f-f54822a6262925e8.elb.us-east-1.amazonaws.com" ./run-load-test.sh soak
+
+# Force port-forward mode (not recommended for load tests)
+USE_GATEWAY=false ./run-load-test.sh stress
 ```
 
 ## Test Configuration

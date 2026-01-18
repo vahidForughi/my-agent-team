@@ -11,7 +11,7 @@
 ./tests/k6/setup-and-run.sh
 
 # Terminal 2: Run your first test
-./k6 run tests/k6/catalog-test.js
+GATEWAY_URL="https://a908be0f78581433da5edddaf76a0b7f-f54822a6262925e8.elb.us-east-1.amazonaws.com" ./k6 run tests/k6/catalog-test.js
 ```
 
 That's it! You're load testing! 🎉
@@ -53,33 +53,33 @@ open http://localhost:3000  # Login: admin / prom-operator
 ### 1. Basic Service Test
 ```bash
 # Test one service
-./k6 run tests/k6/catalog-test.js
-./k6 run tests/k6/basket-test.js
-./k6 run tests/k6/ordering-test.js
+GATEWAY_URL="https://a908be0f78581433da5edddaf76a0b7f-f54822a6262925e8.elb.us-east-1.amazonaws.com" ./k6 run tests/k6/catalog-test.js
+GATEWAY_URL="https://a908be0f78581433da5edddaf76a0b7f-f54822a6262925e8.elb.us-east-1.amazonaws.com" ./k6 run tests/k6/basket-test.js
+GATEWAY_URL="https://a908be0f78581433da5edddaf76a0b7f-f54822a6262925e8.elb.us-east-1.amazonaws.com" ./k6 run tests/k6/ordering-test.js
 ```
 
 ### 2. Find Breaking Point
 ```bash
 # Gradually increase load to 100 VUs
-./k6 run tests/k6/stress-test.js
+GATEWAY_URL="https://a908be0f78581433da5edddaf76a0b7f-f54822a6262925e8.elb.us-east-1.amazonaws.com" ./k6 run tests/k6/stress-test.js
 ```
 
 ### 3. Test Sudden Traffic Spike
 ```bash
 # Simulate flash sale (2 → 100 VUs instantly)
-./k6 run tests/k6/spike-test.js
+GATEWAY_URL="https://a908be0f78581433da5edddaf76a0b7f-f54822a6262925e8.elb.us-east-1.amazonaws.com" ./k6 run tests/k6/spike-test.js
 ```
 
 ### 4. Test User Journey
 ```bash
 # Browse → Add to cart → Checkout
-./k6 run tests/k6/workflow-shopping.js
+GATEWAY_URL="https://a908be0f78581433da5edddaf76a0b7f-f54822a6262925e8.elb.us-east-1.amazonaws.com" ./k6 run tests/k6/workflow-shopping.js
 ```
 
 ### 5. Long-term Stability
 ```bash
 # Run for 10 minutes to find memory leaks
-./k6 run tests/k6/soak-test.js
+GATEWAY_URL="https://a908be0f78581433da5edddaf76a0b7f-f54822a6262925e8.elb.us-east-1.amazonaws.com" ./k6 run tests/k6/soak-test.js
 ```
 
 ---
@@ -95,7 +95,7 @@ open http://localhost:3000  # Login: admin / prom-operator
 ### Export Results
 ```bash
 # Save to JSON for analysis
-./k6 run --summary-export=results.json tests/k6/catalog-test.js
+GATEWAY_URL="https://a908be0f78581433da5edddaf76a0b7f-f54822a6262925e8.elb.us-east-1.amazonaws.com" ./k6 run --summary-export=results.json tests/k6/catalog-test.js
 
 # View specific metrics
 cat results.json | jq '.metrics.http_req_duration'

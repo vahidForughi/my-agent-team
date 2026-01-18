@@ -1,6 +1,7 @@
 import http from 'k6/http';
 import { check, group, sleep } from 'k6';
 import { Counter, Trend } from 'k6/metrics';
+import { getServiceUrl, getEndpoint, createTags } from './config.js';
 
 /**
  * E-Commerce Shopping Workflow Test
@@ -36,15 +37,10 @@ export let options = {
     'http_req_failed': ['rate<0.01'],     // Less than 1% error rate
     'workflow_success': ['count>0'],      // At least some workflows succeed
   },
+  insecureSkipTLSVerify: true,
   // Disable k6 API server to avoid port 6565 conflicts when running multiple tests
   // If needed, set via env: K6_API_HOST=localhost:0 k6 run tests/k6/workflow-shopping.js
   noAPIServer: true,
-};
-
-const BASE_URLS = {
-  catalog: 'http://localhost:8081',
-  basket: 'http://localhost:8082',
-  ordering: 'http://localhost:8083',
 };
 
 export function setup() {
@@ -66,7 +62,10 @@ export default function (data) {
   try {
     // STEP 1: Browse Catalog
     group('01_Browse Catalog', function () {
-      const response = http.get(`${BASE_URLS.catalog}/api/v1/Catalog/GetAllProducts`);
+      const url = getEndpoint('catalog', 'getAllProducts');
+      const response = http.get(url, {
+        tags: createTags('catalog', 'workflow'),
+      });
 
       const success = check(response, {
         'catalog loaded': (r) => r.status === 200,
@@ -93,7 +92,10 @@ export default function (data) {
     group('02_View Product Details', function () {
       // In a real test, we'd parse the product ID from step 1
       // For now, we just make the call to demonstrate the pattern
-      const response = http.get(`${BASE_URLS.catalog}/api/v1/Catalog/GetAllProducts`);
+      const url = getEndpoint('catalog', 'getAllProducts');
+      const response = http.get(url, {
+        tags: createTags('catalog', 'workflow'),
+      });
 
       const success = check(response, {
         'product details loaded': (r) => r.status === 200,
@@ -106,7 +108,10 @@ export default function (data) {
     // STEP 3: Add to Basket
     group('03_Add to Basket', function () {
       // Get current basket first
-      let response = http.get(`${BASE_URLS.basket}/api/v1/Basket/GetBasket/${userId}`);
+      const url = getEndpoint('basket', 'getBasket', userId);
+      const response = http.get(url, {
+        tags: createTags('basket', 'workflow'),
+      });
 
       const success = check(response, {
         'basket retrieved': (r) => r.status === 200 || r.status === 204 || r.status === 404, // 204=empty, 404=not found
@@ -118,7 +123,10 @@ export default function (data) {
 
     // STEP 4: View Basket
     group('04_View Basket', function () {
-      const response = http.get(`${BASE_URLS.basket}/api/v1/Basket/GetBasket/${userId}`);
+      const url = getEndpoint('basket', 'getBasket', userId);
+      const response = http.get(url, {
+        tags: createTags('basket', 'workflow'),
+      });
 
       const success = check(response, {
         'basket viewed': (r) => r.status === 200 || r.status === 204 || r.status === 404,
@@ -130,7 +138,10 @@ export default function (data) {
 
     // STEP 5: Check Order History (simulates viewing order history)
     group('05_Check Order History', function () {
-      const response = http.get(`${BASE_URLS.ordering}/api/v1/Order/${userId}`);
+      const url = getEndpoint('ordering', 'getOrders', userId);
+      const response = http.get(url, {
+        tags: createTags('ordering', 'workflow'),
+      });
 
       const success = check(response, {
         'order history loaded': (r) => r.status === 200 || r.status === 404, // 404 if no orders yet

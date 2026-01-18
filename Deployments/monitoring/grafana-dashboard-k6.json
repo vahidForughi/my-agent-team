@@ -9,6 +9,36 @@
   "schemaVersion": 16,
   "version": 0,
   "refresh": "10s",
+  "templating": {
+    "list": [
+      {
+        "name": "service",
+        "type": "query",
+        "datasource": "Prometheus",
+        "query": "label_values(k6_http_reqs_total, service)",
+        "label": "Service",
+        "multi": true,
+        "includeAll": true,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      },
+      {
+        "name": "test_type",
+        "type": "query",
+        "datasource": "Prometheus",
+        "query": "label_values(k6_http_reqs_total, test_type)",
+        "label": "Test Type",
+        "multi": true,
+        "includeAll": true,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      }
+    ]
+  },
   "panels": [
     {
       "id": 1,
@@ -22,7 +52,7 @@
       },
       "targets": [
         {
-          "expr": "k6_http_req_duration_avg",
+          "expr": "histogram_avg(rate(k6_http_req_duration_seconds{service=~\"$service\",test_type=~\"$test_type\"}[1m])) * 1000",
           "legendFormat": "{{service}}",
           "refId": "A"
         }
@@ -58,7 +88,7 @@
       },
       "targets": [
         {
-          "expr": "k6_http_req_duration_p95",
+          "expr": "histogram_quantile(0.95, rate(k6_http_req_duration_seconds{service=~\"$service\",test_type=~\"$test_type\"}[1m])) * 1000",
           "legendFormat": "{{service}}",
           "refId": "A"
         }
@@ -94,8 +124,8 @@
       },
       "targets": [
         {
-          "expr": "k6_http_reqs_total",
-          "legendFormat": "{{service}}",
+          "expr": "k6_http_reqs_total{service=~\"$service\",test_type=~\"$test_type\"}",
+          "legendFormat": "{{service}} - {{test_type}}",
           "refId": "A"
         }
       ],
@@ -127,8 +157,8 @@
       },
       "targets": [
         {
-          "expr": "k6_http_req_failed_total",
-          "legendFormat": "{{service}}",
+          "expr": "sum(k6_http_req_failed_rate{service=~\"$service\",test_type=~\"$test_type\",expected_response=\"false\"}) by (service, test_type)",
+          "legendFormat": "{{service}} - {{test_type}}",
           "refId": "A"
         }
       ],
@@ -161,7 +191,7 @@
       "targets": [
         {
           "expr": "k6_vus",
-          "legendFormat": "{{service}}",
+          "legendFormat": "Virtual Users",
           "refId": "A"
         }
       ],
@@ -175,12 +205,13 @@
           "calcs": [
             "lastNotNull"
           ],
-          "fields": ""
+          "fields": "/^.*$/"
         },
-        "textMode": "auto"
+        "textMode": "value_and_name"
       },
       "fieldConfig": {
         "defaults": {
+          "displayName": "${__field.labels.service}",
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -215,7 +246,7 @@
       "targets": [
         {
           "expr": "k6_iterations_total",
-          "legendFormat": "{{service}}",
+          "legendFormat": "Total Iterations",
           "refId": "A"
         }
       ],
@@ -229,12 +260,13 @@
           "calcs": [
             "lastNotNull"
           ],
-          "fields": ""
+          "fields": "/^.*$/"
         },
-        "textMode": "auto"
+        "textMode": "value_and_name"
       },
       "fieldConfig": {
         "defaults": {
+          "displayName": "${__field.labels.service}",
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -260,8 +292,8 @@
       },
       "targets": [
         {
-          "expr": "k6_data_received_bytes",
-          "legendFormat": "{{service}}",
+          "expr": "k6_data_received_total",
+          "legendFormat": "Data Received",
           "refId": "A"
         }
       ],
@@ -275,12 +307,13 @@
           "calcs": [
             "lastNotNull"
           ],
-          "fields": ""
+          "fields": "/^.*$/"
         },
-        "textMode": "auto"
+        "textMode": "value_and_name"
       },
       "fieldConfig": {
         "defaults": {
+          "displayName": "${__field.labels.service}",
           "unit": "bytes",
           "mappings": [],
           "thresholds": {
@@ -307,8 +340,8 @@
       },
       "targets": [
         {
-          "expr": "k6_data_sent_bytes",
-          "legendFormat": "{{service}}",
+          "expr": "k6_data_sent_total",
+          "legendFormat": "Data Sent",
           "refId": "A"
         }
       ],
@@ -322,12 +355,13 @@
           "calcs": [
             "lastNotNull"
           ],
-          "fields": ""
+          "fields": "/^.*$/"
         },
-        "textMode": "auto"
+        "textMode": "value_and_name"
       },
       "fieldConfig": {
         "defaults": {
+          "displayName": "${__field.labels.service}",
           "unit": "bytes",
           "mappings": [],
           "thresholds": {
@@ -354,7 +388,7 @@
       },
       "targets": [
         {
-          "expr": "rate(k6_http_reqs_total[1m])",
+          "expr": "sum(rate(k6_http_reqs_total{service=~\"$service\",test_type=~\"$test_type\"}[1m])) by (service)",
           "legendFormat": "{{service}}",
           "refId": "A"
         }
@@ -390,7 +424,7 @@
       },
       "targets": [
         {
-          "expr": "(k6_http_req_failed_total / k6_http_reqs_total) * 100",
+          "expr": "(sum(k6_http_req_failed_rate{service=~\"$service\",test_type=~\"$test_type\",expected_response=\"false\"}) by (service) / sum(k6_http_reqs_total{service=~\"$service\",test_type=~\"$test_type\"}) by (service)) * 100",
           "legendFormat": "{{service}}",
           "refId": "A"
         }
