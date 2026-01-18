@@ -1,4 +1,60 @@
 # Changelog
+## [0.9.0] - 2026-01-18
+
+## What's Changed
+
+### 🚀 Features
+- feat(k6): enhance Grafana dashboard and AWS gateway test tooling (#190) (036edd9)
+- feat: enhance migration trigger with timeout handling and update API gateway display (b7df1fd)
+- feat: update default node instance type to m7i-flex.large in EKS configuration (4eeae7d)
+- feat(k6): add enhanced website workflow test and dashboard verification scripts (2868b60)
+- Merge branch 'main' into feat/sample-grafana-dashboard (200ae85)
+- feat(k6): update smart-port-forward script to include namespace in service definitions and improve health checks (78cde66)
+- feat(grafana): enhance K6 dashboard with templating and improved metrics queries (b2ea952)
+
+### 🐛 Bug Fixes
+- No bug fixes
+
+### 🔧 Improvements
+- feat(k6): enhance Grafana dashboard and AWS gateway test tooling (#190) (036edd9)
+- feat: enhance migration trigger with timeout handling and update API gateway display (b7df1fd)
+- feat(k6): add enhanced website workflow test and dashboard verification scripts (2868b60)
+- feat(k6): update smart-port-forward script to include namespace in service definitions and improve health checks (78cde66)
+- feat(grafana): enhance K6 dashboard with templating and improved metrics queries (b2ea952)
+- chore(deploy): improve AWS deployment script for monitoring, Kiali config, and reliability. (fa825ac)
+- chore(k6): improve setup-and-run.sh for smarter port-forward and monitoring setup. (296c187)
+- chore(k6): refactor shell scripts for AWS Gateway, add automation, update metrics push and dashboard update scripts. (956ba72)
+- refactor(k6): migrate all k6 tests to use AWS Gateway by default, update config.js, endpoints, and tagging. Add gateway-smoke and verify-failures tests. (c66cf09)
+
+### 📚 Documentation
+- docs: update changelog for 0.8.2 (#189) (15f60d4)
+- docs: update changelog for 0.8.2 [skip ci] (61805d0)
+- docs(k6): update README for AWS Gateway migration, new scripts, and usage instructions. (3290cc9)
+
+### 🔐 Security
+- No security updates
+
+### 🏗️ Infrastructure
+- feat(k6): add enhanced website workflow test and dashboard verification scripts (2868b60)
+- docs: update changelog for 0.8.2 [skip ci] (61805d0)
+- feat(k6): update smart-port-forward script to include namespace in service definitions and improve health checks (78cde66)
+
+### Other Changes
+- No other changes
+
+## Docker Images
+All services are available as Docker images:
+- 
+- 
+- 
+- 
+- 
+
+## Helm Deployment
+
+
+**Full Changelog**: https://github.com/sloweyyy/cloud-native-ecommerce-platform/compare/0.8.2...0.9.0
+
 ## [0.8.2] - 2026-01-18
 
 ## What's Changed
