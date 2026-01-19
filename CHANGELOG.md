@@ -1,4 +1,45 @@
 # Changelog
+## [0.10.0] - 2026-01-19
+
+## What's Changed
+
+### 🚀 Features
+- feat: update K6 dashboard verification script and add AWS service access menu (#194) (0149dee)
+- Merge branch 'main' into feat/sample-grafana-dashboard (54bbf82)
+- feat: update K6 dashboard verification script and add AWS service access menu (f19e12b)
+
+### 🐛 Bug Fixes
+- No bug fixes
+
+### 🔧 Improvements
+- No improvements
+
+### 📚 Documentation
+- docs: update changelog for 0.9.0 (#191) (71f3639)
+- docs: update changelog for 0.9.0 [skip ci] (9fdddd2)
+
+### 🔐 Security
+- No security updates
+
+### 🏗️ Infrastructure
+- docs: update changelog for 0.9.0 [skip ci] (9fdddd2)
+
+### Other Changes
+- No other changes
+
+## Docker Images
+All services are available as Docker images:
+- 
+- 
+- 
+- 
+- 
+
+## Helm Deployment
+
+
+**Full Changelog**: https://github.com/sloweyyy/cloud-native-ecommerce-platform/compare/0.9.0...0.10.0
+
 ## [0.9.0] - 2026-01-18
 
 ## What's Changed
