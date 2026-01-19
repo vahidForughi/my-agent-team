@@ -6,7 +6,7 @@ set -euo pipefail
 # Usage: ./cleanup-all.sh [env] [region]
 
 ENV_NAME="${1:-dev}"
-REGION="${2:-${AWS_DEFAULT_REGION:-ap-southeast-1}}"
+REGION="${2:-${AWS_DEFAULT_REGION:-us-east-1}}"
 AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 
 # Stack names

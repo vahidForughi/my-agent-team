@@ -1,8 +1,8 @@
 {
   "dashboard": {
     "id": null,
-    "title": "E-Commerce Service Request Metrics",
-    "tags": ["ecommerce", "service-metrics", "api", "microservices"],
+    "title": "E-Commerce Service Request Metrics (Istio)",
+    "tags": ["ecommerce", "service-metrics", "api", "microservices", "istio"],
     "timezone": "browser",
     "panels": [
       {
@@ -11,7 +11,7 @@
         "type": "stat",
         "targets": [
           {
-            "expr": "sum(rate(http_requests_total[5m]))",
+            "expr": "sum(rate(istio_requests_total{reporter=\"destination\"}[5m]))",
             "legendFormat": "Total Requests"
           }
         ],
@@ -25,7 +25,7 @@
                 {"color": "red", "value": 1000}
               ]
             },
-            "unit": "ops"
+            "unit": "reqps"
           }
         },
         "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
@@ -36,8 +36,8 @@
         "type": "piechart",
         "targets": [
           {
-            "expr": "sum(rate(http_requests_total[5m])) by (service)",
-            "legendFormat": "{{service}}"
+            "expr": "sum(rate(istio_requests_total{reporter=\"destination\",destination_service_namespace=\"dev\"}[5m])) by (destination_service_name)",
+            "legendFormat": "{{destination_service_name}}"
           }
         ],
         "fieldConfig": {
@@ -56,20 +56,20 @@
       },
       {
         "id": 3,
-        "title": "Response Time Trends",
+        "title": "Response Time Trends (P50, P95, P99)",
         "type": "timeseries",
         "targets": [
           {
-            "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service))",
-            "legendFormat": "P50 - {{service}}"
+            "expr": "histogram_quantile(0.50, sum(rate(istio_request_duration_milliseconds_bucket{reporter=\"destination\",destination_service_namespace=\"dev\"}[5m])) by (le, destination_service_name))",
+            "legendFormat": "P50 - {{destination_service_name}}"
           },
           {
-            "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service))",
-            "legendFormat": "P95 - {{service}}"
+            "expr": "histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{reporter=\"destination\",destination_service_namespace=\"dev\"}[5m])) by (le, destination_service_name))",
+            "legendFormat": "P95 - {{destination_service_name}}"
           },
           {
-            "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service))",
-            "legendFormat": "P99 - {{service}}"
+            "expr": "histogram_quantile(0.99, sum(rate(istio_request_duration_milliseconds_bucket{reporter=\"destination\",destination_service_namespace=\"dev\"}[5m])) by (le, destination_service_name))",
+            "legendFormat": "P99 - {{destination_service_name}}"
           }
         ],
         "fieldConfig": {
@@ -78,27 +78,27 @@
             "thresholds": {
               "steps": [
                 {"color": "green", "value": null},
-                {"color": "yellow", "value": 0.5},
-                {"color": "red", "value": 2}
+                {"color": "yellow", "value": 500},
+                {"color": "red", "value": 2000}
               ]
             },
-            "unit": "s"
+            "unit": "ms"
           }
         },
         "gridPos": {"h": 8, "w": 24, "x": 0, "y": 8}
       },
       {
         "id": 4,
-        "title": "Error Rate by Service",
+        "title": "Error Rate by Service (%)",
         "type": "timeseries",
         "targets": [
           {
-            "expr": "sum(rate(http_requests_total{status=~\"4..\"}[5m])) by (service) / sum(rate(http_requests_total[5m])) by (service) * 100",
-            "legendFormat": "4xx Errors - {{service}}"
+            "expr": "sum(rate(istio_requests_total{reporter=\"destination\",destination_service_namespace=\"dev\",response_code=~\"4..\"}[5m])) by (destination_service_name) / sum(rate(istio_requests_total{reporter=\"destination\",destination_service_namespace=\"dev\"}[5m])) by (destination_service_name) * 100",
+            "legendFormat": "4xx Errors - {{destination_service_name}}"
           },
           {
-            "expr": "sum(rate(http_requests_total{status=~\"5..\"}[5m])) by (service) / sum(rate(http_requests_total[5m])) by (service) * 100",
-            "legendFormat": "5xx Errors - {{service}}"
+            "expr": "sum(rate(istio_requests_total{reporter=\"destination\",destination_service_namespace=\"dev\",response_code=~\"5..\"}[5m])) by (destination_service_name) / sum(rate(istio_requests_total{reporter=\"destination\",destination_service_namespace=\"dev\"}[5m])) by (destination_service_name) * 100",
+            "legendFormat": "5xx Errors - {{destination_service_name}}"
           }
         ],
         "fieldConfig": {
@@ -122,8 +122,8 @@
         "type": "timeseries",
         "targets": [
           {
-            "expr": "sum(rate(http_requests_total[5m])) by (service)",
-            "legendFormat": "{{service}}"
+            "expr": "sum(rate(istio_requests_total{reporter=\"destination\",destination_service_namespace=\"dev\"}[5m])) by (destination_service_name)",
+            "legendFormat": "{{destination_service_name}}"
           }
         ],
         "fieldConfig": {
@@ -143,11 +143,11 @@
       },
       {
         "id": 6,
-        "title": "API Gateway Performance",
+        "title": "API Gateway P95 Latency",
         "type": "stat",
         "targets": [
           {
-            "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))",
+            "expr": "histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{reporter=\"destination\",destination_service_name=~\".*gateway.*|.*ocelot.*\"}[5m])) by (le))",
             "legendFormat": "P95 Latency"
           }
         ],
@@ -157,23 +157,23 @@
             "thresholds": {
               "steps": [
                 {"color": "green", "value": null},
-                {"color": "yellow", "value": 1},
-                {"color": "red", "value": 3}
+                {"color": "yellow", "value": 1000},
+                {"color": "red", "value": 3000}
               ]
             },
-            "unit": "s"
+            "unit": "ms"
           }
         },
-        "gridPos": {"h": 6, "w": 6, "x": 0, "y": 24}
+        "gridPos": {"h": 6, "w": 8, "x": 0, "y": 24}
       },
       {
         "id": 7,
-        "title": "Service Availability",
+        "title": "Request Success Rate",
         "type": "stat",
         "targets": [
           {
-            "expr": "sum(up) / count(up) * 100",
-            "legendFormat": "Uptime %"
+            "expr": "sum(rate(istio_requests_total{reporter=\"destination\",destination_service_namespace=\"dev\",response_code!~\"5..\"}[5m])) / sum(rate(istio_requests_total{reporter=\"destination\",destination_service_namespace=\"dev\"}[5m])) * 100",
+            "legendFormat": "Success Rate %"
           }
         ],
         "fieldConfig": {
@@ -189,16 +189,16 @@
             "unit": "percent"
           }
         },
-        "gridPos": {"h": 6, "w": 6, "x": 6, "y": 24}
+        "gridPos": {"h": 6, "w": 8, "x": 8, "y": 24}
       },
       {
         "id": 8,
-        "title": "Active Users",
+        "title": "Total Requests (5m)",
         "type": "stat",
         "targets": [
           {
-            "expr": "sum(rate(http_requests_total[1m])) by (service)",
-            "legendFormat": "Active Users"
+            "expr": "sum(increase(istio_requests_total{reporter=\"destination\",destination_service_namespace=\"dev\"}[5m]))",
+            "legendFormat": "Total Requests"
           }
         ],
         "fieldConfig": {
@@ -207,27 +207,123 @@
             "thresholds": {
               "steps": [
                 {"color": "green", "value": null},
-                {"color": "yellow", "value": 100},
-                {"color": "red", "value": 500}
+                {"color": "yellow", "value": 1000},
+                {"color": "red", "value": 10000}
               ]
             },
-            "unit": "users"
+            "unit": "short"
           }
         },
-        "gridPos": {"h": 6, "w": 6, "x": 12, "y": 24}
+        "gridPos": {"h": 6, "w": 8, "x": 16, "y": 24}
       },
       {
         "id": 9,
-        "title": "Business Metrics - Orders",
-        "type": "stat",
+        "title": "Response Codes by Service",
+        "type": "timeseries",
         "targets": [
           {
-            "expr": "sum(rate(orders_created_total[5m]))",
-            "legendFormat": "Orders/min"
-          },
+            "expr": "sum(rate(istio_requests_total{reporter=\"destination\",destination_service_namespace=\"dev\"}[5m])) by (destination_service_name, response_code)",
+            "legendFormat": "{{destination_service_name}} - {{response_code}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": null}
+              ]
+            },
+            "unit": "reqps"
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 30}
+      },
+      {
+        "id": 10,
+        "title": "Request Size (bytes)",
+        "type": "timeseries",
+        "targets": [
           {
-            "expr": "sum(orders_total)",
-            "legendFormat": "Total Orders"
+            "expr": "sum(rate(istio_request_bytes_sum{reporter=\"destination\",destination_service_namespace=\"dev\"}[5m])) by (destination_service_name) / sum(rate(istio_request_bytes_count{reporter=\"destination\",destination_service_namespace=\"dev\"}[5m])) by (destination_service_name)",
+            "legendFormat": "{{destination_service_name}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 10000},
+                {"color": "red", "value": 100000}
+              ]
+            },
+            "unit": "bytes"
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 30}
+      },
+      {
+        "id": 11,
+        "title": "Top Services by Request Count",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "topk(10, sum(rate(istio_requests_total{reporter=\"destination\",destination_service_namespace=\"dev\"}[5m])) by (destination_service_name))",
+            "legendFormat": "{{destination_service_name}}",
+            "format": "table",
+            "instant": true
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": null}
+              ]
+            },
+            "unit": "reqps"
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 38}
+      },
+      {
+        "id": 12,
+        "title": "Slowest Services (P95 Latency)",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "topk(10, histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{reporter=\"destination\",destination_service_namespace=\"dev\"}[5m])) by (le, destination_service_name)))",
+            "legendFormat": "{{destination_service_name}}",
+            "format": "table",
+            "instant": true
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 1000},
+                {"color": "red", "value": 3000}
+              ]
+            },
+            "unit": "ms"
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 38}
+      },
+      {
+        "id": 13,
+        "title": "Service Traffic Heatmap",
+        "type": "heatmap",
+        "targets": [
+          {
+            "expr": "sum(rate(istio_requests_total{reporter=\"destination\",destination_service_namespace=\"dev\"}[5m])) by (destination_service_name)",
+            "legendFormat": "{{destination_service_name}}"
           }
         ],
         "fieldConfig": {
@@ -240,155 +336,19 @@
                 {"color": "red", "value": 50}
               ]
             },
-            "unit": "orders"
-          }
-        },
-        "gridPos": {"h": 6, "w": 6, "x": 18, "y": 24}
-      },
-      {
-        "id": 10,
-        "title": "Top Endpoints by Volume",
-        "type": "table",
-        "targets": [
-          {
-            "expr": "sum(rate(http_requests_total[5m])) by (endpoint, service)",
-            "legendFormat": "{{endpoint}} - {{service}}"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "mappings": [],
-            "thresholds": {
-              "steps": [
-                {"color": "green", "value": null},
-                {"color": "yellow", "value": null},
-                {"color": "red", "value": null}
-              ]
-            },
-            "unit": "reqps"
-          },
-          "overrides": [
-            {
-              "matcher": {
-                "id": "byName",
-                "options": "Value"
-              },
-              "properties": [
-                {
-                  "id": "custom.width",
-                  "value": 200
-                }
-              ]
-            }
-          ]
-        },
-        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 32}
-      },
-      {
-        "id": 11,
-        "title": "Slowest Endpoints",
-        "type": "table",
-        "targets": [
-          {
-            "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, endpoint, service))",
-            "legendFormat": "{{endpoint}} - {{service}}"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "mappings": [],
-            "thresholds": {
-              "steps": [
-                {"color": "green", "value": null},
-                {"color": "yellow", "value": 1},
-                {"color": "red", "value": 3}
-              ]
-            },
-            "unit": "s"
-          },
-          "overrides": [
-            {
-              "matcher": {
-                "id": "byName",
-                "options": "Value"
-              },
-              "properties": [
-                {
-                  "id": "custom.width",
-                  "value": 200
-                }
-              ]
-            }
-          ]
-        },
-        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 32}
-      },
-      {
-        "id": 12,
-        "title": "Error Heatmap by Service",
-        "type": "heatmap",
-        "targets": [
-          {
-            "expr": "sum(rate(http_requests_total{status=~\"4..|5..\"}[5m])) by (service, hour)",
-            "legendFormat": "{{service}}"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "mappings": [],
-            "thresholds": {
-              "steps": [
-                {"color": "green", "value": null},
-                {"color": "yellow", "value": 1},
-                {"color": "red", "value": 10}
-              ]
-            },
             "unit": "reqps"
           }
         },
-        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 40}
-      },
-      {
-        "id": 13,
-        "title": "Service Health Status",
-        "type": "stat",
-        "targets": [
-          {
-            "expr": "sum(up) by (service)",
-            "legendFormat": "{{service}} - Up"
-          },
-          {
-            "expr": "count(up) by (service) - sum(up) by (service)",
-            "legendFormat": "{{service}} - Down"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "mappings": [],
-            "thresholds": {
-              "steps": [
-                {"color": "green", "value": null},
-                {"color": "yellow", "value": null},
-                {"color": "red", "value": null}
-              ]
-            },
-            "unit": "short"
-          }
-        },
-        "gridPos": {"h": 6, "w": 12, "x": 0, "y": 48}
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 46}
       },
       {
         "id": 14,
-        "title": "Resource Utilization",
+        "title": "Connection Duration",
         "type": "timeseries",
         "targets": [
           {
-            "expr": "avg(rate(container_cpu_usage_seconds_total[5m])) by (service) * 100",
-            "legendFormat": "CPU Usage - {{service}}%"
-          },
-          {
-            "expr": "avg(container_memory_usage_bytes{container!=\"\"}) by (service) / 1024 / 1024 / 1024",
-            "legendFormat": "Memory Usage - {{service}}GB"
+            "expr": "histogram_quantile(0.95, sum(rate(istio_tcp_connection_duration_milliseconds_bucket{reporter=\"destination\",destination_service_namespace=\"dev\"}[5m])) by (le, destination_service_name))",
+            "legendFormat": "P95 - {{destination_service_name}}"
           }
         ],
         "fieldConfig": {
@@ -397,14 +357,41 @@
             "thresholds": {
               "steps": [
                 {"color": "green", "value": null},
-                {"color": "yellow", "value": 70},
-                {"color": "red", "value": 90}
+                {"color": "yellow", "value": 5000},
+                {"color": "red", "value": 10000}
               ]
             },
-            "unit": "percent"
+            "unit": "ms"
           }
         },
-        "gridPos": {"h": 6, "w": 12, "x": 12, "y": 48}
+        "gridPos": {"h": 6, "w": 12, "x": 0, "y": 54}
+      },
+      {
+        "id": 15,
+        "title": "Inbound vs Outbound Traffic",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "sum(rate(istio_request_bytes_sum{reporter=\"destination\",destination_service_namespace=\"dev\"}[5m]))",
+            "legendFormat": "Inbound (Request)"
+          },
+          {
+            "expr": "sum(rate(istio_response_bytes_sum{reporter=\"destination\",destination_service_namespace=\"dev\"}[5m]))",
+            "legendFormat": "Outbound (Response)"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": null}
+              ]
+            },
+            "unit": "Bps"
+          }
+        },
+        "gridPos": {"h": 6, "w": 12, "x": 12, "y": 54}
       }
     ],
     "time": {
@@ -417,7 +404,7 @@
         {
           "name": "service",
           "type": "query",
-          "query": "label_values(service)",
+          "query": "label_values(istio_requests_total{destination_service_namespace=\"dev\"}, destination_service_name)",
           "refresh": 1,
           "includeAll": true,
           "allValue": ".*",
@@ -432,11 +419,11 @@
         {
           "name": "timeRange",
           "type": "custom",
-          "query": "1h, 6h, 24h, 7d, 30d",
+          "query": "5m,15m,1h,6h,24h,7d",
           "current": {
             "selected": false,
-            "text": "1h",
-            "value": "1h"
+            "text": "5m",
+            "value": "5m"
           }
         }
       ]
@@ -456,13 +443,13 @@
     },
     "links": [
       {
-        "title": "Service Details",
-        "url": "/d/service-details?var-service=${__services}",
+        "title": "Istio Service Mesh",
+        "url": "/d/istio-mesh",
         "target": "_blank"
       },
       {
-        "title": "Error Analysis",
-        "url": "/d/error-analysis?var-service=${__services}",
+        "title": "Istio Performance",
+        "url": "/d/istio-performance",
         "target": "_blank"
       }
     ]
