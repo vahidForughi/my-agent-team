@@ -60,7 +60,7 @@ jobs:
           format: spdx-json
 
       - name: Scan SBOM for vulnerabilities
-        uses: anchore/scan-action@v4
+        uses: anchore/scan-action@v7
         with:
           sbom: sbom-${{ matrix.service.name }}.spdx.json
           fail-build: false
