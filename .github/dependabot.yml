@@ -48,7 +48,7 @@ updates:
 
   # npm packages for micro-frontend
   - package-ecosystem: "npm"
-    directory: "/ecommerce-micro-frontend"
+    directory: "/micro-frontends"
     schedule:
       interval: "weekly"
       day: "monday"

@@ -11,8 +11,8 @@
 client/node_modules/
 client/dist/
 client/.angular/
-ecommerce-micro-frontend/node_modules/
-ecommerce-micro-frontend/dist/
+micro-frontends/node_modules/
+micro-frontends/dist/
 
 # .NET build outputs
 **/bin/

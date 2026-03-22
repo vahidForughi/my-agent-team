@@ -25,7 +25,7 @@ mkdir -p "$RESULTS_DIR"
 # Default to AWS Gateway (better performance, no port-forward issues)
 # Set USE_GATEWAY=false to use localhost port-forwards
 export USE_GATEWAY="${USE_GATEWAY:-true}"
-export GATEWAY_URL="${GATEWAY_URL:-https://a908be0f78581433da5edddaf76a0b7f-f54822a6262925e8.elb.us-east-1.amazonaws.com}"
+export GATEWAY_URL="${GATEWAY_URL:-${AWS_GATEWAY_URL:-"http://localhost:8010"}}"
 export PUSHGATEWAY_URL="${PUSHGATEWAY_URL:-http://localhost:9091}"
 
 log_info "========================================="

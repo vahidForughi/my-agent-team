@@ -85,7 +85,7 @@ spec:
               mountPath: /var/lib/postgresql/data
             - name: postgres-run
               mountPath: /var/run/postgresql
-          # Health probes commented out - timing out in resource-constrained env
+            # Health probes commented out - timing out in resource-constrained env
           # livenessProbe:
           #   exec:
           #     command:

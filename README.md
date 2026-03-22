@@ -252,7 +252,7 @@ git clone https://github.com/sloweyyy/cloud-native-ecommerce-platform.git
 cd cloud-native-ecommerce-platform
 
 # Deploy locally (all services + monitoring)
-./deploy.sh
+./scripts/deploy/deploy.sh
 ```
 
 **Time**: ~15-20 minutes
@@ -264,7 +264,7 @@ Best for: Budget-conscious deployments, small teams
 
 ```bash
 # Deploy to AWS with minimal services
-./deploy-aws-minimal.sh
+./scripts/deploy/deploy-aws-minimal.sh
 ```
 
 **Time**: ~20-25 minutes
@@ -277,7 +277,7 @@ Best for: Production workloads, enterprise deployments
 
 ```bash
 # Full production deployment with monitoring
-./deploy-aws.sh
+./scripts/deploy/deploy-aws.sh
 ```
 
 **Time**: ~30-40 minutes
@@ -399,7 +399,7 @@ For detailed deployment instructions, see [DEPLOYMENT-GUIDE.md](DEPLOYMENT-GUIDE
 ```text
 cloud-native-ecommerce-platform/
 │
-├── 📁 ecommerce-micro-frontend/          # Microfrontend monorepo (Nx)
+├── 📁 micro-frontends/          # Microfrontend monorepo (Nx)
 │   ├── host/                             # Shell app (Host) - Router, Auth
 │   ├── store/                            # Store MFE - Product browsing
 │   ├── checkout/                         # Checkout MFE - Cart & checkout
@@ -474,15 +474,19 @@ cloud-native-ecommerce-platform/
 │       └── docker.yml                    # Publish to GHCR
 │
 ├── 📁 scripts/
-│   ├── deploy.sh                         # Local Minikube deployment
-│   ├── deploy-aws.sh                     # Full AWS EKS deployment
-│   ├── deploy-aws-minimal.sh             # Cost-optimized AWS deployment
-│   ├── cleanup.sh                        # Resource cleanup
+│   ├── deploy/                           # Deployment scripts
+│   │   ├── deploy.sh                     # Local Minikube deployment
+│   │   ├── deploy-aws.sh                 # Full AWS EKS deployment
+│   │   ├── deploy-aws-minimal.sh         # Cost-optimized AWS deployment
+│   │   ├── docker-deploy.sh              # Docker Compose deployment
+│   │   └── build-images.sh               # Build Docker images
+│   ├── cleanup/                          # Resource teardown
+│   ├── access/                           # Service access portals
+│   ├── debug/                            # Debugging utilities
 │   └── monitoring/                       # Observability setup scripts
 │
-├── 📁 PostmanCollection/                 # API testing collections
-├── 📁 diagrams/                          # Architecture diagrams
-├── 📁 wiki/                              # Documentation
+├── 📁 tools/postman/                     # API testing collections
+├── 📁 diagrams/                          # Architecture diagrams (eraser.io)
 │
 ├── README.md                             # This file
 ├── DEPLOYMENT-GUIDE.md                   # Detailed deployment docs
@@ -582,7 +586,7 @@ Controllers/Endpoints → MediatR Pipeline → Commands/Queries
 ### E2E Testing (Playwright)
 
 ```bash
-cd ecommerce-micro-frontend
+cd micro-frontends
 npm run test:e2e              # Run all tests
 npm run test:e2e:ui           # Interactive mode
 npm run test:e2e:debug        # Debug mode
@@ -612,7 +616,7 @@ dotnet test --filter Category=Integration  # Integration tests only
 ### API Testing (Postman)
 
 - Pre-built Postman collections for all services
-- Located in: [PostmanCollection/](PostmanCollection/)
+- Located in: [tools/postman/](tools/postman/)
 
 ## 🔒 Security
 
@@ -755,7 +759,7 @@ Triggered on: Pushes to main/release branches
 # Requires: Docker, Docker Compose, Minikube, Helm, kubectl
 
 # Start everything locally
-./deploy.sh
+./scripts/deploy/deploy.sh
 
 # Access at http://localhost:4200
 ```
@@ -781,7 +785,7 @@ export AWS_REGION=ap-southeast-1 # Set region
 #### Full Production Deployment
 
 ```bash
-./deploy-aws.sh
+./scripts/deploy/deploy-aws.sh
 ```
 
 **What's deployed**:
@@ -799,7 +803,7 @@ export AWS_REGION=ap-southeast-1 # Set region
 #### Minimal Deployment (Cost-Optimized)
 
 ```bash
-./deploy-aws-minimal.sh
+./scripts/deploy/deploy-aws-minimal.sh
 ```
 
 **What's deployed**:
@@ -824,7 +828,7 @@ For detailed configuration options, see:
 ### Frontend Development
 
 ```bash
-cd ecommerce-micro-frontend
+cd micro-frontends
 
 # Install dependencies
 npm install
@@ -898,12 +902,8 @@ Also review:
 
 - [DEPLOYMENT-GUIDE.md](DEPLOYMENT-GUIDE.md) - Complete deployment instructions
 - [Deployments/DEPLOYMENT-CONFIGURATION.md](Deployments/DEPLOYMENT-CONFIGURATION.md) - Service configurations
-- [wiki/](wiki/) - Comprehensive documentation
-  - [Architecture](wiki/Architecture.md)
-  - [Microservices](wiki/Microservices.md)
-  - [Deployment](wiki/Deployment.md)
-  - [Monitoring](wiki/Monitoring.md)
-  - [Development](wiki/Development.md)
+- [scripts/README.md](scripts/README.md) - Script reference guide
+- [diagrams/](diagrams/) - Architecture diagrams
 
 ## 📄 License
 

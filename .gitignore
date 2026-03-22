@@ -239,9 +239,9 @@ PublishScripts/
 **/packages/*
 # except build/, which is used as an MSBuild target.
 !**/packages/build/
-# except ecommerce-micro-frontend packages (shared libraries)
-!ecommerce-micro-frontend/packages/
-!ecommerce-micro-frontend/packages/**
+# except micro-frontends packages (shared libraries)
+!micro-frontends/packages/
+!micro-frontends/packages/**
 # Uncomment if necessary however generally it will be regenerated when needed
 #!**/packages/repositories.config
 # NuGet v3's project.json files produces more ignorable files
@@ -320,10 +320,10 @@ FakesAssemblies/
 node_modules/
 
 # Typescript v1 declaration files
-# Note: Using **/typings/ to allow negation for ecommerce-micro-frontend
+# Note: Using **/typings/ to allow negation for micro-frontends
 **/typings/
-!ecommerce-micro-frontend/**/typings/
-!ecommerce-micro-frontend/**/typings/**
+!micro-frontends/**/typings/
+!micro-frontends/**/typings/**
 
 # Visual Studio 6 build log
 *.plg
@@ -446,5 +446,9 @@ repomix-output.md
 
 # K6 load testing binary (should be installed locally)
 /k6
-paper.tex
-22521145 & 22521282_SE505.Q11_NguyenCongHoan.md
+
+# Terraform
+.terraform/
+.terraform.lock.hcl
+*.tfvars
+*.tfstate*

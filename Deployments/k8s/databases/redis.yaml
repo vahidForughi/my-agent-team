@@ -60,7 +60,7 @@ spec:
           volumeMounts:
             - name: redis-storage
               mountPath: /data
-          # Health probes commented out - timing out in resource-constrained env
+            # Health probes commented out - timing out in resource-constrained env
           # livenessProbe:
           #   exec:
           #     command:

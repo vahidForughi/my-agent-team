@@ -13,7 +13,7 @@ if [[ -n "$GRAFANA_POD" ]]; then
         exit 0
     else
         echo "❌ Grafana cannot reach Prometheus - Fix may need reapplication"
-        echo "💡 Run: ./deploy.sh to redeploy with permanent fix"
+        echo "💡 Run: ./scripts/deploy/deploy.sh to redeploy with permanent fix"
         exit 1
     fi
 else
