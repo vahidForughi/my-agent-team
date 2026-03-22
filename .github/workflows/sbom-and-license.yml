@@ -1,0 +1,99 @@
+name: SBOM & License Compliance
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 8 * * MON'  # Weekly Monday 8 AM UTC
+  workflow_dispatch:
+
+concurrency:
+  group: sbom-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  sbom-generation:
+    name: Generate SBOM
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service:
+          - name: catalog-api
+            dockerfile: ./Services/Catalog/Catalog.API/Dockerfile
+          - name: basket-api
+            dockerfile: ./Services/Basket/Basket.API/Dockerfile
+          - name: discount-api
+            dockerfile: ./Services/Discount/Discount.API/Dockerfile
+          - name: ordering-api
+            dockerfile: ./Services/Ordering/Ordering.API/Dockerfile
+          - name: ocelot-gateway
+            dockerfile: ./ApiGateways/Ocelot.ApiGateway/Dockerfile
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image for scanning
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ matrix.service.dockerfile }}
+          push: false
+          load: true
+          tags: ${{ matrix.service.name }}:sbom-scan
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Generate SBOM with Syft
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ matrix.service.name }}:sbom-scan
+          artifact-name: sbom-${{ matrix.service.name }}.spdx.json
+          output-file: sbom-${{ matrix.service.name }}.spdx.json
+          format: spdx-json
+
+      - name: Scan SBOM for vulnerabilities
+        uses: anchore/scan-action@v4
+        with:
+          sbom: sbom-${{ matrix.service.name }}.spdx.json
+          fail-build: false
+          severity-cutoff: high
+
+  license-compliance:
+    name: License Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Check .NET license compliance
+        run: |
+          dotnet tool install --global dotnet-project-licenses || true
+          dotnet-project-licenses -i Ecommerce.sln --output-directory license-report || true
+          echo "## .NET License Report" >> $GITHUB_STEP_SUMMARY
+          if [ -f license-report/*.json ]; then
+            cat license-report/*.json | head -100 >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Check npm license compliance
+        working-directory: ./micro-frontends
+        run: |
+          npx license-checker --production --summary --failOn "GPL-3.0;AGPL-3.0" || true
+          echo "## npm License Report" >> $GITHUB_STEP_SUMMARY
+          npx license-checker --production --summary >> $GITHUB_STEP_SUMMARY 2>/dev/null || true

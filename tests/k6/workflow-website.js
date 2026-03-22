@@ -88,7 +88,7 @@ export function setup() {
 
   return { 
     timestamp: Date.now(),
-    gatewayUrl: 'https://a908be0f78581433da5edddaf76a0b7f-f54822a6262925e8.elb.us-east-1.amazonaws.com',
+    gatewayUrl: __ENV.AWS_GATEWAY_URL || 'http://localhost:8010',
     websiteOrigin: 'https://main.d239j34e2bshzo.amplifyapp.com',
     userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36'
   };

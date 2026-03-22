@@ -87,7 +87,7 @@ if [[ -n "$GRAFANA_POD" ]]; then
         exit 0
     else
         echo "❌ Grafana cannot reach Prometheus - Fix may need reapplication"
-        echo "💡 Run: ./deploy.sh to redeploy with permanent fix"
+        echo "💡 Run: ./scripts/deploy/deploy.sh to redeploy with permanent fix"
         exit 1
     fi
 else
@@ -193,8 +193,8 @@ display_summary() {
     echo "   • Configuration backups with timestamps"
     echo ""
     echo -e "${BLUE}🔧 Usage:${NC}"
-    echo "   • Monitor health: ./monitor-grafana-health.sh"
-    echo "   • Validate fix: ./validate-grafana-fix.sh"
+    echo "   • Monitor health: ./scripts/monitoring/monitor-grafana-health.sh"
+    echo "   • Validate fix: ./scripts/monitoring/validate-grafana-fix.sh"
     echo "   • Access Grafana: http://localhost:3000 (admin/prom-operator)"
     echo ""
     echo -e "${YELLOW}💡 The fix will now persist across:${NC}"

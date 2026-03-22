@@ -71,7 +71,7 @@ public class OrderContextSeed
                 UserName = "slowey",
                 FirstName = "phuc",
                 LastName = "truong",
-                EmailAddress = "truonglevinhphuc2006@gmail.com",
+                EmailAddress = "user@example.com",
                 AddressLine = "Ho Chi Minh city",
                 Country = "Vietnam",
                 TotalPrice = 750,

@@ -1,4 +1,6 @@
 # Changelog
+## [Unreleased]
+
 ## [0.10.0] - 2026-01-19
 
 ## What's Changed
@@ -85,11 +87,11 @@ All services are available as Docker images:
 
 ## Docker Images
 All services are available as Docker images:
-- 
-- 
-- 
-- 
-- 
+- `ghcr.io/sloweyyy/catalog-api`
+- `ghcr.io/sloweyyy/basket-api`
+- `ghcr.io/sloweyyy/discount-api`
+- `ghcr.io/sloweyyy/ordering-api`
+- `ghcr.io/sloweyyy/ocelot-apigw`
 
 ## Helm Deployment
 
@@ -125,11 +127,11 @@ All services are available as Docker images:
 
 ## Docker Images
 All services are available as Docker images:
-- 
-- 
-- 
-- 
-- 
+- `ghcr.io/sloweyyy/catalog-api`
+- `ghcr.io/sloweyyy/basket-api`
+- `ghcr.io/sloweyyy/discount-api`
+- `ghcr.io/sloweyyy/ordering-api`
+- `ghcr.io/sloweyyy/ocelot-apigw`
 
 ## Helm Deployment
 
@@ -171,11 +173,11 @@ All services are available as Docker images:
 
 ## Docker Images
 All services are available as Docker images:
-- 
-- 
-- 
-- 
-- 
+- `ghcr.io/sloweyyy/catalog-api`
+- `ghcr.io/sloweyyy/basket-api`
+- `ghcr.io/sloweyyy/discount-api`
+- `ghcr.io/sloweyyy/ordering-api`
+- `ghcr.io/sloweyyy/ocelot-apigw`
 
 ## Helm Deployment
 
@@ -218,11 +220,11 @@ All services are available as Docker images:
 
 ## Docker Images
 All services are available as Docker images:
-- 
-- 
-- 
-- 
-- 
+- `ghcr.io/sloweyyy/catalog-api`
+- `ghcr.io/sloweyyy/basket-api`
+- `ghcr.io/sloweyyy/discount-api`
+- `ghcr.io/sloweyyy/ordering-api`
+- `ghcr.io/sloweyyy/ocelot-apigw`
 
 ## Helm Deployment
 
@@ -263,11 +265,11 @@ All services are available as Docker images:
 
 ## Docker Images
 All services are available as Docker images:
-- 
-- 
-- 
-- 
-- 
+- `ghcr.io/sloweyyy/catalog-api`
+- `ghcr.io/sloweyyy/basket-api`
+- `ghcr.io/sloweyyy/discount-api`
+- `ghcr.io/sloweyyy/ordering-api`
+- `ghcr.io/sloweyyy/ocelot-apigw`
 
 ## Helm Deployment
 
@@ -302,11 +304,11 @@ All services are available as Docker images:
 
 ## Docker Images
 All services are available as Docker images:
-- 
-- 
-- 
-- 
-- 
+- `ghcr.io/sloweyyy/catalog-api`
+- `ghcr.io/sloweyyy/basket-api`
+- `ghcr.io/sloweyyy/discount-api`
+- `ghcr.io/sloweyyy/ordering-api`
+- `ghcr.io/sloweyyy/ocelot-apigw`
 
 ## Helm Deployment
 
@@ -346,11 +348,11 @@ All services are available as Docker images:
 
 ## Docker Images
 All services are available as Docker images:
-- 
-- 
-- 
-- 
-- 
+- `ghcr.io/sloweyyy/catalog-api`
+- `ghcr.io/sloweyyy/basket-api`
+- `ghcr.io/sloweyyy/discount-api`
+- `ghcr.io/sloweyyy/ordering-api`
+- `ghcr.io/sloweyyy/ocelot-apigw`
 
 ## Helm Deployment
 
@@ -408,11 +410,11 @@ All services are available as Docker images:
 
 ## Docker Images
 All services are available as Docker images:
-- 
-- 
-- 
-- 
-- 
+- `ghcr.io/sloweyyy/catalog-api`
+- `ghcr.io/sloweyyy/basket-api`
+- `ghcr.io/sloweyyy/discount-api`
+- `ghcr.io/sloweyyy/ordering-api`
+- `ghcr.io/sloweyyy/ocelot-apigw`
 
 ## Helm Deployment
 
@@ -460,11 +462,11 @@ All services are available as Docker images:
 
 ## Docker Images
 All services are available as Docker images:
-- 
-- 
-- 
-- 
-- 
+- `ghcr.io/sloweyyy/catalog-api`
+- `ghcr.io/sloweyyy/basket-api`
+- `ghcr.io/sloweyyy/discount-api`
+- `ghcr.io/sloweyyy/ordering-api`
+- `ghcr.io/sloweyyy/ocelot-apigw`
 
 ## Helm Deployment
 
@@ -629,11 +631,11 @@ All services are available as Docker images:
 
 ## Docker Images
 All services are available as Docker images:
-- 
-- 
-- 
-- 
-- 
+- `ghcr.io/sloweyyy/catalog-api`
+- `ghcr.io/sloweyyy/basket-api`
+- `ghcr.io/sloweyyy/discount-api`
+- `ghcr.io/sloweyyy/ordering-api`
+- `ghcr.io/sloweyyy/ocelot-apigw`
 
 ## Helm Deployment
 
@@ -673,11 +675,11 @@ All services are available as Docker images:
 
 ## Docker Images
 All services are available as Docker images:
-- 
-- 
-- 
-- 
-- 
+- `ghcr.io/sloweyyy/catalog-api`
+- `ghcr.io/sloweyyy/basket-api`
+- `ghcr.io/sloweyyy/discount-api`
+- `ghcr.io/sloweyyy/ordering-api`
+- `ghcr.io/sloweyyy/ocelot-apigw`
 
 ## Helm Deployment
 

@@ -30,7 +30,7 @@ log_success() {
 
 # Check if gateway is accessible
 check_gateway() {
-    if ! curl -s --insecure https://a908be0f78581433da5edddaf76a0b7f-f54822a6262925e8.elb.us-east-1.amazonaws.com/Catalog/GetAllProducts >/dev/null 2>&1; then
+    if ! curl -s --insecure ${AWS_GATEWAY_URL:-"http://localhost:8010"}/Catalog/GetAllProducts >/dev/null 2>&1; then
         log_error "AWS Gateway not accessible"
         log_info "Please check your network connection and gateway status"
         exit 1
@@ -48,7 +48,7 @@ main() {
     
     # Set environment for gateway testing (website mode)
     export USE_GATEWAY=true
-    export NX_API_BASE_URL="https://a908be0f78581433da5edddaf76a0b7f-f54822a6262925e8.elb.us-east-1.amazonaws.com"
+    export NX_API_BASE_URL="${AWS_GATEWAY_URL:-"http://localhost:8010"}"
     
     log_info "Testing real website traffic through production gateway"
     log_info "Duration: ~7 minutes"
@@ -57,7 +57,7 @@ main() {
     echo ""
     
     # Run the enhanced workflow test through gateway
-    k6 run --env USE_GATEWAY=true --env NX_API_BASE_URL="https://a908be0f78581433da5edddaf76a0b7f-f54822a6262925e8.elb.us-east-1.amazonaws.com" workflow-website.js
+    k6 run --env USE_GATEWAY=true --env NX_API_BASE_URL="${AWS_GATEWAY_URL:-"http://localhost:8010"}" workflow-website.js
     
     if [ $? -eq 0 ]; then
         log_success "=== Website Gateway Workflow Test Completed Successfully ==="

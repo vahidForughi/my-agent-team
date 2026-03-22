@@ -128,7 +128,7 @@ export const ENV = {
   namespace: __ENV.NAMESPACE || 'dev',
   prometheusUrl: __ENV.PROMETHEUS_URL || 'http://localhost:9090',
   pushgatewayUrl: __ENV.PUSHGATEWAY_URL || 'http://localhost:9091',
-  gatewayUrl: __ENV.GATEWAY_URL || 'https://a908be0f78581433da5edddaf76a0b7f-f54822a6262925e8.elb.us-east-1.amazonaws.com',
+  gatewayUrl: __ENV.GATEWAY_URL || __ENV.AWS_GATEWAY_URL || 'http://localhost:8010',
 };
 
 /**

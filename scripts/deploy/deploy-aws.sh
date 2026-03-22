@@ -1611,7 +1611,7 @@ display_access_info() {
     echo "   Check S3 bucket: aws s3 ls s3://${S3_BUCKET}/ --recursive"
     echo ""
     echo "🗑️  CLEANUP:"
-    echo "   Run: ./cleanup-aws.sh ${ENV_NAME}"
+    echo "   Run: ./scripts/cleanup/cleanup-aws.sh ${ENV_NAME}"
     echo ""
     echo "🎊 Platform is ready for use! 🎊"
     echo ""

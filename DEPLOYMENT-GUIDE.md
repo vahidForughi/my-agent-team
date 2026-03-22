@@ -51,10 +51,10 @@ docker --version
 
 | Method | Environment | Use Case | Script |
 |--------|-------------|----------|--------|
-| **Local Full** | Minikube | Complete local development with monitoring | `./deploy.sh` |
-| **Local Docker** | Docker Compose | Quick local testing without K8s | `./docker-deploy.sh` |
-| **AWS Minimal** | AWS EKS | Production core services only | `./deploy-aws-minimal.sh` |
-| **AWS Full** | AWS EKS | Production with full monitoring | `./deploy-aws.sh` |
+| **Local Full** | Minikube | Complete local development with monitoring | `./scripts/deploy/deploy.sh` |
+| **Local Docker** | Docker Compose | Quick local testing without K8s | `./scripts/deploy/docker-deploy.sh` |
+| **AWS Minimal** | AWS EKS | Production core services only | `./scripts/deploy/deploy-aws-minimal.sh` |
+| **AWS Full** | AWS EKS | Production with full monitoring | `./scripts/deploy/deploy-aws.sh` |
 
 ---
 
@@ -69,7 +69,7 @@ cd cloud-native-ecommerce-platform
 
 # Run single deployment script
 chmod +x deploy.sh
-./deploy.sh
+./scripts/deploy/deploy.sh
 ```
 
 **This script will:**
@@ -88,7 +88,7 @@ chmod +x deploy.sh
 ```bash
 # Run Docker Compose
 chmod +x docker-deploy.sh
-./docker-deploy.sh
+./scripts/deploy/docker-deploy.sh
 
 # Or manually
 docker-compose up -d
@@ -113,7 +113,7 @@ Deploys only core services needed for the application to run.
 ```bash
 # Run minimal AWS deployment
 chmod +x deploy-aws-minimal.sh
-./deploy-aws-minimal.sh dev ap-southeast-1
+./scripts/deploy/deploy-aws-minimal.sh dev ap-southeast-1
 
 # Arguments:
 #   dev - Environment name (dev/staging/prod)
@@ -143,7 +143,7 @@ Deploys complete stack with monitoring and observability.
 ```bash
 # Run full AWS deployment
 chmod +x deploy-aws.sh
-./deploy-aws.sh dev ap-southeast-1
+./scripts/deploy/deploy-aws.sh dev ap-southeast-1
 ```
 
 **Additional Features:**
@@ -329,7 +329,7 @@ kubectl port-forward svc/rabbitmq 15672:15672 -n default &
 #### **Easy Access Script**
 ```bash
 # Use the interactive access script
-./access-services.sh
+./scripts/access/access-services.sh
 
 # Select service by number and access instantly
 ```
@@ -339,7 +339,7 @@ kubectl port-forward svc/rabbitmq 15672:15672 -n default &
 #### **Smart Access Script (Recommended)**
 ```bash
 # Auto-detects namespace and service names
-./access-services-aws-smart.sh
+./scripts/access/access-services-aws-smart.sh
 
 # Shows which services are available
 # Works with both deploy-aws.sh and deploy-aws-minimal.sh
@@ -563,7 +563,7 @@ kubectl logs -n dev <pod-name> --tail=100
 #### **Quick Cleanup Script**
 ```bash
 # Run cleanup script
-./cleanup.sh
+./scripts/cleanup/cleanup.sh
 
 # This will:
 # - Uninstall all Helm releases
@@ -594,7 +594,7 @@ minikube delete
 #### **Quick Cleanup Script**
 ```bash
 # Run AWS cleanup script
-./cleanup-aws.sh dev
+./scripts/cleanup/cleanup-aws.sh dev
 
 # Arguments:
 #   dev - Environment name to clean up
@@ -697,13 +697,13 @@ docker-compose down --rmi all
 1. **Explore the Platform**: Browse http://localhost:4200
 2. **Monitor Services**: Use Grafana dashboards at http://localhost:3000
 3. **View Traces**: Check distributed tracing at http://localhost:16686
-4. **Access Services**: Run `./access-services.sh` for easy access
+4. **Access Services**: Run `./scripts/access/access-services.sh` for easy access
 5. **Test APIs**: Use Postman collections in `/PostmanCollection/`
 6. **Scale Services**: `kubectl scale deployment <name> --replicas=3`
 
 ### **After AWS Deployment**
 1. **Get LoadBalancer URLs**: `kubectl get svc -n dev | grep LoadBalancer`
-2. **Access Services**: Run `./access-services-aws-smart.sh`
+2. **Access Services**: Run `./scripts/access/access-services-aws-smart.sh`
 3. **Configure Frontend**: Update Angular environment with LoadBalancer URLs
 4. **Monitor Costs**: Check AWS Cost Explorer regularly
 5. **Setup Alerts**: Configure CloudWatch alarms for critical metrics
@@ -725,13 +725,13 @@ docker-compose down --rmi all
 
 | Task | Local (Minikube) | AWS (EKS) |
 |------|------------------|-----------|
-| **Deploy** | `./deploy.sh` | `./deploy-aws-minimal.sh dev` |
-| **Access Services** | `./access-services.sh` | `./access-services-aws-smart.sh` |
+| **Deploy** | `./scripts/deploy/deploy.sh` | `./scripts/deploy/deploy-aws-minimal.sh dev` |
+| **Access Services** | `./scripts/access/access-services.sh` | `./scripts/access/access-services-aws-smart.sh` |
 | **View Pods** | `kubectl get pods -n default` | `kubectl get pods -n dev` |
 | **View Logs** | `kubectl logs <pod> -n default` | `kubectl logs <pod> -n dev` |
 | **Restart Service** | `kubectl rollout restart deployment <name> -n default` | `kubectl rollout restart deployment <name> -n dev` |
 | **Scale Service** | `kubectl scale deployment <name> --replicas=3` | `kubectl scale deployment <name> --replicas=3 -n dev` |
-| **Cleanup** | `./cleanup.sh` | `./cleanup-aws.sh dev` |
+| **Cleanup** | `./scripts/cleanup/cleanup.sh` | `./scripts/cleanup/cleanup-aws.sh dev` |
 
 ### **Useful Scripts**
 

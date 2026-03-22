@@ -7,6 +7,10 @@ on:
     branches: [main, develop]
     types: [opened, synchronize, reopened]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   DOTNET_VERSION: "8.0.x"
   NODE_VERSION: "20.19.0"
@@ -33,7 +37,7 @@ jobs:
               - '*.sln'
               - '**/*.csproj'
             frontend:
-              - 'ecommerce-micro-frontend/**'
+              - 'micro-frontends/**'
             docker:
               - 'docker-compose*.yml'
               - '**/Dockerfile'
@@ -115,7 +119,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           scan-type: "fs"
           scan-ref: "."
@@ -147,7 +151,7 @@ jobs:
     if: needs.detect-changes.outputs.frontend == 'true'
     defaults:
       run:
-        working-directory: ./ecommerce-micro-frontend
+        working-directory: ./micro-frontends
     steps:
       - uses: actions/checkout@v4
         with:
@@ -158,17 +162,17 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
-          cache-dependency-path: ecommerce-micro-frontend/package-lock.json
+          cache-dependency-path: micro-frontends/package-lock.json
 
       - name: Cache Nx
         uses: actions/cache@v5
         with:
           path: |
-            ecommerce-micro-frontend/.nx/cache
-            ecommerce-micro-frontend/node_modules/.cache
-          key: ${{ runner.os }}-nx-${{ hashFiles('ecommerce-micro-frontend/package-lock.json') }}-${{ hashFiles('ecommerce-micro-frontend/**/project.json') }}
+            micro-frontends/.nx/cache
+            micro-frontends/node_modules/.cache
+          key: ${{ runner.os }}-nx-${{ hashFiles('micro-frontends/package-lock.json') }}-${{ hashFiles('micro-frontends/**/project.json') }}
           restore-keys: |
-            ${{ runner.os }}-nx-${{ hashFiles('ecommerce-micro-frontend/package-lock.json') }}-
+            ${{ runner.os }}-nx-${{ hashFiles('micro-frontends/package-lock.json') }}-
             ${{ runner.os }}-nx-
 
       - name: Install dependencies
@@ -179,11 +183,9 @@ jobs:
 
       - name: Lint affected
         run: npx nx affected --target=lint --base=$NX_BASE --head=$NX_HEAD
-        continue-on-error: true
 
       - name: Run tests affected
         run: npx nx affected --target=test --base=$NX_BASE --head=$NX_HEAD --passWithNoTests
-        continue-on-error: true
 
       - name: Build affected
         run: npx nx affected --target=build --base=$NX_BASE --head=$NX_HEAD
@@ -233,7 +235,7 @@ jobs:
         env:
           POSTGRES_DB: discountdb
           POSTGRES_USER: admin
-          POSTGRES_PASSWORD: Password@1
+          POSTGRES_PASSWORD: ${{ secrets.TEST_DB_PASSWORD || 'ci-test-password-only' }}
         ports:
           - 5432:5432
       mongodb:
