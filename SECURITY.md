@@ -17,9 +17,8 @@ We appreciate your efforts to responsibly disclose security vulnerabilities. Ple
 
 **DO NOT** create a public GitHub issue for security vulnerabilities. Instead:
 
-1. **Email**: Send details to [security@ecommerce-platform.dev](mailto:security@ecommerce-platform.dev)
-2. **Subject**: Use "Security Vulnerability Report" in the subject line
-3. **Encrypt**: Use our PGP key if possible (see below)
+1. **GitHub**: Use the ["Report a vulnerability"](https://github.com/sloweyyy/cloud-native-ecommerce-platform/security/advisories/new) feature on our GitHub repository
+2. **Subject**: Provide a clear title describing the vulnerability
 
 ### 📋 What to Include
 
@@ -71,16 +70,6 @@ We believe in recognizing security researchers:
 - **References**: Professional references for career development
 - **Coordinated Disclosure**: Joint announcement for major findings
 
-### 🔐 PGP Key
-
-For encrypted communications:
-
-```
------BEGIN PGP PUBLIC KEY BLOCK-----
-[PGP key would go here]
------END PGP PUBLIC KEY BLOCK-----
-```
-
 ### 🛡️ Security Measures
 
 Our platform implements several security measures:
@@ -103,11 +92,7 @@ Our platform implements several security measures:
 
 ### 🤝 Security Community
 
-Join our security-focused community:
-
-- **Discord**: #security channel
-- **Email List**: security-updates@ecommerce-platform.dev
-- **GitHub Discussions**: Security category
+- **GitHub Discussions**: [Security category](https://github.com/sloweyyy/cloud-native-ecommerce-platform/discussions)
 
 ### ⚖️ Legal
 

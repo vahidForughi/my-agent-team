@@ -21,6 +21,10 @@ on:
         default: 'ap-southeast-1'
         type: string
 
+concurrency:
+  group: deploy-${{ github.event.inputs.environment || 'dev' }}
+  cancel-in-progress: false
+
 env:
   AWS_REGION: ${{ github.event.inputs.aws_region || 'ap-southeast-1' }}
   ENV_NAME: ${{ github.event.inputs.environment || 'dev' }}
@@ -51,7 +55,7 @@ jobs:
             path: ApiGateways/Ocelot.ApiGateway
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v6
@@ -116,12 +120,12 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Scan image with Trivy
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@v0.35.0
         with:
           image-ref: ${{ steps.login-ecr.outputs.registry }}/${{ matrix.service.name }}:${{ steps.image-tag.outputs.tag }}
           format: 'sarif'
           output: 'trivy-results.sarif'
-        continue-on-error: true
+          severity: 'CRITICAL,HIGH'
 
   deploy-to-eks:
     runs-on: ubuntu-latest
@@ -134,7 +138,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v6
@@ -148,7 +152,7 @@ jobs:
           version: 'latest'
 
       - name: Install Helm
-        uses: azure/setup-helm@v3
+        uses: azure/setup-helm@v4
         with:
           version: 'latest'
 

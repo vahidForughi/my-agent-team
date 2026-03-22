@@ -8,7 +8,7 @@ set -e
 
 # Configuration
 export USE_GATEWAY=true
-export GATEWAY_URL="${GATEWAY_URL:-https://a908be0f78581433da5edddaf76a0b7f-f54822a6262925e8.elb.us-east-1.amazonaws.com}"
+export GATEWAY_URL="${GATEWAY_URL:-${AWS_GATEWAY_URL:-"http://localhost:8010"}}"
 export DEPLOYMENT_ENV=aws
 
 # Get script directory

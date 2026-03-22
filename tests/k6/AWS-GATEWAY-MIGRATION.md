@@ -22,7 +22,7 @@ useGateway: __ENV.USE_GATEWAY !== 'false',  // Defaults to true
 **Impact:**
 - Tests now use AWS Gateway by default
 - To use port-forwards, explicitly set: `USE_GATEWAY=false`
-- Gateway URL: `https://a908be0f78581433da5edddaf76a0b7f-f54822a6262925e8.elb.us-east-1.amazonaws.com`
+- Gateway URL: `https://<your-elb-hostname>.elb.<region>.amazonaws.com`
 
 ### 2. New Script (`run-all-tests.sh`)
 **Location:** `tests/k6/run-all-tests.sh`

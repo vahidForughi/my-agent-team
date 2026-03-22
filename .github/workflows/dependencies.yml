@@ -10,15 +10,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '8.0.x'
       
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '18.x'
       
@@ -27,6 +27,6 @@ jobs:
           dotnet list package --vulnerable --include-transitive || echo "No vulnerabilities found"
       
       - name: npm Security Audit
-        working-directory: ./client
+        working-directory: ./micro-frontends
         run: |
           npm audit || echo "Audit completed" 

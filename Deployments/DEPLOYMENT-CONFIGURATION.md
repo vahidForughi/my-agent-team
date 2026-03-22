@@ -196,6 +196,4 @@ curl http://localhost:8010/Catalog
 ## 📚 Related Documentation
 
 - [Main README](../README.md) - Project overview
-- [Complete Deployment Guide](../DEPLOYMENT-GUIDE-COMPLETE.md) - Step-by-step instructions
-- [Monitoring Guide](../wiki/Monitoring.md) - Observability setup
-- [Troubleshooting Guide](../wiki/Troubleshooting.md) - Common issues and solutions
+- [Deployment Guide](../DEPLOYMENT-GUIDE.md) - Step-by-step instructions

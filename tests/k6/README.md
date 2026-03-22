@@ -55,7 +55,7 @@ tests/k6/
   - No port-forward crashes under high load
   - Production-like testing environment
   - Automatically enabled unless `USE_GATEWAY=false` is set
-  - Gateway URL: `https://a908be0f78581433da5edddaf76a0b7f-f54822a6262925e8.elb.us-east-1.amazonaws.com`
+  - Gateway URL: `https://<your-elb-hostname>.elb.<region>.amazonaws.com`
 
 - ⚠️ **Port-Forward Mode** (Legacy)
   - Limited to ~300 concurrent users
@@ -88,14 +88,14 @@ The easiest way to run all tests with AWS Gateway:
 
 ```bash
 # Run all tests with AWS Gateway (default)
-GATEWAY_URL="https://a908be0f78581433da5edddaf76a0b7f-f54822a6262925e8.elb.us-east-1.amazonaws.com" ./run-all-tests.sh
+GATEWAY_URL="https://<your-elb-hostname>.elb.<region>.amazonaws.com" ./run-all-tests.sh
 
 # Run all tests with port-forwards
 USE_GATEWAY=false ./run-all-tests.sh
 ```
 
 **Current Gateway URL:**
-`https://a908be0f78581433da5edddaf76a0b7f-f54822a6262925e8.elb.us-east-1.amazonaws.com`
+`https://<your-elb-hostname>.elb.<region>.amazonaws.com`
 
 
 This script will:
@@ -117,13 +117,13 @@ For running specific test types:
 
 ```bash
 # Stress test (via AWS Gateway)
-GATEWAY_URL="https://a908be0f78581433da5edddaf76a0b7f-f54822a6262925e8.elb.us-east-1.amazonaws.com" ./run-load-test.sh stress
+GATEWAY_URL="https://<your-elb-hostname>.elb.<region>.amazonaws.com" ./run-load-test.sh stress
 
 # Spike test (via AWS Gateway)
-GATEWAY_URL="https://a908be0f78581433da5edddaf76a0b7f-f54822a6262925e8.elb.us-east-1.amazonaws.com" ./run-load-test.sh spike
+GATEWAY_URL="https://<your-elb-hostname>.elb.<region>.amazonaws.com" ./run-load-test.sh spike
 
 # Soak test (via AWS Gateway)
-GATEWAY_URL="https://a908be0f78581433da5edddaf76a0b7f-f54822a6262925e8.elb.us-east-1.amazonaws.com" ./run-load-test.sh soak
+GATEWAY_URL="https://<your-elb-hostname>.elb.<region>.amazonaws.com" ./run-load-test.sh soak
 
 # Force port-forward mode (not recommended for load tests)
 USE_GATEWAY=false ./run-load-test.sh stress

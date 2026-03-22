@@ -15,8 +15,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Catalog.Core", "Services\Ca
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Catalog.Infrastructure", "Services\Catalog\Catalog.Infrastructure\Catalog.Infrastructure.csproj", "{4BC1569A-7DF4-443A-ADB7-978A73C7944E}"
 EndProject
-Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{ACE1AB99-C274-4066-9CD1-F9B996536801}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Basket", "Basket", "{47E7724C-892B-4A4A-9721-14DAB5C84C41}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Basket.API", "Services\Basket\Basket.API\Basket.API.csproj", "{08EB4D96-F0C6-416B-B726-64CCAE4DF9A1}"
@@ -79,10 +77,6 @@ Global
 		{4BC1569A-7DF4-443A-ADB7-978A73C7944E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4BC1569A-7DF4-443A-ADB7-978A73C7944E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4BC1569A-7DF4-443A-ADB7-978A73C7944E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{ACE1AB99-C274-4066-9CD1-F9B996536801}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{ACE1AB99-C274-4066-9CD1-F9B996536801}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{ACE1AB99-C274-4066-9CD1-F9B996536801}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{ACE1AB99-C274-4066-9CD1-F9B996536801}.Release|Any CPU.Build.0 = Release|Any CPU
 		{08EB4D96-F0C6-416B-B726-64CCAE4DF9A1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{08EB4D96-F0C6-416B-B726-64CCAE4DF9A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{08EB4D96-F0C6-416B-B726-64CCAE4DF9A1}.Release|Any CPU.ActiveCfg = Release|Any CPU

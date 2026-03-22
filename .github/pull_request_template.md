@@ -23,7 +23,7 @@
 - [ ] Discount Service
 - [ ] Ordering Service
 - [ ] API Gateway (Ocelot)
-- [ ] Frontend (Angular)
+- [ ] Frontend (React/Nx Micro-frontends)
 - [ ] Database migrations
 - [ ] Kubernetes/Helm charts
 - [ ] Docker configurations

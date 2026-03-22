@@ -89,11 +89,11 @@ Documentation improvements are always welcome:
    cd ApiGateways/Ocelot.ApiGateway && dotnet run
    ```
 
-4. **Frontend development**
+4. **Frontend development (Micro-frontends)**
    ```bash
-   cd client
+   cd micro-frontends
    npm install
-   npm start
+   npx nx serve host
    ```
 
 ### Testing
@@ -106,8 +106,8 @@ dotnet test
 dotnet test --collect:"XPlat Code Coverage"
 
 # Frontend tests
-cd client
-npm test
+cd micro-frontends
+npx nx run-many --target=test --all
 ```
 
 ## Coding Standards
@@ -120,12 +120,12 @@ npm test
 - Follow SOLID principles
 - Use dependency injection appropriately
 
-### Angular Guidelines
+### React / Micro-frontend Guidelines
 
-- Follow [Angular Style Guide](https://angular.io/guide/styleguide)
+- Follow React best practices and hooks patterns
 - Use TypeScript strictly
-- Write unit tests for components and services
-- Follow reactive patterns with RxJS
+- Write unit tests for components and utilities
+- Follow Nx workspace conventions for module federation
 
 ### General Principles
 
@@ -140,7 +140,7 @@ npm test
 We use automated formatting tools:
 
 - **.NET**: EditorConfig and built-in formatting
-- **Angular**: Prettier with ESLint
+- **React/Nx**: Prettier with ESLint
 - **YAML**: Standard YAML formatting
 
 ## Pull Request Process
