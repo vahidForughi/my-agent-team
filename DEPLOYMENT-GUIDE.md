@@ -68,7 +68,7 @@ git clone <repository-url>
 cd cloud-native-ecommerce-platform
 
 # Run single deployment script
-chmod +x deploy.sh
+chmod +x ./scripts/deploy/deploy.sh
 ./scripts/deploy/deploy.sh
 ```
 
@@ -87,7 +87,7 @@ chmod +x deploy.sh
 
 ```bash
 # Run Docker Compose
-chmod +x docker-deploy.sh
+chmod +x ./scripts/deploy/docker-deploy.sh
 ./scripts/deploy/docker-deploy.sh
 
 # Or manually
@@ -112,7 +112,7 @@ Deploys only core services needed for the application to run.
 
 ```bash
 # Run minimal AWS deployment
-chmod +x deploy-aws-minimal.sh
+chmod +x ./scripts/deploy/deploy-aws-minimal.sh
 ./scripts/deploy/deploy-aws-minimal.sh dev ap-southeast-1
 
 # Arguments:
@@ -142,7 +142,7 @@ Deploys complete stack with monitoring and observability.
 
 ```bash
 # Run full AWS deployment
-chmod +x deploy-aws.sh
+chmod +x ./scripts/deploy/deploy-aws.sh
 ./scripts/deploy/deploy-aws.sh dev ap-southeast-1
 ```
 
@@ -698,7 +698,7 @@ docker-compose down --rmi all
 2. **Monitor Services**: Use Grafana dashboards at http://localhost:3000
 3. **View Traces**: Check distributed tracing at http://localhost:16686
 4. **Access Services**: Run `./scripts/access/access-services.sh` for easy access
-5. **Test APIs**: Use Postman collections in `/PostmanCollection/`
+5. **Test APIs**: Use Postman collections in `tools/postman/`
 6. **Scale Services**: `kubectl scale deployment <name> --replicas=3`
 
 ### **After AWS Deployment**

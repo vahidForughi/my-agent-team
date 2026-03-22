@@ -70,14 +70,20 @@ jobs:
       - name: Build and start services
         run: |
           dotnet build Ecommerce.sln --configuration Release
-          # Start Catalog API in background
-          cd Services/Catalog/Catalog.API
-          dotnet run --configuration Release --no-build &
-          cd ../../..
+
+          # Start all microservices in background
+          cd Services/Catalog/Catalog.API && dotnet run --configuration Release --no-build --urls "http://0.0.0.0:8001" & cd ../../..
+          cd Services/Basket/Basket.API && dotnet run --configuration Release --no-build --urls "http://0.0.0.0:8002" & cd ../../..
+          cd Services/Ordering/Ordering.API && dotnet run --configuration Release --no-build --urls "http://0.0.0.0:8004" & cd ../../..
+
+          # Start API Gateway
+          cd ApiGateways/Ocelot.ApiGateway && dotnet run --configuration Release --no-build --urls "http://0.0.0.0:8010" & cd ../..
+
           # Wait for services to start
-          sleep 15
-          # Verify services are up
-          curl -sf http://localhost:8001/health || echo "Catalog API not ready yet"
+          echo "Waiting for services to start..."
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8010/health && break || sleep 2
+          done
 
       - name: Run K6 test
         env:

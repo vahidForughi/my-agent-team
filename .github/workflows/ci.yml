@@ -124,6 +124,8 @@ jobs:
           scan-type: "fs"
           scan-ref: "."
           format: "sarif"
+          severity: "CRITICAL,HIGH"
+          exit-code: "1"
           output: "trivy-results.sarif"
 
       - name: Upload Trivy scan results to GitHub Security tab

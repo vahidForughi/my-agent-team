@@ -87,7 +87,7 @@ jobs:
           dotnet tool install --global dotnet-project-licenses || true
           dotnet-project-licenses -i Ecommerce.sln --output-directory license-report || true
           echo "## .NET License Report" >> $GITHUB_STEP_SUMMARY
-          if [ -f license-report/*.json ]; then
+          if compgen -G "license-report/*.json" > /dev/null; then
             cat license-report/*.json | head -100 >> $GITHUB_STEP_SUMMARY
           fi
 

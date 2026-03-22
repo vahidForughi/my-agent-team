@@ -87,11 +87,11 @@ All services are available as Docker images:
 
 ## Docker Images
 All services are available as Docker images:
-- `ghcr.io/sloweyyy/catalog-api`
-- `ghcr.io/sloweyyy/basket-api`
-- `ghcr.io/sloweyyy/discount-api`
-- `ghcr.io/sloweyyy/ordering-api`
-- `ghcr.io/sloweyyy/ocelot-apigw`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/catalog-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/basket-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/discount-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/ordering-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/ocelot-apigw`
 
 ## Helm Deployment
 
@@ -127,11 +127,11 @@ All services are available as Docker images:
 
 ## Docker Images
 All services are available as Docker images:
-- `ghcr.io/sloweyyy/catalog-api`
-- `ghcr.io/sloweyyy/basket-api`
-- `ghcr.io/sloweyyy/discount-api`
-- `ghcr.io/sloweyyy/ordering-api`
-- `ghcr.io/sloweyyy/ocelot-apigw`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/catalog-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/basket-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/discount-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/ordering-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/ocelot-apigw`
 
 ## Helm Deployment
 
@@ -173,11 +173,11 @@ All services are available as Docker images:
 
 ## Docker Images
 All services are available as Docker images:
-- `ghcr.io/sloweyyy/catalog-api`
-- `ghcr.io/sloweyyy/basket-api`
-- `ghcr.io/sloweyyy/discount-api`
-- `ghcr.io/sloweyyy/ordering-api`
-- `ghcr.io/sloweyyy/ocelot-apigw`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/catalog-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/basket-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/discount-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/ordering-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/ocelot-apigw`
 
 ## Helm Deployment
 
@@ -220,11 +220,11 @@ All services are available as Docker images:
 
 ## Docker Images
 All services are available as Docker images:
-- `ghcr.io/sloweyyy/catalog-api`
-- `ghcr.io/sloweyyy/basket-api`
-- `ghcr.io/sloweyyy/discount-api`
-- `ghcr.io/sloweyyy/ordering-api`
-- `ghcr.io/sloweyyy/ocelot-apigw`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/catalog-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/basket-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/discount-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/ordering-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/ocelot-apigw`
 
 ## Helm Deployment
 
@@ -265,11 +265,11 @@ All services are available as Docker images:
 
 ## Docker Images
 All services are available as Docker images:
-- `ghcr.io/sloweyyy/catalog-api`
-- `ghcr.io/sloweyyy/basket-api`
-- `ghcr.io/sloweyyy/discount-api`
-- `ghcr.io/sloweyyy/ordering-api`
-- `ghcr.io/sloweyyy/ocelot-apigw`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/catalog-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/basket-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/discount-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/ordering-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/ocelot-apigw`
 
 ## Helm Deployment
 
@@ -304,11 +304,11 @@ All services are available as Docker images:
 
 ## Docker Images
 All services are available as Docker images:
-- `ghcr.io/sloweyyy/catalog-api`
-- `ghcr.io/sloweyyy/basket-api`
-- `ghcr.io/sloweyyy/discount-api`
-- `ghcr.io/sloweyyy/ordering-api`
-- `ghcr.io/sloweyyy/ocelot-apigw`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/catalog-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/basket-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/discount-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/ordering-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/ocelot-apigw`
 
 ## Helm Deployment
 
@@ -348,11 +348,11 @@ All services are available as Docker images:
 
 ## Docker Images
 All services are available as Docker images:
-- `ghcr.io/sloweyyy/catalog-api`
-- `ghcr.io/sloweyyy/basket-api`
-- `ghcr.io/sloweyyy/discount-api`
-- `ghcr.io/sloweyyy/ordering-api`
-- `ghcr.io/sloweyyy/ocelot-apigw`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/catalog-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/basket-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/discount-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/ordering-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/ocelot-apigw`
 
 ## Helm Deployment
 
@@ -410,11 +410,11 @@ All services are available as Docker images:
 
 ## Docker Images
 All services are available as Docker images:
-- `ghcr.io/sloweyyy/catalog-api`
-- `ghcr.io/sloweyyy/basket-api`
-- `ghcr.io/sloweyyy/discount-api`
-- `ghcr.io/sloweyyy/ordering-api`
-- `ghcr.io/sloweyyy/ocelot-apigw`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/catalog-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/basket-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/discount-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/ordering-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/ocelot-apigw`
 
 ## Helm Deployment
 
@@ -462,11 +462,11 @@ All services are available as Docker images:
 
 ## Docker Images
 All services are available as Docker images:
-- `ghcr.io/sloweyyy/catalog-api`
-- `ghcr.io/sloweyyy/basket-api`
-- `ghcr.io/sloweyyy/discount-api`
-- `ghcr.io/sloweyyy/ordering-api`
-- `ghcr.io/sloweyyy/ocelot-apigw`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/catalog-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/basket-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/discount-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/ordering-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/ocelot-apigw`
 
 ## Helm Deployment
 
@@ -631,11 +631,11 @@ All services are available as Docker images:
 
 ## Docker Images
 All services are available as Docker images:
-- `ghcr.io/sloweyyy/catalog-api`
-- `ghcr.io/sloweyyy/basket-api`
-- `ghcr.io/sloweyyy/discount-api`
-- `ghcr.io/sloweyyy/ordering-api`
-- `ghcr.io/sloweyyy/ocelot-apigw`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/catalog-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/basket-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/discount-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/ordering-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/ocelot-apigw`
 
 ## Helm Deployment
 
@@ -675,11 +675,11 @@ All services are available as Docker images:
 
 ## Docker Images
 All services are available as Docker images:
-- `ghcr.io/sloweyyy/catalog-api`
-- `ghcr.io/sloweyyy/basket-api`
-- `ghcr.io/sloweyyy/discount-api`
-- `ghcr.io/sloweyyy/ordering-api`
-- `ghcr.io/sloweyyy/ocelot-apigw`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/catalog-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/basket-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/discount-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/ordering-api`
+- `ghcr.io/sloweyyy/cloud-native-ecommerce-platform/ocelot-apigw`
 
 ## Helm Deployment
 

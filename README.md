@@ -616,7 +616,7 @@ dotnet test --filter Category=Integration  # Integration tests only
 ### API Testing (Postman)
 
 - Pre-built Postman collections for all services
-- Located in: [PostmanCollection/](PostmanCollection/)
+- Located in: [tools/postman/](tools/postman/)
 
 ## 🔒 Security
 
