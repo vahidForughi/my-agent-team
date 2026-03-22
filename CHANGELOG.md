@@ -1,4 +1,57 @@
 # Changelog
+## [0.10.1] - 2026-03-22
+
+## What's Changed
+
+### 🚀 Features
+- No new features
+
+### 🐛 Bug Fixes
+- No bug fixes
+
+### 🔧 Improvements
+- refactor: professionalize repository structure and CI/CD workflows (#205) (4e66bf9)
+
+### 📚 Documentation
+- chore(deps): bump docker/build-push-action from 5 to 7 (#200) (667c82e)
+- chore(deps): bump docker/metadata-action from 5 to 6 (#201) (59ddaf8)
+- chore(deps): bump docker/login-action from 3 to 4 (428904a)
+- chore(deps): bump docker/setup-buildx-action from 3 to 4 (51200b5)
+- chore(deps): bump docker/metadata-action from 5 to 6 (f63643b)
+- docs: update changelog for 0.10.0 (#195) (b2af75a)
+- docs: update changelog for 0.10.0 [skip ci] (476ef96)
+
+### 🔐 Security
+- No security updates
+
+### 🏗️ Infrastructure
+- refactor: professionalize repository structure and CI/CD workflows (#205) (4e66bf9)
+- chore(deps): bump docker/build-push-action from 5 to 7 (#200) (667c82e)
+- chore(deps): bump docker/metadata-action from 5 to 6 (#201) (59ddaf8)
+- chore(deps): bump docker/login-action from 3 to 4 (428904a)
+- chore(deps): bump docker/setup-buildx-action from 3 to 4 (51200b5)
+- chore(deps): bump docker/metadata-action from 5 to 6 (f63643b)
+- docs: update changelog for 0.10.0 [skip ci] (476ef96)
+
+### Other Changes
+- chore(deps): bump azure/setup-kubectl from 3 to 4 (#182) (660d20f)
+- chore(deps): bump aws-actions/configure-aws-credentials from 5 to 6 (#196) (cf881eb)
+- chore(deps): bump aws-actions/configure-aws-credentials from 5 to 6 (2333a59)
+- chore(deps): bump azure/setup-kubectl from 3 to 4 (7892dbf)
+
+## Docker Images
+All services are available as Docker images:
+- 
+- 
+- 
+- 
+- 
+
+## Helm Deployment
+
+
+**Full Changelog**: https://github.com/sloweyyy/cloud-native-ecommerce-platform/compare/0.10.0...0.10.1
+
 ## [Unreleased]
 
 ## [0.10.0] - 2026-01-19
