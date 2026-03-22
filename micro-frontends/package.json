@@ -103,7 +103,7 @@
     "@tanstack/react-router-devtools": "^1.120.6",
     "@tanstack/zod-adapter": "^1.166.9",
     "antd": "^5.22.6",
-    "axios": "^1.7.2",
+    "axios": "^1.13.6",
     "dayjs": "^1.11.13",
     "i18next": "^25.7.1",
     "lodash": "^4.17.23",
