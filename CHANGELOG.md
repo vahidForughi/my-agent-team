@@ -1,4 +1,43 @@
 # Changelog
+## [0.11.1] - 2026-03-25
+
+## What's Changed
+
+### 🚀 Features
+- Merge branch 'main' into feat/terraform-aws-infrastructure (1cf13b6)
+
+### 🐛 Bug Fixes
+- fix: resolve tflint warnings and tfsec action version (#312) (bb104ce)
+- fix: resolve tflint warnings and tfsec action version (51f76b6)
+
+### 🔧 Improvements
+- No improvements
+
+### 📚 Documentation
+- No documentation updates
+
+### 🔐 Security
+- No security updates
+
+### 🏗️ Infrastructure
+- No infrastructure changes
+
+### Other Changes
+- No other changes
+
+## Docker Images
+All services are available as Docker images:
+- 
+- 
+- 
+- 
+- 
+
+## Helm Deployment
+
+
+**Full Changelog**: https://github.com/sloweyyy/cloud-native-ecommerce-platform/compare/0.11.0...0.11.1
+
 ## [0.10.1] - 2026-03-22
 
 ## What's Changed
