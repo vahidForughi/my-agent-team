@@ -40,7 +40,6 @@ module "eks" {
   environment         = var.environment
   private_subnet_ids  = module.networking.private_subnet_ids
   cluster_sg_id       = module.security.eks_cluster_sg_id
-  node_sg_id          = module.security.eks_nodes_sg_id
   kubernetes_version  = var.kubernetes_version
   node_instance_types = var.node_instance_types
   node_desired_size   = var.node_desired_size

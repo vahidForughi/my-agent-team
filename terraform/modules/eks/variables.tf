@@ -18,11 +18,6 @@ variable "cluster_sg_id" {
   type        = string
 }
 
-variable "node_sg_id" {
-  description = "Security group ID for EKS worker nodes"
-  type        = string
-}
-
 variable "kubernetes_version" {
   description = "Kubernetes version for EKS (e.g., 1.29)"
   type        = string
