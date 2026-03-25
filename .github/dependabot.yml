@@ -34,7 +34,7 @@ updates:
     reviewers:
       - "sloweyyy"
     assignees:
-      - "thvnhtai"
+      - "sloweyyy"
     commit-message:
       prefix: "chore"
       include: "scope"
@@ -57,7 +57,7 @@ updates:
     reviewers:
       - "sloweyyy"
     assignees:
-      - "thvnhtai"
+      - "sloweyyy"
     commit-message:
       prefix: "chore"
       include: "scope"
