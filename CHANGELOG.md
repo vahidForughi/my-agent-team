@@ -41,11 +41,11 @@
 
 ## Docker Images
 All services are available as Docker images:
-- 
-- 
-- 
-- 
-- 
+-
+-
+-
+-
+-
 
 ## Helm Deployment
 

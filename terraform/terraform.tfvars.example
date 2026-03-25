@@ -1,0 +1,29 @@
+# =============================================================================
+# Example Variable Values
+# =============================================================================
+# Copy this file to terraform.tfvars and fill in your values:
+#   cp terraform.tfvars.example terraform.tfvars
+#
+# IMPORTANT: terraform.tfvars contains secrets — it is gitignored.
+
+# --- General ---
+aws_region   = "ap-southeast-1"
+project_name = "ecommerce"
+environment  = "dev"
+
+# --- Networking ---
+vpc_cidr = "10.0.0.0/16"
+
+# --- EKS ---
+kubernetes_version  = "1.29"
+node_instance_types = ["t3.medium"]
+node_desired_size   = 2
+node_min_size       = 1
+node_max_size       = 4
+
+# --- Database Credentials ---
+# Use strong passwords in production!
+mongodb_password  = "ChangeMe_Mongo_123!"
+postgres_password = "ChangeMe_Postgres_123!"
+mssql_password    = "ChangeMe_SqlServer_123!"
+rabbitmq_password = "ChangeMe_RabbitMQ_123!"
