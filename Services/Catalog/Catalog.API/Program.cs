@@ -146,7 +146,6 @@ builder.Services.AddMassTransit(config =>
         cfg.Host(builder.Configuration["EventBusSettings:HostAddress"]);
     });
 });
-builder.Services.AddMassTransitHostedService();
 
 var app = builder.Build();
 
