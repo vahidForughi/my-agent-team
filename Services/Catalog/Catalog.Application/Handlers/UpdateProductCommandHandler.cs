@@ -2,7 +2,7 @@
 using Catalog.Core.Entities;
 using Catalog.Core.Repositories;
 using Catalog.Core.Services;
-using MediatR;
+using Common.Mediator;
 using Microsoft.Extensions.Logging;
 
 namespace Catalog.Application.Handlers;

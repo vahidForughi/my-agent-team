@@ -6,7 +6,7 @@ using Basket.Core.Entities;
 using EventBus.Messages.Common;
 using EventBus.Messages.Events;
 using MassTransit;
-using MediatR;
+using Common.Mediator;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 

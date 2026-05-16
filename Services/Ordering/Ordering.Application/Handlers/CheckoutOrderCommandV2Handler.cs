@@ -1,5 +1,5 @@
 using Ordering.Application.Mappers;
-using MediatR;
+using Common.Mediator;
 using Microsoft.Extensions.Logging;
 using Ordering.Application.Commands;
 using Ordering.Core.Entities;

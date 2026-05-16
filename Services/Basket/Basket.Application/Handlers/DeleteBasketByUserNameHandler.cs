@@ -1,6 +1,6 @@
 ﻿using Basket.Application.Commands;
 using Basket.Core.Repositories;
-using MediatR;
+using Common.Mediator;
 
 namespace Basket.Application.Handlers;
 

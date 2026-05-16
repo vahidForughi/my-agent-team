@@ -1,3 +1,4 @@
+using Common.Mediator;
 using Common.Logging;
 using Discount.API.Services;
 using Discount.Application.Handlers;
@@ -40,7 +41,7 @@ var assemblies = new Assembly[]
     Assembly.GetExecutingAssembly(),
     typeof(CreateDiscountCommandHandler).Assembly
 };
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(assemblies));
+builder.Services.AddMediator(assemblies);
 builder.Services.AddScoped<IDiscountRepository, DiscountRepository>();
 builder.Services.AddGrpc();
 
