@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using Ordering.Application.Mappers;
 using EventBus.Messages.Common;
 using EventBus.Messages.Events;
 using MassTransit;
@@ -11,13 +11,13 @@ namespace Ordering.API.EventBusConsumer;
 public class BasketOrderingConsumer : IConsumer<BasketCheckoutEvent>
 {
     private readonly IMediator _mediator;
-    private readonly IMapper _mapper;
+    private readonly OrderMapper _mapper;
     private readonly ILogger<BasketOrderingConsumer> _logger;
     private readonly IPublishEndpoint _publishEndpoint;
 
     public BasketOrderingConsumer(
         IMediator mediator, 
-        IMapper mapper, 
+        OrderMapper mapper, 
         ILogger<BasketOrderingConsumer> logger,
         IPublishEndpoint publishEndpoint)
     {
@@ -33,7 +33,7 @@ public class BasketOrderingConsumer : IConsumer<BasketCheckoutEvent>
             context.Message.CorrelationId);
 
         _logger.LogInformation("Basket Checkout Event Consumed: {Event}", context.Message);
-        var cmd = _mapper.Map<CheckoutOrderCommand>(context.Message);
+        var cmd = _mapper.ToCheckoutOrderCommand(context.Message);
         var result = await _mediator.Send(cmd);
         
         // Publish OrderActivityEvent after successful order creation

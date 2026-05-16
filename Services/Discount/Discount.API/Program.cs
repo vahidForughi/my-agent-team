@@ -1,6 +1,7 @@
 using Common.Logging;
 using Discount.API.Services;
 using Discount.Application.Handlers;
+using Discount.Application.Mapper;
 using Discount.Core.Repositories;
 using Discount.Infrastructure.Extensions;
 using Discount.Infrastructure.Repositories;
@@ -30,8 +31,8 @@ builder.Services.AddOpenTelemetry()
             });
     });
 
-//Register AutoMapper
-builder.Services.AddAutoMapper(typeof(Program).Assembly);
+// Register Mapperly mappers (source-generated, replaces AutoMapper)
+builder.Services.AddSingleton<DiscountMapper>();
 
 //Register Mediatr
 var assemblies = new Assembly[]

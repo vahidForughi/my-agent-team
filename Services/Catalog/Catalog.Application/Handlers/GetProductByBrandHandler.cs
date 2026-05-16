@@ -19,7 +19,7 @@ public class GetProductByBrandHandler : IRequestHandler<GetProductByBrandQuery, 
         CancellationToken cancellationToken)
     {
         var productList = await _productRepository.GetProductsByBrand(request.BrandName);
-        var productResponseList = ProductMapper.Mapper.Map<IList<ProductResponse>>(productList);
+        var productResponseList = ProductMapper.Instance.ToProductResponseList(productList);
         return productResponseList;
     }
 }

@@ -39,7 +39,7 @@ public class BasketController : ControllerBase
         var basket = await _mediator.Send(query);
         if (basket == null) return BadRequest();
 
-        var eventMsg = BasketMapper.Mapper.Map<BasketCheckoutEventV2>(basketCheckout);
+        var eventMsg = BasketMapper.Instance.ToBasketCheckoutEventV2(basketCheckout);
         eventMsg.TotalPrice = basket.TotalPrice;
         await _publishEndpoint.Publish(eventMsg);
         _logger.LogInformation($"Basket Published for {basket.UserName} with V2 endpoint");

@@ -1,5 +1,4 @@
-﻿using AutoMapper;
-using Catalog.Application.Mappers;
+﻿using Catalog.Application.Mappers;
 using Catalog.Application.Queries;
 using Catalog.Application.Responses;
 using Catalog.Core.Entities;
@@ -20,7 +19,7 @@ public class GetAllBrandsHandler : IRequestHandler<GetAllBrandsQuery, IList<Bran
     public async Task<IList<BrandResponse>> Handle(GetAllBrandsQuery request, CancellationToken cancellationToken)
     {
         var brandList = await _brandRepository.GetAllBrands();
-        var brandResponseList = ProductMapper.Mapper.Map<IList<ProductBrand>, IList<BrandResponse>>(brandList.ToList());
+        var brandResponseList = ProductMapper.Instance.ToBrandResponseList(brandList.ToList());
         return brandResponseList;
     }
 }

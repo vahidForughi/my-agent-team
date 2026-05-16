@@ -20,7 +20,7 @@ public class GetAllProductsHandler : IRequestHandler<GetAllProductsQuery, Pagina
         CancellationToken cancellationToken)
     {
         var productList = await _productRepository.GetProducts(request.CatalogSpecParams);
-        var productResposeList = ProductMapper.Mapper.Map<Pagination<ProductResponse>>(productList);
+        var productResposeList = ProductMapper.Instance.ToProductResponsePagination(productList);
         return productResposeList;
     }
 }

@@ -1,4 +1,5 @@
-using AutoMapper;
+using Ordering.Application.Mappers;
+
 using MediatR;
 using Ordering.Application.Queries;
 using Ordering.Application.Responses;
@@ -12,11 +13,11 @@ public class GetRecentActivitiesQueryHandler
     : IRequestHandler<GetRecentActivitiesQuery, AppPagedResult>
 {
     private readonly IActivityRepository _activityRepository;
-    private readonly IMapper _mapper;
+    private readonly OrderMapper _mapper;
     
     public GetRecentActivitiesQueryHandler(
         IActivityRepository activityRepository,
-        IMapper mapper)
+        OrderMapper mapper)
     {
         _activityRepository = activityRepository;
         _mapper = mapper;
@@ -37,7 +38,7 @@ public class GetRecentActivitiesQueryHandler
             
         return new AppPagedResult
         {
-            Items = _mapper.Map<IReadOnlyList<ActivityResponse>>(corePagedResult.Items),
+            Items = _mapper.ToActivityResponseList(corePagedResult.Items),
             TotalCount = corePagedResult.TotalCount,
             PageIndex = corePagedResult.PageIndex,
             PageSize = corePagedResult.PageSize

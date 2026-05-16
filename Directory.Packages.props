@@ -29,9 +29,11 @@
     <PackageVersion Include="AWSSDK.Extensions.NETCore.Setup" Version="3.7.400.1" />
     <PackageVersion Include="AWSSDK.S3" Version="3.7.511.4" />
 
-    <!-- Mapping. AutoMapper 14+ is commercially licensed (Jimmy Bogard, 2024).
-         13.0.1 is the last free version. Tracked for migration to Mapperly. -->
-    <PackageVersion Include="AutoMapper" Version="13.0.1" />
+    <!-- Mapping. Replaced AutoMapper with Mapperly:
+         - AutoMapper 14+ went commercial in 2024
+         - AutoMapper 13.0.1 has CVE-2026-32933 (HIGH, unpatched in free line)
+         Mapperly is MIT, source-generated, and has no runtime reflection. -->
+    <PackageVersion Include="Riok.Mapperly" Version="4.1.1" />
 
     <!-- Data access -->
     <PackageVersion Include="Dapper" Version="2.1.66" />

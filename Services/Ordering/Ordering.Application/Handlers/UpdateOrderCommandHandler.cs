@@ -1,5 +1,5 @@
-﻿using AutoMapper;
 using MediatR;
+using Ordering.Application.Mappers;
 using Microsoft.Extensions.Logging;
 using Ordering.Application.Commands;
 using Ordering.Application.Exceptions;
@@ -11,10 +11,10 @@ namespace Ordering.Application.Handlers;
 public class UpdateOrderCommandHandler : IRequestHandler<UpdateOrderCommand, Unit>
 {
     private readonly IOrderRepository _orderRepository;
-    private readonly IMapper _mapper;
+    private readonly OrderMapper _mapper;
     private readonly ILogger<UpdateOrderCommandHandler> _logger;
 
-    public UpdateOrderCommandHandler(IOrderRepository orderRepository, IMapper mapper,
+    public UpdateOrderCommandHandler(IOrderRepository orderRepository, OrderMapper mapper,
         ILogger<UpdateOrderCommandHandler> logger)
     {
         _orderRepository = orderRepository;
@@ -26,7 +26,7 @@ public class UpdateOrderCommandHandler : IRequestHandler<UpdateOrderCommand, Uni
     {
         var orderToUpdate = await _orderRepository.GetByIdAsync(request.Id);
         if (orderToUpdate == null) throw new OrderNotFoundException(nameof(Order), request.Id);
-        _mapper.Map(request, orderToUpdate, typeof(UpdateOrderCommand), typeof(Order));
+        _mapper.UpdateOrder(request, orderToUpdate);
         await _orderRepository.UpdateAsync(orderToUpdate);
         _logger.LogInformation($"Order {orderToUpdate.Id} is successfully updated");
         return Unit.Value;

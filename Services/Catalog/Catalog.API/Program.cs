@@ -54,8 +54,7 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "Catalog.API", Version = "v1" });
 });
 
-//Register AutoMapper
-builder.Services.AddAutoMapper(typeof(Program).Assembly);
+// Mapperly mappers are accessed via static ProductMapper.Instance — no DI registration needed.
 
 //Register Mediatr
 var assemblies = new Assembly[]

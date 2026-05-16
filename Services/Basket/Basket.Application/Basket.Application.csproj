@@ -12,9 +12,11 @@
   </ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="AutoMapper" />
 		<PackageReference Include="Grpc.AspNetCore" />
 		<PackageReference Include="MediatR" />
+		<PackageReference Include="Riok.Mapperly">
+			<PrivateAssets>all</PrivateAssets>
+		</PackageReference>
 	</ItemGroup>
 
   <ItemGroup>

@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using Ordering.Application.Mappers;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Ordering.Application.Commands;
@@ -10,10 +10,10 @@ namespace Ordering.Application.Handlers;
 public class CheckoutOrderCommandHandler : IRequestHandler<CheckoutOrderCommand, int>
 {
     private readonly IOrderRepository _orderRepository;
-    private readonly IMapper _mapper;
+    private readonly OrderMapper _mapper;
     private readonly ILogger<CheckoutOrderCommandHandler> _logger;
 
-    public CheckoutOrderCommandHandler(IOrderRepository orderRepository, IMapper mapper,
+    public CheckoutOrderCommandHandler(IOrderRepository orderRepository, OrderMapper mapper,
         ILogger<CheckoutOrderCommandHandler> logger)
     {
         _orderRepository = orderRepository;
@@ -23,7 +23,7 @@ public class CheckoutOrderCommandHandler : IRequestHandler<CheckoutOrderCommand,
 
     public async Task<int> Handle(CheckoutOrderCommand request, CancellationToken cancellationToken)
     {
-        var orderEntity = _mapper.Map<Order>(request);
+        var orderEntity = _mapper.ToOrder(request);
         var generatedOrder = await _orderRepository.AddAsync(orderEntity);
         _logger.LogInformation($"Order with Id {generatedOrder.Id} successfully created");
         return generatedOrder.Id;

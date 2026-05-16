@@ -21,12 +21,12 @@ public class CreateBrandCommandHandler : IRequestHandler<CreateBrandCommand, Bra
     if (string.IsNullOrWhiteSpace(request.Name))
       throw new ArgumentException("Brand name is required", nameof(request.Name));
 
-    var brandEntity = ProductMapper.Mapper.Map<ProductBrand>(request);
+    var brandEntity = ProductMapper.Instance.ToProductBrand(request);
     if (brandEntity is null)
       throw new ApplicationException("There is an issue with mapping while creating new brand");
 
     var newBrand = await _brandRepository.CreateBrand(brandEntity);
-    var brandResponse = ProductMapper.Mapper.Map<BrandResponse>(newBrand);
+    var brandResponse = ProductMapper.Instance.ToBrandResponse(newBrand);
     return brandResponse;
   }
 }
