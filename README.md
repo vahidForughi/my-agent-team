@@ -1,6 +1,6 @@
 # Cloud-Native E-Commerce Platform
 
-[![.NET 8](https://img.shields.io/badge/.NET-8.0-blue.svg)](https://dotnet.microsoft.com/)
+[![.NET 10](https://img.shields.io/badge/.NET-10.0-blue.svg)](https://dotnet.microsoft.com/)
 [![React 18](https://img.shields.io/badge/React-18-61dafb.svg)](https://react.dev/)
 [![Nx](https://img.shields.io/badge/Nx-21-96267f.svg)](https://nx.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6.svg)](https://www.typescriptlang.org/)
@@ -341,8 +341,8 @@ For detailed deployment instructions, see [DEPLOYMENT-GUIDE.md](DEPLOYMENT-GUIDE
 
 | Component | Technology | Version | Purpose |
 | --- | --- | --- | --- |
-| **Runtime** | .NET | 8.0 | Framework |
-| **Framework** | ASP.NET Core | 8.0 | Web API |
+| **Runtime** | .NET | 10.0 | Framework |
+| **Framework** | ASP.NET Core | 10.0 | Web API |
 | **Architecture** | Clean Architecture | - | SOLID principles |
 | **Pattern** | CQRS + MediatR | 12.5 | Command/Query separation |
 | **ORM** | Entity Framework Core | 8.0 | Database abstraction |
@@ -414,7 +414,7 @@ cloud-native-ecommerce-platform/
 │   ├── tsconfig.base.json                # TypeScript base config
 │   └── package.json                      # Dependencies
 │
-├── 📁 Services/                          # Backend microservices (.NET 8)
+├── 📁 Services/                          # Backend microservices (.NET 10)
 │   ├── Catalog/
 │   │   ├── Catalog.API/                  # REST endpoints
 │   │   ├── Catalog.Core/                 # Domain entities
@@ -699,7 +699,7 @@ Triggered on: Pull requests, pushes to main
 **Steps**:
 
 1. **Code Quality**
-   - Build .NET 8 backend
+   - Build .NET 10 backend
    - Run backend unit tests (with Cobertura coverage)
    - Run frontend tests via Nx affected
    - ESLint and Prettier
