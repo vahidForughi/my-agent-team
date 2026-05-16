@@ -75,9 +75,6 @@
     <!-- Tooling -->
     <PackageVersion Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.20.1" />
 
-    <!-- Serialization. Newtonsoft.Json retained pending System.Text.Json migration. -->
-    <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
-
     <!-- API gateway. Ocelot 24.x retained pending the 23 → 24 migration PR. -->
     <PackageVersion Include="Ocelot" Version="23.4.3" />
 
