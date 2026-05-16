@@ -126,7 +126,7 @@ Security Groups > EKS Cluster : Policies
 // • CI/CD: GitHub Actions → ECR → EKS (Helm)
 //
 // Services:
-// • 4 Microservices: Catalog, Basket, Discount, Ordering (ASP.NET 8.0)
+// • 4 Microservices: Catalog, Basket, Discount, Ordering (ASP.NET 10.0)
 // • API Gateway: Ocelot (routing, rate limiting)
 // • Service Mesh: Istio 1.28.2 (mTLS, traffic management)
 //

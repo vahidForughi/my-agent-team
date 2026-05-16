@@ -11,15 +11,15 @@ A consolidated dependency audit and migration roadmap for the .NET stack. This d
 - **AutoMapper 13.0.1** has a known HIGH-severity vulnerability (GHSA-rvv3-g6hj-g44x). The free version will not be patched.
 - **MassTransit 7.x** has been EOL for years; Basket.API and Ordering.API are still on 7.3.1.
 
-## Current state (post PR 1)
+## Current state (post PR 3)
 
 | Dimension | State |
 | --- | --- |
-| Target framework | net8.0 across 19 projects |
+| Target framework | net10.0 (LTS until 2028-11) |
 | Central Package Management | ✅ enabled (`Directory.Packages.props`) |
 | Transitive pinning | ✅ enabled |
-| Build/restore | ✅ clean |
-| Known CVEs | AutoMapper 13.0.1 (high), OpenTelemetry.Exporter.OpenTelemetryProtocol 1.15.0 (3 moderate) |
+| Build/restore | ✅ clean on .NET 10 SDK 10.0.300 |
+| Known CVEs (post PR 4) | OpenTelemetry.* 1.15.0 (3 moderate), MongoDB.Driver 2.30.0 transitive Snappier 1.0.0 (HIGH), SharpCompress 0.30.1 (moderate) |
 
 ## Migration roadmap
 
