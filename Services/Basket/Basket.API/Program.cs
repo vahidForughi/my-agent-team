@@ -1,3 +1,4 @@
+using Common.Mediator;
 using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
 using Basket.Application.GrpcService;
@@ -89,7 +90,7 @@ var assemblies = new Assembly[]
     Assembly.GetExecutingAssembly(),
     typeof(CreateShoppingCartCommandHandler).Assembly
 };
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(assemblies));
+builder.Services.AddMediator(assemblies);
 
 // Redis
 builder.Services.AddStackExchangeRedisCache(options =>

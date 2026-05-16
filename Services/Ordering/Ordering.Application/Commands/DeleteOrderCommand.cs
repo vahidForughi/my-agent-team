@@ -1,4 +1,4 @@
-﻿using MediatR;
+﻿using Common.Mediator;
 
 namespace Ordering.Application.Commands;
 

@@ -1,6 +1,6 @@
 ﻿using EventBus.Messages.Events;
 using MassTransit;
-using MediatR;
+using Common.Mediator;
 using Microsoft.AspNetCore.Mvc;
 using Ordering.Application.Commands;
 using Ordering.Application.Queries;

@@ -2,7 +2,7 @@ using Discount.Application.Commands;
 using Discount.Application.Mapper;
 using Discount.Core.Repositories;
 using Discount.Grpc.Protos;
-using MediatR;
+using Common.Mediator;
 
 namespace Discount.Application.Handlers;
 

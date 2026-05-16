@@ -16,7 +16,6 @@
 
   <ItemGroup>
     <PackageReference Include="Grpc.AspNetCore" />
-    <PackageReference Include="MediatR" />
     <PackageReference Include="Riok.Mapperly">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
@@ -24,6 +23,11 @@
 
   <ItemGroup>
     <Protobuf Include="Protos\discount.proto" GrpcServices="Server" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Infrastructure\Common.Mediator\Common.Mediator.csproj" />
   </ItemGroup>
 
 </Project>

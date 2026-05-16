@@ -1,5 +1,5 @@
 ﻿using Discount.Grpc.Protos;
-using MediatR;
+using Common.Mediator;
 
 namespace Discount.Application.Commands;
 

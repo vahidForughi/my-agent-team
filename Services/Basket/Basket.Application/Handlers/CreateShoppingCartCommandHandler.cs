@@ -3,7 +3,7 @@ using Basket.Application.Mappers;
 using Basket.Application.Responses;
 using Basket.Core.Repositories;
 using Basket.Core.Entities;
-using MediatR;
+using Common.Mediator;
 using Basket.Application.GrpcService;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;

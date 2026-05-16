@@ -2,7 +2,7 @@
 using Catalog.Application.Queries;
 using Catalog.Application.Responses;
 using Catalog.Core.Repositories;
-using MediatR;
+using Common.Mediator;
 
 namespace Catalog.Application.Handlers;
 

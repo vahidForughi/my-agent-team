@@ -1,4 +1,4 @@
-using MediatR;
+using Common.Mediator;
 using Ordering.Application.Mappers;
 using Microsoft.Extensions.Logging;
 using Ordering.Application.Commands;

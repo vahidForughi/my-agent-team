@@ -1,4 +1,4 @@
-﻿using MediatR;
+﻿using Common.Mediator;
 
 namespace Discount.Application.Commands;
 
