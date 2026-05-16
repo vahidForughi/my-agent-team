@@ -80,7 +80,11 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          platforms: linux/amd64,linux/arm64
+          # arm64 dropped: Grpc.Tools/protoc segfaults under QEMU emulation in
+          # the Discount.Application build. Re-enable by refactoring the
+          # Dockerfiles to cross-compile (FROM --platform=$BUILDPLATFORM +
+          # dotnet publish -r linux-$TARGETARCH) — keeps Grpc.Tools native.
+          platforms: linux/amd64
 
       - name: Check if images were pushed
         id: push-check
