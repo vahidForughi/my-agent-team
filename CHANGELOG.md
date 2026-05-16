@@ -1,4 +1,72 @@
 # Changelog
+## [0.11.2] - 2026-05-16
+
+## What's Changed
+
+### 🚀 Features
+- No new features
+
+### 🐛 Bug Fixes
+- chore: modernize .NET stack to .NET 10 LTS — fix 6 CVEs, replace commercial deps (#318) (e1a10e3)
+- fix: drop linux/arm64 from docker-build matrix (unblock PR #318 CI) (#326) (ee1bb7f)
+- fix: drop linux/arm64 from docker-build matrix (2311255)
+- chore: fix all known CVEs + bump packages to .NET 10 alignment (#322) (30f4b76)
+- chore: bump packages to .NET 10 alignment + fix all known CVEs (e3afcd2)
+- fix: copy Directory.Packages.props into Dockerfile build contexts (77382c7)
+
+### 🔧 Improvements
+- No improvements
+
+### 📚 Documentation
+- fix: drop linux/arm64 from docker-build matrix (unblock PR #318 CI) (#326) (ee1bb7f)
+- fix: drop linux/arm64 from docker-build matrix (2311255)
+- chore: remove docs/MODERNIZATION-2026.md (#325) (9f2ec1c)
+- chore: remove docs/MODERNIZATION-2026.md and its references (6e8fd81)
+- chore: remove Newtonsoft + .NET 6 orphan Dockerfile, pin SDK via global.json (#324) (6dbbdba)
+- chore: remove Newtonsoft + .NET 6 orphan Dockerfile, pin SDK via global.json (2511a4f)
+- fix: copy Directory.Packages.props into Dockerfile build contexts (77382c7)
+- docs: update changelog for 0.11.1 (#315) (77dbe66)
+- docs: update changelog for 0.11.1 [skip ci] (1c8c7cc)
+
+### 🔐 Security
+- No security updates
+
+### 🏗️ Infrastructure
+- chore: modernize .NET stack to .NET 10 LTS — fix 6 CVEs, replace commercial deps (#318) (e1a10e3)
+- fix: drop linux/arm64 from docker-build matrix (unblock PR #318 CI) (#326) (ee1bb7f)
+- fix: drop linux/arm64 from docker-build matrix (2311255)
+- chore: remove Newtonsoft + .NET 6 orphan Dockerfile, pin SDK via global.json (#324) (6dbbdba)
+- chore: remove Newtonsoft + .NET 6 orphan Dockerfile, pin SDK via global.json (2511a4f)
+- chore: bump packages to .NET 10 alignment + fix all known CVEs (e3afcd2)
+- chore: migrate AutoMapper to Riok.Mapperly across all services (2a630cd)
+- fix: copy Directory.Packages.props into Dockerfile build contexts (77382c7)
+- docs: update changelog for 0.11.1 [skip ci] (1c8c7cc)
+
+### Other Changes
+- Merge branch 'chore/modernization-foundation-2026' into chore/cleanup-newtonsoft-and-orphans (0c2d521)
+- chore: replace MediatR with in-house Common.Mediator dispatcher (#323) (a388f27)
+- Merge remote-tracking branch 'origin/chore/modernization-foundation-2026' into chore/mediatr-replacement (c3e69e9)
+- chore: replace MediatR with in-house Common.Mediator dispatcher (aaf453d)
+- chore: bump target framework to .NET 10 LTS (#321) (3231b2c)
+- chore: bump target framework to .NET 10 LTS (6700138)
+- merge: AutoMapper → Mapperly migration into modernization foundation (fb54e17)
+- merge: MassTransit 7→8 alignment into modernization foundation (ef21bf4)
+- chore: align all services on MassTransit 8.x (e5c6c2e)
+- chore: add central package management + 2026 modernization plan (01a9b15)
+
+## Docker Images
+All services are available as Docker images:
+- 
+- 
+- 
+- 
+- 
+
+## Helm Deployment
+
+
+**Full Changelog**: https://github.com/sloweyyy/cloud-native-ecommerce-platform/compare/0.11.1...0.11.2
+
 ## [0.11.1] - 2026-03-25
 
 ## What's Changed
