@@ -90,7 +90,6 @@ builder.Services.AddMassTransit(config =>
             c => { c.ConfigureConsumer<OrderActivityConsumer>(ctx); });
     });
 });
-builder.Services.AddMassTransitHostedService();
 
 var app = builder.Build();
 

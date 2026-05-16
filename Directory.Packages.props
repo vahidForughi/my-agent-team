@@ -48,11 +48,10 @@
     <!-- gRPC -->
     <PackageVersion Include="Grpc.AspNetCore" Version="2.64.0" />
 
-    <!-- Messaging. MassTransit 7.x is EOL (Basket/Ordering still pinned via
-         VersionOverride pending migration to 8.x). -->
+    <!-- Messaging. All services on 8.x stable line (free/OSS).
+         MassTransit.AspNetCore is gone in 8.x — features absorbed into core. -->
     <PackageVersion Include="MassTransit" Version="8.1.3" />
     <PackageVersion Include="MassTransit.RabbitMQ" Version="8.1.3" />
-    <PackageVersion Include="MassTransit.AspNetCore" Version="7.3.1" />
 
     <!-- Mediator. MediatR 13+ is commercially licensed (Jimmy Bogard, 2024).
          12.x is the last free version. Tracked for migration. -->
