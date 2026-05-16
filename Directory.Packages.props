@@ -7,8 +7,6 @@
     All package versions are defined here. Individual .csproj files reference
     packages without a Version attribute. To override for a single project, use
     <PackageReference Include="X" VersionOverride="..." /> in that csproj.
-
-    Version drift remediation roadmap: see docs/MODERNIZATION-2026.md.
   -->
 
   <PropertyGroup>
