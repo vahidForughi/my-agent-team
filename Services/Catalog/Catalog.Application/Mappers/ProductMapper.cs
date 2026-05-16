@@ -1,19 +1,40 @@
-﻿using AutoMapper;
+using Catalog.Application.Commands;
+using Catalog.Application.Responses;
+using Catalog.Core.Entities;
+using Catalog.Core.Specs;
+using Riok.Mapperly.Abstractions;
 
 namespace Catalog.Application.Mappers;
 
-public static class ProductMapper
+[Mapper]
+public partial class ProductMapper
 {
-    private static readonly Lazy<IMapper> Lazy = new(() =>
-    {
-        var config = new MapperConfiguration(cfg =>
-        {
-            cfg.ShouldMapProperty = p => p.GetMethod.IsPublic || p.GetMethod.IsAssembly;
-            cfg.AddProfile<ProductMappingProfile>();
-        });
-        var mapper = config.CreateMapper();
-        return mapper;
-    });
+    public static readonly ProductMapper Instance = new();
 
-    public static IMapper Mapper => Lazy.Value;
+    public partial ProductResponse ToProductResponse(Product product);
+    public partial IList<ProductResponse> ToProductResponseList(IEnumerable<Product> products);
+
+    public partial BrandResponse ToBrandResponse(ProductBrand brand);
+    public partial IList<BrandResponse> ToBrandResponseList(IEnumerable<ProductBrand> brands);
+
+    public partial TypesResponse ToTypesResponse(ProductType type);
+    public partial IList<TypesResponse> ToTypesResponseList(IEnumerable<ProductType> types);
+
+    // Id is database-generated on insert.
+    [MapperIgnoreTarget(nameof(Product.Id))]
+    public partial Product ToProduct(CreateProductCommand command);
+
+    [MapperIgnoreTarget(nameof(ProductBrand.Id))]
+    public partial ProductBrand ToProductBrand(CreateBrandCommand command);
+
+    [MapperIgnoreTarget(nameof(ProductType.Id))]
+    public partial ProductType ToProductType(CreateTypeCommand command);
+
+    public Pagination<ProductResponse> ToProductResponsePagination(Pagination<Product> source) => new()
+    {
+        PageIndex = source.PageIndex,
+        PageSize = source.PageSize,
+        Count = source.Count,
+        Data = source.Data.Select(ToProductResponse).ToList(),
+    };
 }

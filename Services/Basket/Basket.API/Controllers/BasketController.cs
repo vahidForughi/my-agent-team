@@ -68,7 +68,7 @@ public class BasketController : ApiController
 
         // When a checkout happens in BasketController, it publishes an event using MassTransit:
 
-        var eventMsg = BasketMapper.Mapper.Map<BasketCheckoutEvent>(basketCheckout);
+        var eventMsg = BasketMapper.Instance.ToBasketCheckoutEvent(basketCheckout);
         eventMsg.TotalPrice = basket.TotalPrice;
         await _publishEndpoint.Publish(eventMsg);
         _logger.LogInformation($"Basket Published for {basket.UserName}");

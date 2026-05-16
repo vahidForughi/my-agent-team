@@ -81,8 +81,7 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// Register AutoMapper
-builder.Services.AddAutoMapper(typeof(Program).Assembly);
+// Mapperly mappers are accessed via static BasketMapper.Instance — no DI registration needed.
 
 // Register Mediatr
 var assemblies = new Assembly[]

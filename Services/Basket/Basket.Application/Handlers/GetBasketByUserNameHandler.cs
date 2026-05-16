@@ -19,7 +19,6 @@ public class GetBasketByUserNameHandler : IRequestHandler<GetBasketByUserNameQue
         CancellationToken cancellationToken)
     {
         var shoppingCart = await _basketRepository.GetBasket(request.UserName);
-        var shoppingCartResponse = BasketMapper.Mapper.Map<ShoppingCartResponse>(shoppingCart);
-        return shoppingCartResponse;
+        return BasketMapper.Instance.ToShoppingCartResponse(shoppingCart);
     }
 }

@@ -18,7 +18,7 @@ public class GetProductByNameQueryHandler : IRequestHandler<GetProductByNameQuer
     public async Task<IList<ProductResponse>> Handle(GetProductByNameQuery request, CancellationToken cancellationToken)
     {
         var productList = await _productRepository.GetProductsByName(request.Name);
-        var productResponseList = ProductMapper.Mapper.Map<IList<ProductResponse>>(productList);
+        var productResponseList = ProductMapper.Instance.ToProductResponseList(productList);
         return productResponseList;
     }
 }

@@ -55,7 +55,6 @@ public class CreateShoppingCartCommandHandler : IRequestHandler<CreateShoppingCa
             UserName = request.UserName,
             Items = request.Items
         });
-        var shoppingCartResponse = BasketMapper.Mapper.Map<ShoppingCartResponse>(shoppingCart);
-        return shoppingCartResponse;
+        return BasketMapper.Instance.ToShoppingCartResponse(shoppingCart);
     }
 }
