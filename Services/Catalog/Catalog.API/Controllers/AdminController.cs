@@ -1,5 +1,5 @@
 using Catalog.Application.Commands;
-using MediatR;
+using Common.Mediator;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 

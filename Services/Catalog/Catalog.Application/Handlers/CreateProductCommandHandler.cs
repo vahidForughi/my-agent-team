@@ -3,7 +3,7 @@ using Catalog.Application.Mappers;
 using Catalog.Application.Responses;
 using Catalog.Core.Entities;
 using Catalog.Core.Repositories;
-using MediatR;
+using Common.Mediator;
 
 namespace Catalog.Application.Handlers;
 

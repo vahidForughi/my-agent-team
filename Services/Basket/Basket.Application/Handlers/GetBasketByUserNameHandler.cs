@@ -2,7 +2,7 @@
 using Basket.Application.Queries;
 using Basket.Application.Responses;
 using Basket.Core.Repositories;
-using MediatR;
+using Common.Mediator;
 
 namespace Basket.Application.Handlers;
 

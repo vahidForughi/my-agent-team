@@ -2,7 +2,7 @@ using Ordering.Application.Mappers;
 using EventBus.Messages.Common;
 using EventBus.Messages.Events;
 using MassTransit;
-using MediatR;
+using Common.Mediator;
 using Ordering.Application.Commands;
 
 

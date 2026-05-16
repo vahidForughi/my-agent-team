@@ -1,3 +1,4 @@
+using Common.Mediator;
 using Asp.Versioning;
 using Catalog.Application.Handlers;
 using Catalog.Core.Repositories;
@@ -62,7 +63,7 @@ var assemblies = new Assembly[]
     Assembly.GetExecutingAssembly(),
     typeof(GetAllBrandsHandler).Assembly
 };
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(assemblies));
+builder.Services.AddMediator(assemblies);
 
 //Register Application Services
 builder.Services.AddScoped<ICatalogContext, CatalogContext>();

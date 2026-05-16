@@ -1,4 +1,4 @@
-using MediatR;
+using Common.Mediator;
 using Microsoft.AspNetCore.Mvc;
 using Ordering.Application.Queries;
 using Ordering.Application.Responses;

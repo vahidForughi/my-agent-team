@@ -1,7 +1,7 @@
 using Ordering.Application.Mappers;
 using EventBus.Messages.Events;
 using MassTransit;
-using MediatR;
+using Common.Mediator;
 using Ordering.Application.Commands;
 
 namespace Ordering.API.EventBusConsumer;

@@ -1,4 +1,4 @@
-﻿using MediatR;
+﻿using Common.Mediator;
 using Microsoft.Extensions.Logging;
 
 namespace Ordering.Application.Behaviour;

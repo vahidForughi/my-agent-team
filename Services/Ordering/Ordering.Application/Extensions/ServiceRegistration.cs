@@ -1,5 +1,5 @@
 ﻿using FluentValidation;
-using MediatR;
+using Common.Mediator;
 using Microsoft.Extensions.DependencyInjection;
 using Ordering.Application.Behaviour;
 using Ordering.Application.Mappers;
@@ -13,7 +13,7 @@ public static class ServiceRegistration
     {
         // Mapperly source-generated mapper (replaces AutoMapper).
         services.AddSingleton<OrderMapper>();
-        services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
+        services.AddMediator(Assembly.GetExecutingAssembly());
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehaviour<,>));
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(UnhandledExceptionBehaviour<,>));

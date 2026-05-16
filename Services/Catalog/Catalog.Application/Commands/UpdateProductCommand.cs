@@ -1,5 +1,5 @@
 ﻿using Catalog.Core.Entities;
-using MediatR;
+using Common.Mediator;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Bson;
 

@@ -1,5 +1,5 @@
 using Ordering.Application.Mappers;
-using MediatR;
+using Common.Mediator;
 using Ordering.Application.Queries;
 using Ordering.Application.Responses;
 using Ordering.Core.Repositories;

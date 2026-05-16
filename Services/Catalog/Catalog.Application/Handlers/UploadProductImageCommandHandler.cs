@@ -1,6 +1,6 @@
 using Catalog.Application.Commands;
 using Catalog.Core.Services;
-using MediatR;
+using Common.Mediator;
 using Microsoft.Extensions.Logging;
 
 namespace Catalog.Application.Handlers;
