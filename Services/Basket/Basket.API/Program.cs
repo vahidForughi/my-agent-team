@@ -1,3 +1,4 @@
+using Common.Mediator;
 using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
 using Basket.Application.GrpcService;
@@ -81,8 +82,7 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// Register AutoMapper
-builder.Services.AddAutoMapper(typeof(Program).Assembly);
+// Mapperly mappers are accessed via static BasketMapper.Instance — no DI registration needed.
 
 // Register Mediatr
 var assemblies = new Assembly[]
@@ -90,7 +90,7 @@ var assemblies = new Assembly[]
     Assembly.GetExecutingAssembly(),
     typeof(CreateShoppingCartCommandHandler).Assembly
 };
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(assemblies));
+builder.Services.AddMediator(assemblies);
 
 // Redis
 builder.Services.AddStackExchangeRedisCache(options =>
@@ -125,7 +125,6 @@ builder.Services.AddMassTransit(config =>
         });
     });
 });
-builder.Services.AddMassTransitHostedService();
 
 var app = builder.Build();
 

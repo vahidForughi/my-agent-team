@@ -2,7 +2,7 @@
 using Catalog.Application.Queries;
 using Catalog.Application.Responses;
 using Catalog.Core.Repositories;
-using MediatR;
+using Common.Mediator;
 
 namespace Catalog.Application.Handlers;
 
@@ -18,7 +18,7 @@ public class GetProductByNameQueryHandler : IRequestHandler<GetProductByNameQuer
     public async Task<IList<ProductResponse>> Handle(GetProductByNameQuery request, CancellationToken cancellationToken)
     {
         var productList = await _productRepository.GetProductsByName(request.Name);
-        var productResponseList = ProductMapper.Mapper.Map<IList<ProductResponse>>(productList);
+        var productResponseList = ProductMapper.Instance.ToProductResponseList(productList);
         return productResponseList;
     }
 }

@@ -2,7 +2,7 @@
 using Discount.Application.Queries;
 using Discount.Grpc.Protos;
 using Grpc.Core;
-using MediatR;
+using Common.Mediator;
 
 namespace Discount.API.Services;
 

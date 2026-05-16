@@ -1,6 +1,8 @@
+using Common.Mediator;
 using Common.Logging;
 using Discount.API.Services;
 using Discount.Application.Handlers;
+using Discount.Application.Mapper;
 using Discount.Core.Repositories;
 using Discount.Infrastructure.Extensions;
 using Discount.Infrastructure.Repositories;
@@ -30,8 +32,8 @@ builder.Services.AddOpenTelemetry()
             });
     });
 
-//Register AutoMapper
-builder.Services.AddAutoMapper(typeof(Program).Assembly);
+// Register Mapperly mappers (source-generated, replaces AutoMapper)
+builder.Services.AddSingleton<DiscountMapper>();
 
 //Register Mediatr
 var assemblies = new Assembly[]
@@ -39,7 +41,7 @@ var assemblies = new Assembly[]
     Assembly.GetExecutingAssembly(),
     typeof(CreateDiscountCommandHandler).Assembly
 };
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(assemblies));
+builder.Services.AddMediator(assemblies);
 builder.Services.AddScoped<IDiscountRepository, DiscountRepository>();
 builder.Services.AddGrpc();
 

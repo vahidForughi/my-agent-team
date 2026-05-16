@@ -1,4 +1,4 @@
-using MediatR;
+using Common.Mediator;
 using Ordering.Application.Responses;
 
 namespace Ordering.Application.Queries;

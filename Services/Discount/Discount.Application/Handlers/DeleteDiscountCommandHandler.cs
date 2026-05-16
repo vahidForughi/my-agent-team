@@ -1,6 +1,6 @@
 ﻿using Discount.Application.Commands;
 using Discount.Core.Repositories;
-using MediatR;
+using Common.Mediator;
 
 namespace Discount.Application.Handlers;
 

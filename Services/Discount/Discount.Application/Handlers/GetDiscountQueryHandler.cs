@@ -2,7 +2,7 @@ using Discount.Application.Queries;
 using Discount.Core.Repositories;
 using Discount.Grpc.Protos;
 using Grpc.Core;
-using MediatR;
+using Common.Mediator;
 using Microsoft.Extensions.Logging;
 
 namespace Discount.Application.Handlers;

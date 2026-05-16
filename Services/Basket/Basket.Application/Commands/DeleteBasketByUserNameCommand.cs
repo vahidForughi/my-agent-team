@@ -1,4 +1,4 @@
-﻿using MediatR;
+﻿using Common.Mediator;
 
 namespace Basket.Application.Commands;
 

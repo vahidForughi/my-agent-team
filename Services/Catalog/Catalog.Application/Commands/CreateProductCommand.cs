@@ -1,6 +1,6 @@
 ﻿using Catalog.Application.Responses;
 using Catalog.Core.Entities;
-using MediatR;
+using Common.Mediator;
 
 namespace Catalog.Application.Commands;
 

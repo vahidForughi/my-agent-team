@@ -1,5 +1,5 @@
 ﻿using FluentValidation;
-using MediatR;
+using Common.Mediator;
 
 namespace Ordering.Application.Behaviour;
 

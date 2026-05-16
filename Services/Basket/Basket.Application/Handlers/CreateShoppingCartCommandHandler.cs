@@ -3,7 +3,7 @@ using Basket.Application.Mappers;
 using Basket.Application.Responses;
 using Basket.Core.Repositories;
 using Basket.Core.Entities;
-using MediatR;
+using Common.Mediator;
 using Basket.Application.GrpcService;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -55,7 +55,6 @@ public class CreateShoppingCartCommandHandler : IRequestHandler<CreateShoppingCa
             UserName = request.UserName,
             Items = request.Items
         });
-        var shoppingCartResponse = BasketMapper.Mapper.Map<ShoppingCartResponse>(shoppingCart);
-        return shoppingCartResponse;
+        return BasketMapper.Instance.ToShoppingCartResponse(shoppingCart);
     }
 }

@@ -1,4 +1,4 @@
-using MediatR;
+using Common.Mediator;
 using Microsoft.AspNetCore.Http;
 
 namespace Catalog.Application.Commands;

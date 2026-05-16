@@ -1,3 +1,4 @@
+using Common.Mediator;
 using Asp.Versioning;
 using Catalog.Application.Handlers;
 using Catalog.Core.Repositories;
@@ -54,8 +55,7 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "Catalog.API", Version = "v1" });
 });
 
-//Register AutoMapper
-builder.Services.AddAutoMapper(typeof(Program).Assembly);
+// Mapperly mappers are accessed via static ProductMapper.Instance — no DI registration needed.
 
 //Register Mediatr
 var assemblies = new Assembly[]
@@ -63,7 +63,7 @@ var assemblies = new Assembly[]
     Assembly.GetExecutingAssembly(),
     typeof(GetAllBrandsHandler).Assembly
 };
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(assemblies));
+builder.Services.AddMediator(assemblies);
 
 //Register Application Services
 builder.Services.AddScoped<ICatalogContext, CatalogContext>();
@@ -146,7 +146,6 @@ builder.Services.AddMassTransit(config =>
         cfg.Host(builder.Configuration["EventBusSettings:HostAddress"]);
     });
 });
-builder.Services.AddMassTransitHostedService();
 
 var app = builder.Build();
 

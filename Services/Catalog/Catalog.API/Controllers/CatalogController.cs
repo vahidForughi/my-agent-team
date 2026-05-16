@@ -4,7 +4,7 @@ using Catalog.Application.Responses;
 using Catalog.Core.Specs;
 using EventBus.Messages.Events;
 using MassTransit;
-using MediatR;
+using Common.Mediator;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 

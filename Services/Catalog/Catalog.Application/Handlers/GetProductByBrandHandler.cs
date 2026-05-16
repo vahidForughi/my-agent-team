@@ -2,7 +2,7 @@
 using Catalog.Application.Queries;
 using Catalog.Application.Responses;
 using Catalog.Core.Repositories;
-using MediatR;
+using Common.Mediator;
 
 namespace Catalog.Application.Handlers;
 
@@ -19,7 +19,7 @@ public class GetProductByBrandHandler : IRequestHandler<GetProductByBrandQuery, 
         CancellationToken cancellationToken)
     {
         var productList = await _productRepository.GetProductsByBrand(request.BrandName);
-        var productResponseList = ProductMapper.Mapper.Map<IList<ProductResponse>>(productList);
+        var productResponseList = ProductMapper.Instance.ToProductResponseList(productList);
         return productResponseList;
     }
 }

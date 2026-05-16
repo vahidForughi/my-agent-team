@@ -3,7 +3,7 @@ using Catalog.Application.Mappers;
 using Catalog.Application.Responses;
 using Catalog.Core.Entities;
 using Catalog.Core.Repositories;
-using MediatR;
+using Common.Mediator;
 
 namespace Catalog.Application.Handlers;
 
@@ -21,12 +21,12 @@ public class CreateTypeCommandHandler : IRequestHandler<CreateTypeCommand, Types
     if (string.IsNullOrWhiteSpace(request.Name))
       throw new ArgumentException("Type name is required", nameof(request.Name));
 
-    var typeEntity = ProductMapper.Mapper.Map<ProductType>(request);
+    var typeEntity = ProductMapper.Instance.ToProductType(request);
     if (typeEntity is null)
       throw new ApplicationException("There is an issue with mapping while creating new type");
 
     var newType = await _typesRepository.CreateType(typeEntity);
-    var typeResponse = ProductMapper.Mapper.Map<TypesResponse>(newType);
+    var typeResponse = ProductMapper.Instance.ToTypesResponse(newType);
     return typeResponse;
   }
 }

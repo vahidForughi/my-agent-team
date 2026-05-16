@@ -1,5 +1,5 @@
 ﻿using Basket.Application.Responses;
-using MediatR;
+using Common.Mediator;
 
 namespace Basket.Application.Queries;
 
