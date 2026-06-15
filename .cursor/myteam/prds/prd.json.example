@@ -1,0 +1,62 @@
+{
+  "project": "cloud-native-ecommerce-platform",
+  "prdId": "PRD-001",
+  "branchName": "myteam/feature-kebab-name",
+  "description": "One-line description of the feature this PRD delivers.",
+  "defaultParallelism": 2,
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Add the data model / migration",
+      "description": "As a developer, I need to persist X so it survives restarts.",
+      "acceptanceCriteria": [
+        "Add column/table with sensible default",
+        "Migration runs cleanly",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": "",
+      "agents": [
+        { "role": "backend-architect", "count": 1 }
+      ],
+      "parallelism": 1
+    },
+    {
+      "id": "US-002",
+      "title": "Expose it through the API",
+      "description": "As a client, I want an endpoint to read/write X so the UI can use it.",
+      "acceptanceCriteria": [
+        "New endpoint documented and wired through the gateway",
+        "Contract tests pass",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "",
+      "agents": [
+        { "role": "backend-architect", "count": 2 },
+        { "role": "api-tester", "count": 1 }
+      ],
+      "parallelism": 3
+    },
+    {
+      "id": "US-003",
+      "title": "Show it in the UI",
+      "description": "As a user, I want to see X so I can act on it.",
+      "acceptanceCriteria": [
+        "Component renders X with loading/empty/error states",
+        "Typecheck passes",
+        "Verify in browser (screenshot for the progress log)"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "",
+      "agents": [
+        { "role": "frontend-developer", "count": 1 },
+        { "role": "evidence-collector", "count": 1 }
+      ],
+      "parallelism": 2
+    }
+  ]
+}

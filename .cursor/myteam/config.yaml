@@ -1,0 +1,43 @@
+# myteam — custom harness config
+# Inspired by Ralph (prd.json loop + progress.txt) and OpenSpec (.cursor commands/skills).
+# This file is read by the myteam skills/commands as shared context.
+
+schema: prd-driven
+project: cloud-native-ecommerce-platform
+
+# Project context shown to agents when generating a PRD or executing stories.
+# Fill in tech stack, conventions, and domain knowledge during onboarding.
+context: |
+  Cloud-native e-commerce platform.
+  Tech stack: .NET microservices (Services/), Ocelot API gateways (ApiGateways/),
+  React client (client/) + micro-frontends (micro-frontends/),
+  Terraform/Helm/Istio infra (Infrastructure/, Deployments/, terraform/), observability (monitoring/).
+  We use conventional commits. Branches: myteam/<feature-kebab>.
+
+# Defaults used by /myteam-run and /myteam-harness.
+defaults:
+  branchPrefix: myteam/
+  defaultParallelism: 2
+  qualityGates:
+    - typecheck
+    - lint
+    - test
+  uiVerification: "Verify in browser (screenshot for the progress log)"
+  stopSignal: "<promise>COMPLETE</promise>"
+
+# Agent registry — roles map 1:1 to .cursor/agents/<role>.md and .cursor/rules/<role>.mdc.
+# prd.json userStories[].agents[].role MUST be one of these.
+agents:
+  - role: product-manager        # owns /myteam-run: turns intent into prd.json
+  - role: backend-architect      # services, APIs, data models, infra design
+  - role: frontend-developer     # client/ and micro-frontends/ UI work
+  - role: api-tester             # API functional/perf/security validation
+  - role: devops-automator       # DevOps Engineer: CI/CD pipelines, AWS EKS/ECR, Terraform, Helm, Istio, observability
+  - role: code-reviewer          # correctness/security/maintainability review
+  - role: evidence-collector     # screenshot-backed QA, reality checks
+
+# Per-artifact rules (optional). Add custom constraints during onboarding.
+# rules:
+#   prd:
+#     - Keep each user story completable in one focused session
+#     - Always end acceptance criteria with "Typecheck passes"
