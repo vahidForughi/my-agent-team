@@ -5,7 +5,7 @@ The full version lives in `.cursor/skills/myteam-harness/SKILL.md`.
 
 ## Each iteration (fresh context)
 
-1. Read the active `prds/current/<prd>/prd.json` and its `progress.txt` (read the **Codebase Patterns** section at the top first).
+1. Read the active `prds/current/<prd>/prd.json` and its `progress.txt` (read the **Codebase Patterns** section at the top first). For each part the story touches, also read `.cursor/rules/workspace/_<part>/AGENT.md`.
 2. Verify you are on the branch named in `prd.json.branchName` (`myteam/<feature>`). If not, check it out or create it from `main`.
 3. Pick the **highest-priority** user story where `passes: false`.
 4. Read that story's `agents[]`. Delegate the work to those roles (defined in `.cursor/agents/`), spawning up to each role's `count`, capped by the story's `parallelism` (fallback: `config.yaml > defaults.defaultParallelism`).
@@ -13,8 +13,8 @@ The full version lives in `.cursor/skills/myteam-harness/SKILL.md`.
 6. Run the quality gates from `config.yaml` (typecheck / lint / test); for UI stories, verify in the browser.
 7. Commit all changes: `feat: [US-id] - [Story Title]`.
 8. Set `passes: true` for that story in `prd.json`.
-9. **Append** (never overwrite) a dated entry to `progress.txt` with what changed and a **Learnings** block.
-10. Promote any reusable, general pattern to the `## Codebase Patterns` section at the top of `progress.txt`, and to the nearest `.cursor/rules/workspace/_<part>/AGENT.md` when it's part-specific.
+9. **Append** (never overwrite) a dated entry to the PRD `progress.txt` with what changed and a **Learnings** block.
+10. Promote any reusable, general pattern to the `## Codebase Patterns` section at the top of the PRD `progress.txt`, and promote durable part-specific patterns into that part's `.cursor/rules/workspace/_<part>/AGENT.md`.
 
 ## Stop condition
 

@@ -15,7 +15,7 @@
       ],
       "priority": 1,
       "passes": false,
-      "notes": "Template only — replace with a real PRD via /myteam-run.",
+      "notes": "Template only — replace with a real PRD via /myteam-do.",
       "agents": [
         { "role": "product-manager", "count": 1 }
       ],

@@ -1,6 +1,6 @@
 ---
 name: prd
-description: "Generate a PRD and emit prd.json for the myteam harness. Each user story is assigned agent roles (from .cursor/agents/) with parallel counts. Use when planning a feature or when asked to create a PRD / spec out work. Triggers: create a prd, plan this feature, requirements for, spec out, /myteam-run."
+description: "Generate a PRD and emit prd.json for the myteam harness. Each user story is assigned agent roles (from .cursor/agents/) with parallel counts. Use when planning a feature or when asked to create a PRD / spec out work. Triggers: create a prd, plan this feature, requirements for, spec out, /myteam-do."
 license: MIT
 compatibility: Reads .cursor/myteam/config.yaml and .cursor/agents/. Output follows .cursor/myteam/prds/prd.json.example.
 metadata:

@@ -1,6 +1,6 @@
 ---
-name: /myteam-run
-id: myteam-run
+name: /myteam-do
+id: myteam-do
 category: Harness
 description: Product-manager generates a prd.json (with agent assignments), then the harness loop implements it
 ---
@@ -9,8 +9,16 @@ Create and execute a PRD with the **myteam** harness.
 
 This command has two phases: **plan** (generate `prd.json`) then **execute** (the merged loop).
 
-**Input**: the argument after `/myteam-run` is a feature description, OR an existing PRD name
+**Input**: the argument after `/myteam-do` is a feature description, OR an existing PRD name
 under `prds/current/` to resume.
+
+**Step 0 — Guard — require scaffolding (hard stop).** Before anything else, check the harness
+scaffold exists: `.cursor/myteam/config.yaml` and `.cursor/myteam/prds/`. If either is missing, STOP
+and do not generate or execute a PRD:
+> Stop. The harness isn't initialized. Run `/myteam-task` first (and `/myteam-onboard` before that if
+> you haven't), then re-run `/myteam-do`.
+Only continue to Phase 1 when the scaffold is present. (`/myteam-task` itself requires onboarding, so
+this transitively guarantees the repo was onboarded.)
 
 **Phase 1 — Plan (product-manager + `prd` skill)**
 
@@ -32,9 +40,11 @@ under `prds/current/` to resume.
 **Phase 2 — Execute (myteam-harness loop)**
 
 6. Load the **`myteam-harness`** skill (`.cursor/skills/myteam-harness/SKILL.md`) and run the loop:
-   pick the highest-priority story with `passes: false` → spawn its assigned agents (up to
-   `count` / `parallelism`) → reconcile → quality gates → commit `feat: [US-id] - [title]` →
-   set `passes: true` → append a dated **Learnings** block to `progress.txt`.
+   pick the highest-priority story with `passes: false` → read each touched part's
+   `.cursor/rules/workspace/_<part>/AGENT.md` and hand it to the agents → spawn its assigned agents
+   (up to `count` / `parallelism`) → reconcile → quality gates → commit `feat: [US-id] - [title]` →
+   set `passes: true` → append a dated **Learnings** block to the PRD `progress.txt`, promoting
+   durable part-specific learnings into that part's `AGENT.md`.
 7. Repeat until every story passes, then emit `<promise>COMPLETE</promise>`.
 
 **Output**: the PRD location, per-story status, and the stop signal when complete.

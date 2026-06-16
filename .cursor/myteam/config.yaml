@@ -14,7 +14,7 @@ context: |
   Terraform/Helm/Istio infra (Infrastructure/, Deployments/, terraform/), observability (monitoring/).
   We use conventional commits. Branches: myteam/<feature-kebab>.
 
-# Defaults used by /myteam-run and /myteam-harness.
+# Defaults used by /myteam-do and /myteam-harness.
 defaults:
   branchPrefix: myteam/
   defaultParallelism: 2
@@ -28,7 +28,7 @@ defaults:
 # Agent registry — roles map 1:1 to .cursor/agents/<role>.md and .cursor/rules/<role>.mdc.
 # prd.json userStories[].agents[].role MUST be one of these.
 agents:
-  - role: product-manager        # owns /myteam-run: turns intent into prd.json
+  - role: product-manager        # owns /myteam-do: turns intent into prd.json
   - role: backend-architect      # services, APIs, data models, infra design
   - role: frontend-developer     # client/ and micro-frontends/ UI work
   - role: api-tester             # API functional/perf/security validation
@@ -36,8 +36,26 @@ agents:
   - role: code-reviewer          # correctness/security/maintainability review
   - role: evidence-collector     # screenshot-backed QA, reality checks
 
-# Per-artifact rules (optional). Add custom constraints during onboarding.
-# rules:
-#   prd:
-#     - Keep each user story completable in one focused session
-#     - Always end acceptance criteria with "Typecheck passes"
+# Per-artifact rules. Constraints applied to each artifact the harness produces.
+# Add or tighten these during onboarding.
+rules:
+  prd:
+    - Keep each user story completable in one focused session
+    - Order stories by dependency (schema -> backend -> API -> UI); no forward dependencies
+    - Acceptance criteria must be verifiable, not vague; always end with "Typecheck passes"
+    - UI stories must include a browser-verification criterion (screenshot for the log)
+    - Every story must assign agents[] using roles from this registry, plus a parallelism cap
+    - branchName must be "myteam/<feature-kebab>"; prd.json must validate as JSON
+  progress:
+    - Append-only; never overwrite or delete prior entries
+    - One dated block per completed story, with a "Learnings for future iterations" section
+    - Keep only general, reusable patterns in the top "## Codebase Patterns" section
+  workspace:
+    - Parts mirror the repo tree; sub-parts nest under their parent (e.g. _services/_basket/, _deployments/_helm/)
+    - Every part dir has two files; AGENT.md (curated onboarding doc + Patterns/Gotchas) and <part>.mdc (native Cursor rule)
+    - <part>.mdc frontmatter; leaf parts set globs to the part's repo paths, parent parts use description only; alwaysApply false; the body stays short and @-references AGENT.md
+    - Part-specific patterns belong in that part's AGENT.md
+  commit:
+    - Conventional commits; one story per commit: "feat: [US-id] - [Story Title]"
+    - Quality gates (defaults.qualityGates) must pass before committing; never commit broken code
+    - Keep each commit focused and minimal; follow existing code patterns
