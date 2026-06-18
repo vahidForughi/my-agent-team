@@ -1,11 +1,11 @@
 ---
 name: prd
-description: "Generate a PRD and emit prd.json for the myteam harness. Each user story is assigned agent roles (from .claude/agents/) with parallel counts. Use when planning a feature or when asked to create a PRD / spec out work. Triggers: create a prd, plan this feature, requirements for, spec out, /myteam-do."
+description: "Generate a PRD and emit prd.json for the myteam execute. Each user story is assigned agent roles (from .claude/agents/) with parallel counts. Use when planning a feature or when asked to create a PRD / spec out work. Triggers: create a prd, plan this feature, requirements for, spec out, /myteam-execute."
 ---
 
 # PRD Generator (myteam)
 
-Produce a clear, implementation-ready PRD and emit it as `prd.json` for the harness.
+Produce a clear, implementation-ready PRD and emit it as `prd.json` for the execute.
 `prd` skill, **extended** so every story is assigned agent roles + a parallel count.
 
 **Do NOT implement.** This skill only produces the PRD.
@@ -41,7 +41,7 @@ Rules:
 ## Step 3 — Assign agents per story (the myteam extension)
 
 For every story, choose the agent roles that should do the work and how many run in parallel.
-Roles MUST come from `.claude/agents/` (registry in `.claude/myteam/config.yaml`); the harness spawns
+Roles MUST come from `.claude/agents/` (registry in `.claude/myteam/config.yaml`); the execute spawns
 each via the Agent tool with `subagent_type: "<role>"`:
 
 | Work in the story | Likely roles |

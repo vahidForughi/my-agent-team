@@ -1,7 +1,7 @@
-# myteam — harness agent guidance
+# myteam — execute agent guidance
 
-This is the condensed loop strategy for any agent executing a PRD under this harness.
-The full version lives in `.cursor/skills/myteam-harness/SKILL.md`.
+This is the condensed loop strategy for any agent executing a PRD under this execute.
+The full version lives in `.cursor/skills/myteam-execute/SKILL.md`.
 
 ## Each iteration (fresh context)
 

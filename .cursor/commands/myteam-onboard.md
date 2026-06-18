@@ -1,7 +1,7 @@
 ---
 name: /myteam-onboard
 id: myteam-onboard
-category: Harness
+category: Myteam
 description: Research the repo and fill part AGENT.md files, .cursor/rules/workspace/<part>/*.mdc rules, and .cursor/skills/workspace/<part>/SKILL.md for every part in config.yaml
 ---
 

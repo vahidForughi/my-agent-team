@@ -3,7 +3,7 @@ description: Archive a completed or superseded PRD to prds/archive/YYYY-MM-DD-<n
 argument-hint: [PRD name under prds/current/]
 ---
 
-Archive a PRD with the **myteam** harness.
+Archive a PRD with the **myteam** execute.
 
 **Input** (`$ARGUMENTS`): the PRD name under `prds/current/`.
 If omitted and exactly one PRD is in `current/`, use it; otherwise ask which one.
@@ -22,6 +22,6 @@ If omitted and exactly one PRD is in `current/`, use it; otherwise ask which one
 
 **Guardrails**
 - Never delete PRD content — only move it.
-- Do not archive the `_example-prd/` template.
+- Never delete PRD content — the example `progress.txt` lives at `prds/progress.txt` and is not a PRD dir.
 - Use today's date for the prefix; do not overwrite an existing archive dir of the same name
   (append a numeric suffix if it already exists).

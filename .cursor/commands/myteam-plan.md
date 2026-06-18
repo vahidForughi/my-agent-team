@@ -1,47 +1,41 @@
 ---
-name: /myteam-task
-id: myteam-task
-category: Harness
+name: /myteam-plan
+id: myteam-plan
+category: Myteam
 description: Turn a backlog-task description into a prd.json of specific technical tasks (product-manager leads, specialist subagents help). Writes the current PRD only — no scaffolding, no execution, no commits.
 ---
 
 Turn **one backlog task** into an implementation-ready `prd.json`: decompose it into **specific
 technical tasks** (the `userStories`) such that **completing every task means the backlog task is
 done** — nothing left implied. This command **only writes the current PRD**; it makes no other
-changes (no scaffolding, no code, no branch/commit, no execution — `/myteam-do` runs it later).
+changes (no scaffolding, no code, no branch/commit, no execution — `/myteam-execute` runs it later).
 
-**Input**: the argument after `/myteam-task` is the **backlog-task description** (free text). It may
+**Input**: the argument after `/myteam-plan` is the **backlog-task description** (free text). It may
 come straight from a `backlog-tasks.csv` row (`id` + `title` + `description`).
 
 **Steps**
 
 0. **Guard — require onboarding (hard stop).** Check for `.cursor/myteam/workspace-parts.yaml`. If it
    does **not** exist or is empty, STOP:
-   > Stop. This repo hasn't been onboarded yet. Run `/myteam-onboard` first, then re-run `/myteam-task`.
+   > Stop. This repo hasn't been onboarded yet. Run `/myteam-onboard` first, then re-run `/myteam-plan`.
    Planning needs the workspace part docs to break the task down technically.
 
-1. **Understand the backlog task.** Load the **`prd`** skill (`.cursor/skills/prd/SKILL.md`) and the
-   output contract `.cursor/myteam/prds/prd.json.example`. Load `.cursor/myteam/workspace-parts.yaml`
-   to build a map of available parts (name, dir, category, kebab). Read the relevant parts' repo-dir
-   `.cursor/skills/workspace/<part-dir>/SKILL.md`, `.cursor/rules/workspace/<part-dir>/<part-name>.md` 
-   and ./<part-dir>/AGENT.md so the breakdown is grounded in the real architecture (paths, stack, interfaces,
-   gotchas). If the task is ambiguous, ask the `prd` skill's clarifying questions (lettered options)
-   before decomposing.
-
-2. **Break it into technical tasks — product-manager leads, subagents help.** Adopt the
-   **product-manager** role (`.cursor/agents/product-manager.md`) as lead. Consult the specialist
-   subagents that exist in `.cursor/agents/` to decompose the backlog task into *specific, technical*
-   user stories — e.g. `backend-architect` (services/APIs/data/infra), `frontend-developer`
-   (`client/` + `micro-frontends/`), `api-tester` / `evidence-collector` (verification),
-   `devops-automator` (CI/CD & deploy), `code-reviewer` (review gates). Each story = **one focused
-   technical task**: dependency-ordered (schema → backend → API → UI, no forward deps), sized for one
-   session, with verifiable acceptance criteria ending in `Typecheck passes` (+ a browser-verify line
-   for UI).
-
-   Every story must be assigned a **`part`** from `workspace-parts.yaml` — the closest matching leaf
-   part, or its top-level parent if no leaf is a better fit. Use the part's `category` to select
-   agents (`agents[]` entries are `{"role": "..."}` — no `count`).
-   Example:
+1. Adopt the **product-manager** role (`.cursor/agents/product-manager.md`).
+2. Load the **`prd`** skill (`.cursor/skills/prd/SKILL.md`). Ask its clarifying questions
+   (lettered options) unless the description is already unambiguous.
+3. Produce a `prd.json` that follows `prds/prd.json.example`:
+   - **Breakdown Task** to grounded and technical use stories in the real architecture (paths, stack, interfaces,
+     gotchas). Can use `.cursor/myteam/workspace-parts.yaml` and its relevant contexts:
+     `.cursor/skills/workspace/<part-dir>/SKILL.md`, `.cursor/rules/workspace/<part-dir>/<part-name>.md`
+     and `./<part-dir>/AGENT.md`. If the task is ambiguous, ask the `prd` skill's clarifying questions (lettered options)
+     before decomposing.
+   - relate task to the `part` from `.cursor/myteam/workspace-parts.yaml`. Each user story should relate to one part.
+   - Stories ordered by `priority` with **no forward dependencies**.
+   - Each story sized for one focused session; acceptance criteria verifiable and ending with
+     `Typecheck passes`; UI stories include a browser-verify line.
+   - **Assign agents per story**: `agents: [{ "role" }]` using roles from
+     `.cursor/agents/` (registry in `config.yaml`) and considering `part`. Pick roles by the
+     work considering part's category and type, Example:
 
    | part category                  | default agents |
    |--------------------------------|---|
@@ -53,12 +47,12 @@ come straight from a `backlog-tasks.csv` row (`id` + `title` + `description`).
    | `automation`, `tools`          | `devops-automator` / `api-tester` |
    | `docs`                         | `code-reviewer` |
    | all                            | `code-reviewer` |
-   
-   A story touching multiple categories may list roles from both. Leave stories on
-   `config.yaml > defaults.model`; set a story's optional `model` to a stronger tier only for
-   genuinely hard stories, justified in `notes`.
 
-3. **Guarantee completeness (the key rule).** The set of technical tasks **must fully cover** the
+4. Write it to `prds/current/<feature-kebab>/prd.json` and create an empty
+   `progress.txt` (seed the `## Codebase Patterns` header). Confirm `branchName` is `myteam/<feature-kebab>`.
+5. Show the PRD summary and ask the user to confirm before executing.
+
+6. **Guarantee completeness (the key rule).** The set of technical tasks **must fully cover** the
    backlog task: when every story has `passes: true`, the backlog task is satisfied — no gap, nothing
    unstated. Make this explicit — record the backlog task's done-definition in the PRD `description`
    and ensure the union of all stories' acceptance criteria delivers it. If you can't cover it
@@ -71,7 +65,7 @@ come straight from a `backlog-tasks.csv` row (`id` + `title` + `description`).
    `userStories[]` = the technical tasks. Each story must include `part` (from workspace-parts.yaml)
    and `agents[]` (roles derived from that part's category). Seed an empty `progress.txt` next to it
    with the `## Codebase Patterns` header. Validate it is JSON and matches the example. Print the PRD
-   path and a one-line task list; suggest `/myteam-do` to execute it.
+   path and a one-line task list; suggest `/myteam-execute` to execute it.
 
 **Guardrails**
 - Write **only** the current PRD dir (`prd.json` + seeded `progress.txt`). Make **no other changes**

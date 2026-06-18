@@ -3,7 +3,7 @@
   "prdId": "PRD-001",
   "branchName": "myteam/feature-kebab-name",
   "description": "One-line description of the feature this PRD delivers.",
-  "defaultParallelism": 1,
+  "defaultParallelism": 2,
   "userStories": [
     {
       "id": "US-001",
@@ -17,10 +17,15 @@
       "priority": 1,
       "passes": false,
       "notes": "",
+      "part": {
+        "name": "Services",
+        "dir": "Services",
+        "category": "micro-service",
+        "kebab": "services"
+      },
       "agents": [
-        { "role": "backend-architect", "count": 1 }
-      ],
-      "parallelism": 1
+        { "role": "backend-architect" }
+      ]
     },
     {
       "id": "US-002",
@@ -33,12 +38,17 @@
       ],
       "priority": 2,
       "passes": false,
-      "notes": "Complex story — raised above the default 1: two independent backend sub-tasks plus a tester run concurrently. Optional `model` overrides defaults.model for this harder story; omit it (like US-001/US-003) to use the cheaper default tier.",
+      "notes": "Optional `model` overrides defaults.model for harder stories; omit to use the default tier.",
+      "part": {
+        "name": "Services",
+        "dir": "Services",
+        "category": "micro-service",
+        "kebab": "services"
+      },
       "agents": [
-        { "role": "backend-architect", "count": 2 },
-        { "role": "api-tester", "count": 1 }
+        { "role": "backend-architect" },
+        { "role": "api-tester" }
       ],
-      "parallelism": 3,
       "model": "opus"
     },
     {
@@ -53,11 +63,16 @@
       "priority": 3,
       "passes": false,
       "notes": "",
+      "part": {
+        "name": "MicroFrontends",
+        "dir": "micro-frontends",
+        "category": "micro-frontend",
+        "kebab": "micro-frontends"
+      },
       "agents": [
-        { "role": "frontend-developer", "count": 1 },
-        { "role": "evidence-collector", "count": 1 }
-      ],
-      "parallelism": 1
+        { "role": "frontend-developer" },
+        { "role": "evidence-collector" }
+      ]
     }
   ]
 }
