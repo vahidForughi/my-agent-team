@@ -1,0 +1,16 @@
+---
+alwaysApply: false
+globs: diagrams/**/*
+---
+
+# Diagrams Rules
+
+## Do's
+- **Do** keep diagrams updated with architectural changes.
+- **Do** use clear and consistent notation across all diagrams.
+
+## Don'ts
+- **Don't** leave diagrams undocumented or without context.
+- **Don't** create diagrams that are overly complex or difficult to understand.
+
+@../../../diagrams/AGENT.md

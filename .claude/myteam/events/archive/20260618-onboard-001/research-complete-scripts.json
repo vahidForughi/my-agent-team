@@ -1,0 +1,1 @@
+{"type":"research-complete","run-id":"20260618-onboard-001","part":"Scripts","dir":"scripts","kebab":"scripts","parent":null,"status":"done","artifacts":{"agent_md":"scripts/AGENT.md","claude_md":"scripts/CLAUDE.md","skill":".claude/skills/workspace/scripts/SKILL.md"},"depth-bar":"pass","sections-filled":11,"paths-verified":true,"notes":""}

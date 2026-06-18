@@ -1,0 +1,7 @@
+{
+  "part-name": "Istio",
+  "part-dir": "Deployments/istio",
+  "category": "infra",
+  "type": "istio",
+  "run-id": "20260618162023"
+}

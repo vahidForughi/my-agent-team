@@ -1,0 +1,18 @@
+{
+  "type": "research-complete",
+  "run-id": "20260618-onboard-001",
+  "part": "Ocelot.ApiGateway",
+  "dir": "ApiGateways/Ocelot.ApiGateway",
+  "kebab": "api-gateways/ocelot",
+  "parent": "ApiGateways",
+  "status": "done",
+  "artifacts": {
+    "agent_md": "ApiGateways/Ocelot.ApiGateway/AGENT.md",
+    "claude_md": "ApiGateways/Ocelot.ApiGateway/CLAUDE.md",
+    "skill": ".claude/skills/workspace/api-gateways/ocelot/SKILL.md"
+  },
+  "depth-bar": "pass",
+  "sections-filled": 11,
+  "paths-verified": true,
+  "notes": ""
+}

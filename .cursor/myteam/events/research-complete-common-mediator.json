@@ -1,0 +1,7 @@
+{
+  "part-name": "CommonMediator",
+  "part-dir": "Infrastructure/Common.Mediator",
+  "category": "shared-lib",
+  "type": "dotnet",
+  "run-id": "20260618162023"
+}

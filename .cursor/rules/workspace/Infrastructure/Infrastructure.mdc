@@ -1,0 +1,13 @@
+---
+description: Cross-cutting libraries and infra-as-code shared by all microservices.
+alwaysApply: false
+---
+
+## Do's
+- Refer to this rule for an overview of the platform's shared infrastructure components.
+- Consult individual infrastructure rules for deep-dives into each bounded context.
+
+## Don'ts
+- Do not modify shared infrastructure components without understanding their impact on all consuming microservices.
+
+@Infrastructure/AGENT.md

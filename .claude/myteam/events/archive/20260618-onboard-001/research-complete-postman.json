@@ -1,0 +1,1 @@
+{"type":"research-complete","run-id":"20260618-onboard-001","part":"postman","dir":"tools/postman","kebab":"tools/postman","parent":"Tools","status":"done","artifacts":{"agent_md":"tools/postman/AGENT.md","claude_md":"tools/postman/CLAUDE.md","skill":".claude/skills/workspace/tools/postman/SKILL.md"},"depth-bar":"pass","sections-filled":11,"paths-verified":true,"notes":""}

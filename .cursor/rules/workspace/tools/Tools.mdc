@@ -1,0 +1,14 @@
+---
+alwaysApply: false
+description: Guidance for the 'Tools' part of the codebase.
+---
+
+## Tools
+
+### Do
+- Use `tools/postman` for API testing.
+
+### Don't
+- Don't modify the Postman collections without understanding their impact on API testing.
+
+@tools/AGENT.md

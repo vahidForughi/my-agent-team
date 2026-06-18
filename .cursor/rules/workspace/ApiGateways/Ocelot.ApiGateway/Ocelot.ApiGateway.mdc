@@ -1,0 +1,21 @@
+---
+alwaysApply: false
+globs: ApiGateways/Ocelot.ApiGateway/**/*
+---
+This rule provides guidance for working with the Ocelot API Gateway.
+
+DO:
+- Refer to `ApiGateways/Ocelot.ApiGateway/Program.cs` for startup, CORS, and Ocelot middleware pipeline configuration.
+- Consult `ApiGateways/Ocelot.ApiGateway/ocelot.Development.json` for local/Docker Compose routing rules.
+- Consult `ApiGateways/Ocelot.ApiGateway/ocelot.k8s.json` for Kubernetes in-cluster routing rules.
+- Be aware that routes are JSON-only and upstream paths omit `/api/v1`.
+- Note environment-specific Ocelot configuration loaded via `ocelot.{ASPNETCORE_ENVIRONMENT}.json`.
+- Observe rate limiting on `/Basket/Checkout` and `/Basket/CheckoutV2` (1 request / 3s).
+- Note file caching on Catalog (30s) and Activity (10s) read routes.
+
+DON'T:
+- Assume authentication middleware is active despite `UseAuthorization()` calls; it is not configured.
+- Forget to keep `ocelot.k8s.json` and the corresponding Helm ConfigMap in sync.
+- Rely on `Ocelot.ApiGateway.http` as it is a stale template with incorrect port/endpoint information.
+
+@ApiGateways/Ocelot.ApiGateway/AGENT.md

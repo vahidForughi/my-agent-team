@@ -1,0 +1,1 @@
+{"type":"research-complete","run-id":"20260618-onboard-001","part":"Terraform","dir":"terraform","kebab":"terraform","parent":null,"status":"done","artifacts":{"agent_md":"terraform/AGENT.md","claude_md":"terraform/CLAUDE.md","skill":".claude/skills/workspace/terraform/SKILL.md"},"depth-bar":"pass","sections-filled":11,"paths-verified":true,"notes":""}

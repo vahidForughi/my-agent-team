@@ -1,0 +1,16 @@
+---
+alwaysApply: false
+globs: Infrastructure/Common.Mediator/**/*
+---
+## Do's
+- Implement new CQRS handlers using `IRequestHandler<TRequest, TResponse>` from `Common.Mediator`.
+- Ensure new handlers are discoverable by passing the containing assembly to `AddMediator(...)`.
+- Implement cross-cutting concerns using `IPipelineBehavior<TRequest, TResponse>`.
+- Use `IMediator.Send()` for dispatching commands and queries.
+
+## Don'ts
+- Do not assume support for notifications or streams; `Common.Mediator` only implements a subset of MediatR's features.
+- Avoid direct instantiation of `Mediator` or `RequestInvoker`; always use `IMediator` via DI.
+- Do not modify `Abstractions.cs` unless absolutely necessary and with careful consideration of breaking changes.
+
+@Infrastructure/Common.Mediator/AGENT.md

@@ -1,56 +1,52 @@
-# Common.Mediator
+# Codebase Orientation Map
 
-## What & Why
-The `Common.Mediator` project provides a simplified, in-process mediator implementation for request/response and pipeline behaviors within the application. It mirrors the functionality of MediatR, allowing for decoupling of command/query dispatch from their respective handlers and enabling cross-cutting concerns (like logging, validation, etc.) through pipeline behaviors. This promotes a clean, maintainable architecture by centralizing the dispatch mechanism and making it easy to extend.
+## 1-Line Summary
+Common.Mediator provides a simplified in-process mediator implementation for request/response and pipeline behaviors, mirroring a subset of MediatR's functionality.
 
-## Where it lives
-The core components are located in the `Infrastructure/Common.Mediator` directory:
-- `Abstractions.cs`: Defines the core interfaces for requests, handlers, and pipeline behaviors.
-- `Mediator.cs`: Implements the `IMediator` interface, handling request dispatch and pipeline execution.
-- `ServiceCollectionExtensions.cs`: Provides an extension method for registering mediator services with the DI container.
+## 5-Minute Explanation
+- **Primary tasks in code**: Handles in-process command and query dispatching, resolving `IRequestHandler` implementations, and composing `IPipelineBehavior` instances around handlers.
+- **Primary inputs**: `IRequest<TResponse>` instances for dispatch, `IServiceProvider` for dependency resolution, and assemblies for handler/behavior discovery.
+- **Primary outputs**: `Task<TResponse>` from request handlers, where `TResponse` can be `Unit` for void operations.
+- **Key files**:
+    - `Abstractions.cs`: Defines core interfaces like `IRequest`, `IRequestHandler`, `IPipelineBehavior`, and `IMediator`.
+    - `Mediator.cs`: Implements the `IMediator` interface, handling request dispatch and pipeline behavior composition using reflection.
+    - `ServiceCollectionExtensions.cs`: Provides an extension method `AddMediator` to register the mediator and discover handlers from specified assemblies.
+- **Main code paths**: A request is sent via `IMediator.Send()`, `Mediator` resolves the appropriate `IRequestHandler` and `IPipelineBehavior`s, executes the pipeline, and returns the result.
 
-## Tech Stack
-- C#
-- .NET
-- Microsoft.Extensions.DependencyInjection (for DI integration)
+## Deep Dive
+- **Type**: Library (shared-lib)
+- **Primary runtime(s)**: .NET
+- **Entry points**:
+  - `Abstractions.cs`: Defines the public contract for using the mediator pattern.
+  - `ServiceCollectionExtensions.cs`: The `AddMediator` extension method is the primary entry point for configuring the mediator in a .NET `IServiceCollection`.
+  - `Mediator.cs`: The `Send` method on `IMediator` is the runtime entry point for dispatching requests.
 
-## Build/Run/Test
-This is a library project, so it does not have a direct runnable entry point. It's consumed by other projects.
-To build, it's part of the larger solution. A typical build command would be:
-```bash
-dotnet build
-```
-Testing would involve unit tests in dependent projects that utilize the mediator.
+## Top-Level Structure
+| Path | Purpose | Notes |
+|------|---------|-------|
+| `Abstractions.cs` | Defines core interfaces | Public contract for mediator pattern |
+| `Mediator.cs` | Mediator implementation | Handles request dispatch and pipeline |
+| `ServiceCollectionExtensions.cs` | DI registration | Registers mediator, handlers, and behaviors |
 
-## Configuration
-The mediator itself does not have external configuration files. Its behavior is configured programmatically during service registration in the DI container.
-
-## Interfaces & Contracts
-- `IRequest<TResponse>`: Marker interface for a request that expects a `TResponse`.
-- `IRequest`: Marker interface for a request that does not expect a meaningful response (returns `Unit`).
-- `Unit`: A `struct` representing no meaningful return value, similar to MediatR's `Unit`.
-- `IRequestHandler<TRequest, TResponse>`: Interface for handling a specific request type and returning a response.
-- `IPipelineBehavior<TRequest, TResponse>`: Interface for intercepting requests and adding cross-cutting concerns.
-- `IMediator`: The main interface for sending requests and receiving responses.
-
-## Data & State
-The `Mediator` class uses a static `ConcurrentDictionary<Type, RequestInvoker>` to cache `RequestInvoker` instances, which helps in optimizing reflection performance for request dispatch. This cache holds metadata about how to invoke handlers and behaviors, but it does not store application-specific data or state.
-
-## Dependencies
-- `Microsoft.Extensions.DependencyInjection`: Used for registering and resolving handlers and behaviors from the DI container.
-
-## Patterns
-- **Mediator Pattern**: Centralizes communication between components, reducing direct dependencies.
-- **Pipeline Pattern**: Allows for the insertion of cross-cutting concerns (behaviors) around the core handler logic.
-- **Dependency Injection**: Leverages the .NET Core DI system for service resolution.
-- **Reflection**: Used internally by `Mediator.cs` to dynamically invoke handlers and pipeline behaviors.
-
-## Gotchas
-- **Handler Registration**: Forgetting to register the assemblies containing request handlers with `AddMediator` will result in runtime errors when dispatching requests.
-- **Missing Handlers**: If a request is sent for which no handler is registered, an `InvalidOperationException` will occur.
-- **Behavior Order**: Pipeline behaviors are wrapped from the inside out, meaning the first-registered behavior will execute first. This is important for understanding the order of operations.
-- **Performance**: While caching `RequestInvoker` instances mitigates some reflection overhead, excessive use of complex pipeline behaviors can impact performance.
-- **Synchronous Operations**: All `Handle` methods are `async` and return `Task<TResponse>`, enforcing an asynchronous programming model.
-
-## Owners
-The `Infrastructure` team is responsible for this component.
+## Key Boundaries
+- **Presentation**: Not applicable; this is a foundational library.
+- **Application/Domain**: Provides an in-process messaging mechanism for application and domain logic to communicate without direct dependencies. Handlers (implemented in application/domain layers) use the interfaces defined here.
+- **Persistence/External I/O**: Not directly involved in persistence or external I/O, but facilitates commands/queries that might trigger such operations in other layers.
+- **Cross-cutting concerns**: Pipeline behaviors (defined via `IPipelineBehavior`) allow for cross-cutting concerns like logging, validation, or error handling to be applied around request handlers.
+- **Responsibilities by file/module**:
+    - `Abstractions.cs`: Defines `IRequest<T>`, `IRequest`, `Unit`, `IRequestHandler<TRequest, TResponse>`, `RequestHandlerDelegate<TResponse>`, `IPipelineBehavior<TRequest, TResponse>`, `IMediator`.
+    - `Mediator.cs`: `Mediator` class implements `IMediator`, using a `ConcurrentDictionary` cache for `RequestInvoker`s. `RequestInvoker` uses reflection to build handler and behavior invocation chains.
+    - `ServiceCollectionExtensions.cs`: `AddMediator` method registers `IMediator` as a singleton and `IRequestHandler` implementations as transient services.
+- **Detailed code flows**:
+  1. A request (`IRequest<TResponse>`) is sent via `IMediator.Send(request, cancellationToken)`.
+  2. The `Mediator` class looks up or builds a `RequestInvoker` for the request type.
+  3. The `RequestInvoker.Invoke` method resolves the appropriate `IRequestHandler` and any registered `IPipelineBehavior` instances from the `IServiceProvider`.
+  4. The `RequestInvoker` constructs a delegate chain, starting with the `IRequestHandler`'s `Handle` method as the innermost call.
+  5. Each `IPipelineBehavior`'s `Handle` method is wrapped around the inner delegate, from the last registered to the first, ensuring the first-registered behavior executes first.
+  6. The composed delegate chain is invoked, and the `Task<TResponse>` result is returned.
+- **How the pieces map together**: Consumers inject `IMediator` and send `IRequest` instances. Application-specific command/query handlers implement `IRequestHandler`. Cross-cutting concerns implement `IPipelineBehavior`. `ServiceCollectionExtensions.AddMediator` glues these pieces together during DI configuration.
+- **Files inspected**:
+    - `Infrastructure/Common.Mediator/Abstractions.cs`
+    - `Infrastructure/Common.Mediator/Mediator.cs`
+    - `Infrastructure/Common.Mediator/ServiceCollectionExtensions.cs`
+    - `Infrastructure/CLAUDE.md`

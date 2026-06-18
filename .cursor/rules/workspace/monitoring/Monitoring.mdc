@@ -1,0 +1,11 @@
+---
+alwaysApply: false
+description: Provides an overview of the monitoring components and their configurations.
+---
+
+## Monitoring
+
+- Do: Refer to this rule for a high-level understanding of the monitoring stack.
+- Don't: Dive into specific tool configurations without consulting their dedicated rules.
+
+@monitoring/AGENT.md

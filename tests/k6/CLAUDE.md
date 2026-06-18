@@ -103,8 +103,14 @@ All in `config.js` (overridable via `__ENV`):
   IDs / usernames) to be meaningful.
 - Gateway vs port-forward use different paths (`/api/v1/...` vs gateway routes) — handled by
   `getEndpoint`; don't hardcode paths in new tests.
+- `discount-test.js` is a stub that always passes trivially — the Discount service is gRPC-only
+  and not testable via k6's HTTP client without loading the `.proto` file.
+- `workflow-website.js` step 7 (`CheckoutV2`) includes exponential-backoff retry up to 5 attempts
+  on HTTP 429 — the gateway rate-limits checkout to 1 req / 3 s per route.
 
 ## Owners / agents
 
 - `performance-benchmarker` — owns load/stress/soak profiles, thresholds, and SLOs.
 - `api-tester` — owns endpoint coverage and per-service test correctness.
+
+@AGENT.md

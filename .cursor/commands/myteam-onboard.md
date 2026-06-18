@@ -148,7 +148,7 @@ registry. Agent dispatch is unchanged — parallel batches as always.
   "run-id": "<timestamp-based id>",
   "commit": "<sha>",
   "mode": "changes",
-  "total-parts": 24
+  "total-top-level-parent-parts": 24
 }
 ```
 
@@ -197,10 +197,11 @@ Each step
 
 ### 2 — Research (per-part, fresh context, read-only)
 Before dispatching any agents, write `.cursor/myteam/events/.bus-meta.json` with the current
-`run-id` (timestamp), `commit` (from `git rev-parse HEAD`), `mode`, and `total-parts` count.
+`run-id` (timestamp), `commit` (from `git rev-parse HEAD`), `mode`, and `total-top-level-parent-parts` count.
 
-The orchestrator dispatches one **`codebase-onboarding-engineer`** agent per **top-level parent**
+The orchestrator dispatches one **`codebase-onboarding-engineer`** agent per **top-level-parent**
 in `.cursor/myteam/workspace-parts.yaml > parts` — all in parallel, fresh context each.
+dont dispatch again any top-level-part that have research-complete-<top-level-parent>.json event.
 
 **Each agent is scoped to its entire subtree** (parent + all nested children). It researches every
 part in that subtree itself, in one session — no sub-dispatch. Having full subtree context lets the
@@ -245,24 +246,11 @@ Watches `.cursor/myteam/events/` for new `research-complete-*.json` files. For e
    `status` / `artifacts` / `depth-bar` if the entry already exists from a prior run).
 3. Log progress: `[N/total] <part-name> — <status>` (where total comes from `.bus-meta.json`).
 
-Continues until the count of processed `research-complete-*` files equals `.bus-meta.total-parts`.
+Continues until the count of processed `research-complete-*` files equals `.bus-meta.total-top-level-parent-parts`.
 Each upsert is a targeted write to that part's YAML block — never rewrites the whole file from
 scratch so concurrent writes from fast vs. slow agents don't clobber each other.
 
-### 6 — Phase B: Assemble and write each part's artifacts
-Write only parts in the work set:
-
-**For each leaf part** — write all three artifacts from the research agent's returned content (not
-from memory):
-- `<part.dir>/AGENT.md` — all 11 sections; mark not-found fields as `_not found in <where>_`,
-  never omit.
-- `.cursor/rules/workspace/<part.dir>/<part.name>.mdc` — frontmatter: `alwaysApply: false`,
-  `globs: <part.dir>/**/*`; no `description`. Body: grouped do/don'ts; ends with
-  `@<relative path to AGENT.md>`.
-- `.cursor/skills/workspace/<part-kebab-path>/SKILL.md` — frontmatter: `name: <folder-name>`,
-  `description: <one-line>`, `metadata: { part-dir: <dir> }`; body: briefing + AGENT.md link.
-
-**For each parent part** — write artifacts that summarize and link to the now-completed sub-parts:
+**For each leaf part and parent part** — write artifacts that summarize and link to the now-completed sub-parts:
 - `<part.dir>/AGENT.md` — its own all 11 sections; mark not-found fields as `_not found in <where>_`, 
   never omit + summary table linking each sub-part's AGENT.md.
 - `.cursor/rules/workspace/<part.dir>/<part.name>.mdc` — frontmatter: `alwaysApply: false`,

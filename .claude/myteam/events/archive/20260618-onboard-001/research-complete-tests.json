@@ -1,0 +1,1 @@
+{"type":"research-complete","run-id":"20260618-onboard-001","part":"Tests","dir":"tests","kebab":"tests","parent":null,"status":"done","artifacts":{"agent_md":"tests/AGENT.md","claude_md":"tests/CLAUDE.md","skill":".claude/skills/workspace/tests/SKILL.md"},"depth-bar":"pass","sections-filled":11,"paths-verified":true,"notes":""}

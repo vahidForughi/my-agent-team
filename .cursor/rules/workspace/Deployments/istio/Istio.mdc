@@ -1,0 +1,5 @@
+---
+alwaysApply: false
+globs: Deployments/istio/**/*
+---
+@Deployments/istio/AGENT.md

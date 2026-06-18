@@ -1,0 +1,17 @@
+---
+alwaysApply: false
+globs: tests/k6/**/*
+---
+# Rules for k6 Testing
+
+Do:
+- Use k6 for performance, load, stress, spike, and soak testing.
+- Refer to `tests/k6/config.js` for centralized configuration of endpoints and environment variables.
+- Utilize the provided shell scripts (e.g., `run-all-tests.sh`, `run-load-test.sh`) to execute tests.
+- Expect test metrics to be pushed to Prometheus via PushGateway.
+
+Don't:
+- Modify k6 core scripts without understanding the impact on test reporting.
+- Hardcode service URLs within test scripts; use `config.js` instead.
+
+@tests/k6/AGENT.md

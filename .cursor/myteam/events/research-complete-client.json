@@ -1,0 +1,9 @@
+{
+  "run-id": "20260618162023",
+  "part": {
+    "name": "Client",
+    "dir": "client",
+    "category": "frontend",
+    "type": "angular"
+  }
+}

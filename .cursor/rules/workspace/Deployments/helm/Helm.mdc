@@ -1,0 +1,22 @@
+---
+alwaysApply: false
+globs: Deployments/helm/**/*
+---
+
+Helm is used for templated, upgradeable deployments to Kubernetes.
+
+**Do**
+- Use `Deployments/helm/install-helm.sh` to install all charts.
+- Use `helm install <release-name> <chart-name>` for individual charts.
+- Override values using `-f <values-file>` or `--set`, never by editing base `values.yaml`.
+- Copy an existing chart when adding a new workload to ensure uniformity.
+- Ensure container port aligns with service port (80) to avoid readiness issues.
+- Set `image.registry` to the ECR account for AWS deployments, leave empty for local/Minikube.
+- Configure S3 with empty `AWS__S3__ServiceUrl` and IRSA on AWS, or `http://localstack:4566` and `USE_LOCALSTACK=true` locally.
+
+**Don't**
+- Edit base `values.yaml` for environment-specific overrides.
+- Deploy both Helm charts and raw Kubernetes manifests (`k8s/CLAUDE.md`) for the same workload in the same cluster.
+- Assume success of `install-helm.sh` without checking `helm list` as it continues on per-chart failure.
+
+@Deployments/helm/AGENT.md

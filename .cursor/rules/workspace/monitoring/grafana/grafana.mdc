@@ -1,0 +1,9 @@
+---
+alwaysApply: false
+globs: monitoring/grafana/**/*
+---
+
+- Do: Use for understanding Grafana configurations and dashboards.
+- Don't: Modify Grafana settings without proper authorization.
+
+@monitoring/grafana/AGENT.md

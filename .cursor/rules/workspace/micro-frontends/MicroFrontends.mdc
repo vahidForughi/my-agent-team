@@ -1,0 +1,18 @@
+---
+alwaysApply: false
+description: A modern frontend architecture built on NX monorepo, React, and Webpack 5 Module Federation.
+---
+
+### Do's
+- **Do** ensure all shared packages (`@ecommerce-platform/*`) are built before running or building any micro-frontend application.
+- **Do** use NX commands for building, testing, and linting to leverage caching and optimize performance.
+- **Do** maintain clear boundaries and contracts between micro-frontends to promote independent development and deployment.
+- **Do** leverage the shared `auth-provider` and `shared-layout` packages for consistent authentication and UI across all micro-frontends.
+
+### Don'ts
+- **Don't** modify `module-federation.config.ts` or `webpack.config.ts` directly unless you thoroughly understand Module Federation principles and their impact on runtime composition.
+- **Don't** introduce direct dependencies between micro-frontends; communication should occur via the host or well-defined events/APIs.
+- **Don't** bypass the shared `auth-provider` for authentication in any micro-frontend; always use the provided hooks and components.
+- **Don't** use plain CSS for styling; adhere to LESS as configured by the NX generator.
+
+@../../micro-frontends/AGENT.md

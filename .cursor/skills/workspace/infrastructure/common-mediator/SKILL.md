@@ -1,23 +1,22 @@
 ---
 name: common-mediator
 description: Provides a simplified in-process mediator implementation for request/response and pipeline behaviors.
-metadata:
-  part-dir: Infrastructure/Common.Mediator
+metadata: { part-dir: Infrastructure/Common.Mediator }
 ---
-
-This skill is for working with the `Common.Mediator` infrastructure component.
+This part implements a basic in-process mediator for handling requests and responses with optional pipeline behaviors. It's designed as a lightweight alternative to MediatR for simple CQRS patterns.
 
 Key files to read first:
-- `Abstractions.cs`: Defines the core interfaces.
-- `Mediator.cs`: The core implementation of the mediator.
-- `ServiceCollectionExtensions.cs`: Extension methods for DI registration.
+- `Infrastructure/Common.Mediator/Abstractions.cs`: Defines the core interfaces.
+- `Infrastructure/Common.Mediator/ServiceCollectionExtensions.cs`: Shows how to register the mediator and handlers.
 
 Top patterns:
-- Mediator Pattern for decoupling request dispatch from handling.
-- Pipeline Pattern for cross-cutting concerns.
+- In-process command/query dispatch via `IMediator`.
+- Extensible pipeline behaviors for cross-cutting concerns.
+- Reflection-based handler discovery during DI registration.
 
 Top gotchas:
-- Ensure all request handlers and pipeline behaviors are correctly registered with the DI container.
-- Understand the order of execution for pipeline behaviors (first registered, first executed).
+- Only supports request/response patterns; no notifications or streams.
+- Relies on assembly scanning for handler discovery, so ensure correct assemblies are passed to `AddMediator`.
+- Direct modification of `Abstractions.cs` can have wide-reaching effects.
 
-See the full documentation here: @Infrastructure/Common.Mediator/AGENT.md
+For a full overview, see the AGENT.md: @Infrastructure/Common.Mediator/AGENT.md

@@ -1,0 +1,18 @@
+{
+  "type": "research-complete",
+  "run-id": "20260618-onboard-001",
+  "part": "ApiGateways",
+  "dir": "ApiGateways",
+  "kebab": "api-gateways",
+  "parent": null,
+  "status": "done",
+  "artifacts": {
+    "agent_md": "ApiGateways/AGENT.md",
+    "claude_md": "ApiGateways/CLAUDE.md",
+    "skill": ".claude/skills/workspace/api-gateways/SKILL.md"
+  },
+  "depth-bar": "pass",
+  "sections-filled": 11,
+  "paths-verified": true,
+  "notes": ""
+}
