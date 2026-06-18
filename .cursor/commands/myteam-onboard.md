@@ -129,6 +129,7 @@ parts:
       agent_md: Services/Basket/AGENT.md
       mdc: .cursor/rules/Services/Basket/basket.mdc
       skill: .cursor/skills/workspace/services/basket/SKILL.md
+  - 
 ```
 
 ### Event bus (`.cursor/myteam/events/`)
@@ -182,41 +183,56 @@ Each step
 ### 1 — Resolve the part tree
 - **Primary source:** Read `.cursor/myteam/config.yaml > workspace.parts`. Each entry defines a
   part: `name`, `dir` (repo path), `category`, `type`, and optional nested `parts`. Flatten into a
-  list of (name, dir, parent, isLeaf) tuples. A part is a **leaf** when it has no sub-`parts`, or
-  when its sub-`parts` are empty.
+  list of (name, dir, parent, isLeaf, children[]) tuples. A part is a **leaf** when it has no
+  sub-`parts` or its sub-`parts` are empty. The orchestrator uses only **top-level entries** for
+  initial dispatch; each agent receives its full subtree in its brief and handles all children
+  itself — the orchestrator does not dispatch separate agents for nested parts.
 - **Fallback:** Read and consider `config.yaml > workspace.parts`, derive parts by reading
   the repo tree.
 - **Compute kebab paths** for skills: lowercase the hierarchy, join with `/` (e.g.
   `MicroFrontends > AppInjector` → `micro-frontends/app-injector`). Use `dir` for rule and AGENT.md
   paths verbatim (preserving case from config.yaml).
 - **Apply Tree:** interactive with user to apply workspace part tree.
-- generate `.cursor/myteam/workspace-parts.yaml` file with empty parts:.
+- **Workspace Parts:** generate `.cursor/myteam/workspace-parts.yaml` file with empty parts:.
 
 ### 2 — Research (per-part, fresh context, read-only)
 Before dispatching any agents, write `.cursor/myteam/events/.bus-meta.json` with the current
 `run-id` (timestamp), `commit` (from `git rev-parse HEAD`), `mode`, and `total-parts` count.
 
-For each **leaf part** in the work set, dispatch one **`codebase-onboarding-engineer`** agent
-(`.cursor/agents/`) in its own fresh-context session, in parallel batches.
-Do not write any part's docs from your own memory — the orchestrator assembles only what the research agents return.
-**Hierarchical:** The agent of parts that have parent, **just dispatch in parent agent**.
+The orchestrator dispatches one **`codebase-onboarding-engineer`** agent per **top-level parent**
+in `.cursor/myteam/workspace-parts.yaml > parts` — all in parallel, fresh context each.
+
+**Each agent is scoped to its entire subtree** (parent + all nested children). It researches every
+part in that subtree itself, in one session — no sub-dispatch. Having full subtree context lets the
+parent AGENT.md accurately cross-reference its children.
+
+Within its session, each agent:
+1. Researches children first (leaf nodes), writing each child's 3 artifacts.
+2. Emits `research-complete-<child-kebab>.json` for each child as it completes.
+3. Assembles the parent's own 3 artifacts (summary + cross-links to children).
+4. Emits `research-complete-<parent-kebab>.json` last.
+
+Top-level parts with no children (e.g. `Client`, `Diagrams`) skip steps 1-2 — they emit one event.
+
+Do not write any part's docs from orchestrator memory — only agents write artifacts.
 
 Brief each agent with:
-- The part's `dir` from the Primary Source resolved in step 1 — sent to agent as input prompt — as the canonical scope root.
-- The target output paths: `<dir>/AGENT.md`, `.cursor/rules/<dir>/<name>.mdc`,
+- The top-level part's `dir` as the canonical scope root.
+- The part's full `parts` subtree from config.yaml (children + their dirs, kebab paths, and
+  target artifact paths), so the agent knows every node it must cover.
+- The target output paths for each node: `<dir>/AGENT.md`, `.cursor/rules/workspace/<dir>/<name>.mdc`,
   `.cursor/skills/workspace/<kebab-path>/SKILL.md`.
-- The output formats from `.cursor/agents/codebase-onboarding-engineer.md` (Output Format),
-  adapted to the new paths above (AGENT.md lives in the repo dir, not in `.cursor/`).
-- After writing all three artifacts, **emit** `.cursor/myteam/events/research-complete-<part-kebab>.json`
-  (schema in Approach → Event bus). This is the only write the agent makes outside its own part directory.
+- The output formats from `.cursor/agents/codebase-onboarding-engineer.md` (AGENT.md lives in the
+  repo dir, not in `.cursor/`).
+- After writing each part's three artifacts, **emit**
+  `.cursor/myteam/events/research-complete-<part-kebab>.json` (schema in Approach → Event bus).
+  Events outside the part directory are the agent's only writes to shared state.
 
-Each agent's deliverable is:
-- Complete `AGENT.md` body (all 11 sections, grounded in inspected files, real paths).
-- Complete `.mdc` body (valid frontmatter + grouped do/don'ts + `@<AGENT.md path>`).
-- Complete `SKILL.md` body (frontmatter + concise agent briefing linking to AGENT.md).
-- `research-complete-<part-kebab>.json` event file in `.cursor/myteam/events/`.
-
-**Parent** parts are researched directly and assemble considering their completed children (Phase B).
+Each agent's total deliverable (for its full subtree):
+- One `AGENT.md` per node (all 11 sections, grounded in source, real paths).
+- One `.mdc` per node (valid frontmatter + grouped do/don'ts + `@<AGENT.md path>`).
+- One `SKILL.md` per node (frontmatter + concise briefing + AGENT.md link).
+- One `research-complete-*.json` event per node in `.cursor/myteam/events/`.
 
 **Retry:** If an agent returns thin output (below depth bar), re-dispatch with the specific gaps
 before moving on. The re-dispatched agent overwrites the same artifacts and re-emits its event (max_retry_times: 3).
