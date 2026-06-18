@@ -2,8 +2,8 @@
 
 A lightweight agentic harness for this repo, **inspired by**:
 
-- **Ralph** (`prd.json` loop + append-only `progress.txt` + branch-based archiving + `<promise>COMPLETE</promise>` stop signal)
-- **OpenSpec** (`.cursor/commands/*.md` + `.cursor/skills/<name>/SKILL.md` conventions, and a propose → run → archive mental model)
+- (`prd.json` loop + append-only `progress.txt` + branch-based archiving + `<promise>COMPLETE</promise>` stop signal)
+- (`.cursor/commands/*.md` + `.cursor/skills/<name>/SKILL.md` conventions, and a propose → run → archive mental model)
 
 It reuses the agent definitions already in `.cursor/agents/*.md` and `.cursor/rules/*.mdc` — it does **not** redefine roles.
 

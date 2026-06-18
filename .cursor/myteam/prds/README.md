@@ -8,7 +8,7 @@ prds/
   current/
     <prd-name>/
       prd.json                the PRD: stories + per-story agent assignments
-      progress.txt            append-only log of what was done + Learnings (ralph-style)
+      progress.txt            append-only log of what was done + Learnings
   archive/
     YYYY-MM-DD-<prd-name>/     moved here by /myteam-archive when done/superseded
       prd.json
@@ -17,7 +17,7 @@ prds/
 
 ## prd.json schema
 
-Inspired by Ralph's `prd.json`, extended with **per-story agent assignment + parallelism**.
+`prd.json`, extended with **per-story agent assignment + parallelism**.
 
 | Field | Meaning |
 |---|---|

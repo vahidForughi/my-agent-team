@@ -6,13 +6,12 @@ compatibility: Reads .cursor/myteam/config.yaml and .cursor/agents/. Output foll
 metadata:
   author: myteam
   version: "1.0"
-  inspiredBy: "ralph/skills/prd + openspec"
 ---
 
 # PRD Generator (myteam)
 
 Produce a clear, implementation-ready PRD and emit it as `prd.json` for the harness.
-Inspired by Ralph's `prd` skill, **extended** so every story is assigned agent roles + a parallel count.
+`prd` skill, **extended** so every story is assigned agent roles + a parallel count.
 
 **Do NOT implement.** This skill only produces the PRD.
 

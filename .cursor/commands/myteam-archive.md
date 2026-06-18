@@ -5,7 +5,7 @@ category: Harness
 description: Archive a completed or superseded PRD to prds/archive/YYYY-MM-DD-<name>/
 ---
 
-Archive a PRD with the **myteam** harness (ralph-style, date-prefixed).
+Archive a PRD with the **myteam** harness.
 
 **Input**: the argument after `/myteam-archive` is the PRD name under `prds/current/`.
 If omitted and exactly one PRD is in `current/`, use it; otherwise ask which one.

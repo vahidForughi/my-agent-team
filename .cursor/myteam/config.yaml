@@ -1,9 +1,209 @@
-# myteam — custom harness config
-# Inspired by Ralph (prd.json loop + progress.txt) and OpenSpec (.cursor commands/skills).
+# myteam — custom config
 # This file is read by the myteam skills/commands as shared context.
 
 schema: prd-driven
-project: cloud-native-ecommerce-platform
+workspace:
+  name: cloud-native-ecommerce-platform
+  category: workspace
+  parts:
+    - ApiGateways:
+        dir: "ApiGateways"
+        category: api-gateway
+        parts:
+          - Ocelot:
+              dir: "ApiGateways/Ocelot.ApiGateway"
+              category: api-gateway
+              type: ocelot
+    - Services:
+        dir: "Services"
+        category: micro-service
+        parts:
+          - Basket:
+              dir: "Services/Basket"
+              category: backend
+              type: aspnet
+          - Catalog:
+              dir: "Services/Catalog"
+              category: backend
+              type: aspnet
+          - Discount:
+              dir: "Services/Discount"
+              category: backend
+              type: aspnet
+          - Ordering:
+              dir: "Services/Ordering"
+              category: backend
+              type: aspnet
+    - Infrastructure:
+        dir: "Infrastructure"
+        category: shared-lib
+        parts:
+          - CommonMediator:
+              dir: "Infrastructure/Common.Mediator"
+              category: shared-lib
+              type: dotnet
+          - CommonLogging:
+              dir: "Infrastructure/Common.Logging"
+              category: shared-lib
+              type: dotnet
+          - EventBusMessages:
+              dir: "Infrastructure/EventBus.Messages"
+              category: shared-lib
+              type: dotnet
+          - Aws:
+              dir: "Infrastructure/aws"
+              category: shared-lib
+              type: dotnet
+    - MicroFrontends:
+        dir: "micro-frontends"
+        category: micro-frontend
+        parts:
+          - Host:
+              dir: "micro-frontends/host"
+              category: frontend
+              type: react
+          - Store:
+              dir: "micro-frontends/store"
+              category: frontend
+              type: react
+          - Checkout:
+              dir: "micro-frontends/checkout"
+              category: frontend
+              type: react
+          - Account:
+              dir: "micro-frontends/account"
+              category: frontend
+              type: react
+          - Admin:
+              dir: "micro-frontends/admin"
+              category: frontend
+              type: react
+          - AppInjector:
+              dir: "micro-frontends/packages/app-injector"
+              category: frontend
+              type: react
+          - AuthProvider:
+              dir: "micro-frontends/packages/auth-provider"
+              category: frontend
+              type: react
+          - SharedLayout:
+              dir: "micro-frontends/packages/shared-layout"
+              category: frontend
+              type: react
+    - Client:
+        dir: "client"
+        category: frontend
+        type: angular
+    - Deployments:
+        dir: "Deployments"
+        category: infra
+        parts:
+          - Helm:
+              dir: "Deployments/helm"
+              category: infra
+              type: helm
+          - Istio:
+              dir: "Deployments/istio"
+              category: infra
+              type: istio
+          - K8s:
+              dir: "Deployments/k8s"
+              category: infra
+              type: kubernetes
+          - Monitoring:
+              dir: "Deployments/monitoring"
+              category: infra
+              type: kubernetes
+    - Terraform:
+        dir: "terraform"
+        category: infra
+        type: terraform
+        parts:
+          - Databases:
+              dir: "terraform/modules/databases"
+              category: infra
+              type: terraform
+          - Ecr:
+              dir: "terraform/modules/ecr"
+              category: infra
+              type: terraform
+          - Eks:
+              dir: "terraform/modules/eks"
+              category: infra
+              type: terraform
+          - Messaging:
+              dir: "terraform/modules/messaging"
+              category: infra
+              type: terraform
+          - Networking:
+              dir: "terraform/modules/networking"
+              category: infra
+              type: terraform
+          - Observability:
+              dir: "terraform/modules/observability"
+              category: infra
+              type: terraform
+          - Security:
+              dir: "terraform/modules/security"
+              category: infra
+              type: terraform
+          - Storage:
+              dir: "terraform/modules/storage"
+              category: infra
+              type: terraform
+    - Monitoring:
+        dir: "monitoring"
+        category: observability
+        parts:
+          - grafana:
+              dir: "monitoring/grafana"
+              category: observability
+              type: grafana
+    - Tests:
+        dir: "tests"
+        category: testing
+        parts:
+          - k6:
+            dir: "tests/k6"
+            category: testing
+            type: k6
+    - Scripts:
+        dir: "scripts"
+        category: automation
+        parts:
+          - Deploy:
+              dir: "scripts/deploy"
+              category: automation
+              type: bash
+          - Access:
+              dir: "scripts/access"
+              category: automation
+              type: bash
+          - Cleanup:
+              dir: "scripts/cleanup"
+              category: automation
+              type: bash
+          - Debug:
+              dir: "scripts/debug"
+              category: automation
+              type: bash
+          - ScriptsMonitoring:
+              dir: "scripts/monitoring"
+              category: automation
+              type: bash
+    - Tools:
+        dir: "tools"
+        category: tools
+        parts:
+          - postman:
+            dir: "tools/postman"
+            category: api-testing
+            type: postman
+    - Diagrams:
+        dir: "diagrams"
+        category: docs
+        type: eraser
+
 
 # Project context shown to agents when generating a PRD or executing stories.
 # Fill in tech stack, conventions, and domain knowledge during onboarding.
