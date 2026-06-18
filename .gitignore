@@ -435,7 +435,7 @@ backups/
 *.zip.backup
 *.backup-*
 *.bak-*
-/.claude
+#/.claude
 
 # Stakpak session files
 .stakpak/session*
