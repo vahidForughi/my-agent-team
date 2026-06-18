@@ -1,0 +1,18 @@
+---
+alwaysApply: false
+description: Guidance for working with general automation and operational scripts.
+---
+
+### DOs
+- **DO** run all scripts from the project root directory.
+- **DO** use `set -e` in your bash scripts for robust error handling.
+- **DO** use `log_info` and `log_error` helpers for color-coded logging.
+- **DO** make scripts idempotent where possible (safe to re-run).
+- **DO** follow the existing style when adding new scripts.
+
+### DON'Ts
+- **DON'T** run deployment scripts without checking required prerequisites (e.g., Minikube resources, AWS CLI configuration).
+- **DON'T** manually assemble `kubectl`/`helm`/`aws` sequences if an existing script covers the task.
+- **DON'T** run S3 migration scripts without verifying the active S3 mode (LocalStack vs. AWS) and `USE_LOCALSTACK` variable.
+
+@scripts/AGENT.md

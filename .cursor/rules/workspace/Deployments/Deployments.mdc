@@ -1,0 +1,19 @@
+---
+alwaysApply: false
+description: Guidance for deploying the Cloud Native E-commerce Platform onto Kubernetes using Helm, raw manifests, Istio, and in-cluster monitoring.
+---
+This rule provides guidance for the 'Deployments' part of the codebase.
+
+Do:
+- Refer to `Deployments/README.md` for a comprehensive deployment guide.
+- Use Helm charts (`Deployments/helm/`) for production deployments due to their templating and management capabilities.
+- Utilize raw Kubernetes manifests (`Deployments/k8s/`) for CI/CD or when full control and transparency are required.
+- Consult `Deployments/DEPLOYMENT-CONFIGURATION.md` for detailed service configurations and port mappings.
+- Use the orchestration scripts in `scripts/deploy/` for consistent deployment and cleanup processes.
+
+Don't:
+- Run both Helm and raw Kubernetes manifests for the same workload in one cluster, as they duplicate each other.
+- Skip Istio installation and namespace labeling if service mesh features are required; ensure pod restarts after injection.
+- Assume `localhost` for connection strings; always use in-cluster service DNS.
+
+@Deployments/AGENT.md

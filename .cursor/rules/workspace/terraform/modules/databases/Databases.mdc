@@ -1,0 +1,19 @@
+---
+alwaysApply: false
+globs: terraform/modules/databases/**/*
+---
+
+## Database Module Guidelines
+
+### Do's
+- **Do** ensure all sensitive database credentials (`mongodb_password`, `postgres_password`, `mssql_password`) are passed via Terraform variables marked as `sensitive = true` and managed securely (e.g., in `terraform.tfvars` or CI/CD environment variables, not hardcoded).
+- **Do** configure `multi_az = true` and `deletion_protection = true` for RDS instances in `prod` environments to ensure high availability and prevent accidental data loss.
+- **Do** use dedicated security groups (`databases_sg_id`) to control network access to database instances, limiting ingress to only necessary sources (e.g., EKS worker nodes).
+- **Do** ensure database instances are placed in private subnets (`private_subnet_ids`) to prevent direct public internet access.
+
+### Don'ts
+- **Don't** hardcode any sensitive credentials directly in `main.tf` or `variables.tf` files without marking them as sensitive.
+- **Don't** expose database instances to the public internet by placing them in public subnets or allowing broad ingress rules in their security groups.
+- **Don't** disable `skip_final_snapshot` for production databases; always take a final snapshot before deletion to allow for recovery.
+
+@terraform/modules/databases/AGENT.md

@@ -17,10 +17,15 @@
       "priority": 1,
       "passes": false,
       "notes": "",
+      "part": {
+        "name": "Services",
+        "dir": "Services",
+        "category": "micro-service",
+        "kebab": "services"
+      },
       "agents": [
-        { "role": "backend-architect", "count": 1 }
-      ],
-      "parallelism": 1
+        { "role": "backend-architect" }
+      ]
     },
     {
       "id": "US-002",
@@ -34,11 +39,16 @@
       "priority": 2,
       "passes": false,
       "notes": "",
+      "part": {
+        "name": "Services",
+        "dir": "Services",
+        "category": "micro-service",
+        "kebab": "services"
+      },
       "agents": [
-        { "role": "backend-architect", "count": 2 },
-        { "role": "api-tester", "count": 1 }
-      ],
-      "parallelism": 3
+        { "role": "backend-architect" },
+        { "role": "api-tester" }
+      ]
     },
     {
       "id": "US-003",
@@ -52,11 +62,16 @@
       "priority": 3,
       "passes": false,
       "notes": "",
+      "part": {
+        "name": "MicroFrontends",
+        "dir": "micro-frontends",
+        "category": "micro-frontend",
+        "kebab": "micro-frontends"
+      },
       "agents": [
-        { "role": "frontend-developer", "count": 1 },
-        { "role": "evidence-collector", "count": 1 }
-      ],
-      "parallelism": 2
+        { "role": "frontend-developer" },
+        { "role": "evidence-collector" }
+      ]
     }
   ]
 }

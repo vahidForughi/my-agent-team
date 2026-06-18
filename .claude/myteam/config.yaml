@@ -1,0 +1,76 @@
+# myteam — custom harness config (Claude Code)
+# Ported from the Cursor harness (.cursor/myteam/). This file is read by the myteam
+# skills/commands as shared context.
+
+schema: prd-driven
+project: cloud-native-ecommerce-platform
+
+# Project context shown to agents when generating a PRD or executing stories.
+# Fill in tech stack, conventions, and domain knowledge during onboarding.
+context: |
+  Cloud-native e-commerce platform.
+  Tech stack: .NET microservices (Services/), Ocelot API gateways (ApiGateways/),
+  React client (client/) + micro-frontends (micro-frontends/),
+  Terraform/Helm/Istio infra (Infrastructure/, Deployments/, terraform/), observability (monitoring/).
+  We use conventional commits. Branches: myteam/<feature-kebab>.
+
+# Defaults used by /myteam-do and /myteam-harness.
+defaults:
+  branchPrefix: myteam/
+  # Default 1: each story runs in a single fresh-context subagent (Agent tool). Raise parallelism
+  # (and per-role count) ONLY for genuinely complex stories with independent sub-work.
+  defaultParallelism: 1
+  # Non-interactive by default: commands proceed unattended (trade engineer time for tokens).
+  # When false, clarifying questions and the pre-execute confirm are SKIPPED — make a reasonable
+  # assumption and record it in the story notes / PRD description instead of blocking.
+  # Set true (or ask) to restore the human prompts (asked via the AskUserQuestion tool).
+  interactive: false
+  # Bound expensive retries: how many times a story may fail quality gates before the loop STOPS
+  # and flags it (leaves passes:false, logs the blocker) rather than churning.
+  maxStoryAttempts: 2
+  # Default model tier for story agents (agents carry `model: inherit`, so this overrides per run).
+  # Keep grunt stories on a cheaper tier; a story may override with its own `model`.
+  model: inherit
+  qualityGates:
+    - typecheck
+    - lint
+    - test
+  uiVerification: "Verify in browser (screenshot for the progress log)"
+  stopSignal: "<promise>COMPLETE</promise>"
+
+# Agent registry — roles map 1:1 to .claude/agents/<role>.md and are spawned via the Agent tool
+# with subagent_type: "<role>". prd.json userStories[].agents[].role MUST be one of these.
+agents:
+  - role: product-manager        # owns /myteam-do: turns intent into prd.json
+  - role: backend-architect      # services, APIs, data models, infra design
+  - role: frontend-developer     # client/ and micro-frontends/ UI work
+  - role: api-tester             # API functional/perf/security validation
+  - role: devops-automator       # DevOps Engineer: CI/CD pipelines, AWS EKS/ECR, Terraform, Helm, Istio, observability
+  - role: code-reviewer          # correctness/security/maintainability review
+  - role: evidence-collector     # screenshot-backed QA, reality checks
+
+# Per-artifact rules. Constraints applied to each artifact the harness produces.
+# Add or tighten these during onboarding.
+rules:
+  prd:
+    - Keep each user story completable in one focused session
+    - Order stories by dependency (schema -> backend -> API -> UI); no forward dependencies
+    - Acceptance criteria must be verifiable, not vague; always end with "Typecheck passes"
+    - UI stories must include a browser-verification criterion (screenshot for the log)
+    - Every story must assign agents[] using roles from this registry, plus a parallelism cap
+    - Default to count 1 and parallelism 1 per story; raise either only for genuinely complex stories with independent sub-work (justify in notes)
+    - branchName must be "myteam/<feature-kebab>"; prd.json must validate as JSON
+  progress:
+    - Append-only; never overwrite or delete prior entries
+    - One dated block per completed story, with a "Learnings for future iterations" section
+    - Keep only general, reusable patterns in the top "## Codebase Patterns" section
+  workspace:
+    - Per-part onboarding docs live as nested CLAUDE.md placed inside each part's real repo directory (e.g. Services/Basket/CLAUDE.md) — Claude Code auto-loads them when working in that area
+    - The tree mirrors the repo; a parent dir's CLAUDE.md (e.g. Services/CLAUDE.md) summarizes and links its child parts
+    - Each CLAUDE.md is the curated onboarding doc (What & why, Where it lives, Tech stack, Build/run/test, Configuration, Interfaces & contracts, Data & state, Dependencies, Patterns, Gotchas, Owners)
+    - A top-level part map lives at .claude/rules/workspace/AGENT.md; the onboarding marker is .claude/rules/workspace/.onboarded
+    - Part-specific patterns belong in that part's CLAUDE.md
+  commit:
+    - Conventional commits; one story per commit: "feat: [US-id] - [Story Title]"
+    - Quality gates (defaults.qualityGates) must pass before committing; never commit broken code
+    - Keep each commit focused and minimal; follow existing code patterns

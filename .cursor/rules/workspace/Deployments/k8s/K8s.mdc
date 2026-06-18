@@ -1,0 +1,23 @@
+---
+alwaysApply: false
+globs: Deployments/k8s/**/*
+---
+# k8s — Raw Kubernetes Manifests
+
+## Best Practices
+
+- **Adhere to the apply order**: The apply order is non-negotiable; always prefer `deploy-k8s.sh` over manual `kubectl apply` commands to ensure dependencies are met.
+- **Validate manifests pre-deployment**: Utilize the `validate-*.sh` scripts (`validate-yaml.sh`, `validate-manifests-simple.sh`, `validate-deployment.sh`) to catch configuration errors before applying.
+- **Implement zero-trust networking**: Design network policies with a default-deny approach, explicitly adding allow rules for necessary communications (e.g., DNS, specific service-to-service paths).
+
+## Anti-Patterns
+
+- **Non-base64 encoded secrets**: Secrets must be base64-encoded; otherwise, `kubectl apply` will silently use bad values, leading to application failures.
+- **Ignoring network policy impact**: Network policies are default-deny. Failing to define explicit allow rules for new pod-to-pod communication paths will silently break traffic.
+- **Co-deploying with Helm charts**: Do not deploy these raw manifests and [`helm/CLAUDE.md`](../helm/CLAUDE.md) charts for the same workload in a single cluster, as they duplicate each other and can lead to conflicts.
+- **Assuming correct namespace**: `namespace.yaml` and `network-policies/` target `ecommerce`/`monitoring`, but `deploy-k8s.sh` may deploy workloads into `default`, `monitoring`, and `istio-system`. Always confirm the namespace a resource lands in.
+
+## Related Documentation
+
+@Deployments/k8s/CLAUDE.md
+@Deployments/k8s/AGENT.md

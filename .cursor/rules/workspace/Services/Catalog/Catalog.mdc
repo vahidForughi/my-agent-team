@@ -1,47 +1,14 @@
 ---
-globs: Services/Catalog/**/*
 alwaysApply: false
+globs: Services/Catalog/**/*
 ---
 
-# Catalog Service Rules
+## Do's
+- Use this rule to understand the Catalog microservice architecture and its data flow.
+- Refer to `Services/Catalog/CLAUDE.md` for detailed information on configuration, build, and run instructions.
 
-## Architecture & layering
-
-- Follow the four-project layout: `Catalog.API` (HTTP/DI) → `Catalog.Application` (handlers) → `Catalog.Core` (entities/interfaces) → `Catalog.Infrastructure` (MongoDB, S3).
-- Add new endpoints as Mediator commands/queries + handlers in `Catalog.Application`; keep controllers thin — delegate via `_mediator.Send()`.
-- Use `ProductMapper.Instance` (Mapperly) for entity/DTO mapping; do not register mappers in DI.
-- `ProductRepository` is the single implementation for `IProductRepository`, `IBrandRepository`, and `ITypesRepository` — extend it, do not create parallel repository classes.
-
-## Data & persistence
-
-- MongoDB collections are `Products`, `Brands`, `Types` — configured via `DatabaseSettings` in `appsettings.json`.
-- Seed data lives in `Catalog.Infrastructure/Data/SeedData/`; product seed file switches on `USE_LOCALSTACK` env var.
-- Pagination/filtering goes through `CatalogSpecParams` → `ProductRepository.GetProducts` — respect `MaxPageSize` (70).
-- Do not add EF Core or alternate ORMs; persistence is MongoDB driver only.
-
-## Messaging & events
-
-- Publish integration events via MassTransit `IPublishEndpoint` — event type is `ProductActivityEvent` from `Infrastructure/EventBus.Messages`.
-- Today only `CreateProduct` and `UpdateProduct` publish events; `Actor` is hardcoded `"system"`.
-- MassTransit host is `EventBusSettings:HostAddress` (RabbitMQ).
-
-## Images & S3
-
-- Image uploads flow through `UploadProductImageCommand` → `S3ImageStorageService`.
-- S3 client switches between LocalStack (`USE_LOCALSTACK=true` + `AWS_ENDPOINT_URL`) and real AWS based on `Program.cs` branching.
-- Validate against `ImageSettings` (5 MB max, `.png/.jpg/.jpeg/.webp`).
-
-## Security & config
-
-- No authentication middleware is configured — do not assume JWT or role claims exist.
-- CORS is fully permissive (`AllowAnyOrigin`).
-- `ElasticConfiguration` and Mongo health-check packages are referenced but not wired in `Program.cs`.
-
-## Common pitfalls
-
-- Seed methods use un-awaited `InsertOneAsync` — race conditions possible on cold start.
-- `GetProductById` does not return 404 for missing products.
-- Admin migration (`MigrateImagesToS3`) requires `/app/images/products` volume mount from compose.
-- Gateway routes Catalog at port 8000 via Ocelot (`/Catalog/...` → `/api/v1/Catalog/...`).
+## Don'ts
+- Do not assume shared database schemas. The Catalog service uses MongoDB exclusively for its data.
+- Do not modify `ProductActivityEvent` structure without coordinating with `Services/Ordering` consumers.
 
 @Services/Catalog/AGENT.md

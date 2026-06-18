@@ -1,0 +1,28 @@
+---
+alwaysApply: false
+globs: micro-frontends/store/**/*
+---
+# Store Micro-Frontend
+
+## Architecture & routing
+
+- The `store` micro-frontend exposes exactly one entry `./ConsoleMicroApp` via `module-federation.config.ts`, which points to `./src/remote-entry.ts`.
+- It uses `@tanstack/react-router` for internal routing, with the base path configured based on the host's `appContext.basePath`.
+
+## Data & state
+
+- The `store` carries real cart state, which differs from `shared-layout`'s `CartPreview` which is display-only.
+- It uses Zustand for client-side state and TanStack Query for server-side state.
+
+## Dependencies
+
+- The `store` app imports the workspace packages `@ecommerce-platform/app-injector`, `@ecommerce-platform/auth-provider`, `@ecommerce-platform/shared-layout`.
+- It talks to the backend API gateway via `NX_API_BASE_URL`.
+
+## Gotchas
+
+- Port conflicts on 4200–4204 break `npm start`.
+- Module Federation expose/remote names are case-sensitive and must match `module-federation.config.ts` and the registry (`exposedModule: ConsoleMicroApp`).
+- Runtime remote loading: use `registerRemotes`, never `init`. Calling `@module-federation/runtime` `init()` again (especially with a different `name`) throws `#RUNTIME-010` ("The name option cannot be changed after initialization") and renders the ErrorBoundary.
+
+@micro-frontends/store/AGENT.md

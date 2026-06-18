@@ -1,0 +1,13 @@
+---
+alwaysApply: false
+description: Guidance for managing the AWS infrastructure using Terraform.
+---
+
+When working with the Terraform infrastructure, ensure you:
+- Understand the module dependencies as defined in `main.tf`.
+- Configure `terraform.tfvars` with correct environment values and sensitive variables (passwords).
+- Confirm the state backend in `backend.tf` before `terraform init` in new environments.
+- Keep Terraform EKS versions coherent with local and Helm assumptions.
+- Be aware that `scripts/deploy/deploy-aws.sh` uses CloudFormation for some resources; distinguish between Terraform and CloudFormation managed resources.
+
+@terraform/AGENT.md

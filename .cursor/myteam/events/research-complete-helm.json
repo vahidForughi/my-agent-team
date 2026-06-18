@@ -1,0 +1,9 @@
+{
+  "run-id": "20260618162023",
+  "part-id": "Deployments/helm",
+  "artifact-paths": [
+    "Deployments/helm/AGENT.md",
+    ".cursor/rules/workspace/Deployments/helm/Helm.mdc",
+    ".cursor/skills/workspace/deployments/helm/SKILL.md"
+  ]
+}

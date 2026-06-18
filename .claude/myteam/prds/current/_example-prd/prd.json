@@ -1,0 +1,25 @@
+{
+  "project": "cloud-native-ecommerce-platform",
+  "prdId": "PRD-000-example",
+  "branchName": "myteam/example-prd",
+  "description": "Example PRD illustrating the directory layout — not a real feature.",
+  "defaultParallelism": 2,
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Example story (delete me)",
+      "description": "As a maintainer, I want an example so the layout is obvious.",
+      "acceptanceCriteria": [
+        "This file is valid JSON",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": "Template only — replace with a real PRD via /myteam-do.",
+      "agents": [
+        { "role": "product-manager", "count": 1 }
+      ],
+      "parallelism": 1
+    }
+  ]
+}

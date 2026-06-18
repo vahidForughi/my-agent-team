@@ -1,0 +1,13 @@
+---
+alwaysApply: false
+globs: tools/postman/**/*
+---
+
+### Guidelines for `tools/postman`
+
+- **DO** keep Postman collections and environments up-to-date with API changes.
+- **DO** use environment variables for sensitive information and environment-specific values.
+- **DO NOT** commit API keys or sensitive credentials directly into collection files.
+- **DO NOT** duplicate existing requests; instead, organize them logically within collections.
+
+@tools/postman/AGENT.md

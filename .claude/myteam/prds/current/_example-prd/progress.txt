@@ -1,0 +1,19 @@
+## Codebase Patterns
+# General, reusable learnings discovered while executing this PRD go here (top of file).
+# Keep them durable and project-wide. Example:
+# - Always use conventional commits: feat:, fix:, chore:
+# - Run quality gates before committing (see config.yaml > defaults.qualityGates)
+
+# ---------------------------------------------------------------------------
+# Below: one APPEND-ONLY block per completed story. Newest at the bottom.
+# Format:
+#
+# ## [YYYY-MM-DD HH:MM] - US-00X
+# - What was implemented
+# - Files changed
+# - **Learnings for future iterations:**
+#   - Patterns discovered
+#   - Gotchas encountered
+# ---
+#
+# (This is the example PRD — no real progress recorded.)

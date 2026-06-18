@@ -73,3 +73,5 @@ aws eks update-kubeconfig --region ap-southeast-1 --name ecommerce-eks-dev
 ## Owners / agents
 
 devops-automator (primary — owns IaC modules, state, AWS provisioning), backend-architect (data/topology design).
+
+@AGENT.md

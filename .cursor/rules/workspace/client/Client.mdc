@@ -1,0 +1,19 @@
+---
+alwaysApply: false
+globs: client/**/*
+---
+Do:
+- Use Angular best practices for component, service, and module design.
+- Utilize existing core services and interceptors for loading, error handling, and authentication.
+- Follow the established feature-module organization under `src/app/`.
+- Use SCSS for styling, consistent with existing components.
+- Confirm with the user before implementing new features in this legacy codebase; prioritize maintenance.
+- Change the `generate-env.cjs` script or its inputs for production environment configuration, never hand-edit the generated `environment.prod.ts`.
+
+Don't:
+- Introduce new state management libraries (e.g., NgRx).
+- Modify generated `environment.prod.ts` directly.
+- Expect `npm run lint` to enforce linting rules; it is currently stubbed.
+- Introduce new UI work without confirming if it should be in the micro-frontends instead.
+
+@client/AGENT.md

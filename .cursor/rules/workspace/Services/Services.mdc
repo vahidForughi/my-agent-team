@@ -1,0 +1,20 @@
+---
+alwaysApply: false
+description: Microservices that make up the platform's domain.
+---
+
+# Services
+
+### Do's
+- **Do** treat each subdirectory (`Basket`, `Catalog`, `Discount`, `Ordering`) as a distinct, independently deployable microservice.
+- **Do** use the defined API contracts for inter-service communication.
+- **Do** use the shared event bus for asynchronous interactions between services.
+- **Do** follow the clean architecture principles: `Core` (domain), `Application` (app logic), `API` (presentation), `Infrastructure` (data access/external integrations).
+
+### Don'ts
+- **Don't** introduce direct database dependencies between services.
+- **Don't** bypass the API Gateway for external requests to services.
+- **Don't** add business logic directly into the API layer; delegate to the Application layer.
+- **Don't** assume synchronous communication for all inter-service interactions; consider event-driven patterns where appropriate.
+
+@Services/AGENT.md

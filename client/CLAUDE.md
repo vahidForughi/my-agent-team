@@ -99,6 +99,12 @@ library. HTTP concerns flow through `core/interceptors/` (`loading.interceptor.t
 - Production size budgets in `angular.json` are enforced; large additions can fail `build:prod`.
 - `npm run build` defaults to the **production** configuration (`defaultConfiguration: production`),
   so a plain build applies budgets and prod file replacements.
+- **Hardcoded Azure B2C fallback**: if `AZURE_B2C_CLIENT_ID`, `AZURE_B2C_AUTHORITY`, or
+  `AZURE_B2C_KNOWN_AUTHORITY` are not set when `build:prod` runs, `generate-env.cjs` silently
+  uses hardcoded values for the `nexttechuit.b2clogin.com` tenant. Always set these env vars in
+  any deployment environment.
+- **`--legacy-peer-deps` required**: `amplify.yml` uses `npm install --legacy-peer-deps`;
+  local installs need the same flag (Angular 21 + ngx-bootstrap 21 peer-dep conflicts).
 
 ## Owners / agents
 

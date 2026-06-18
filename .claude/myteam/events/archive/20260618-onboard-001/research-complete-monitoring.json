@@ -1,0 +1,1 @@
+{"type":"research-complete","run-id":"20260618-onboard-001","part":"Monitoring","dir":"monitoring","kebab":"monitoring","parent":null,"status":"done","artifacts":{"agent_md":"monitoring/AGENT.md","claude_md":"monitoring/CLAUDE.md","skill":".claude/skills/workspace/monitoring/SKILL.md"},"depth-bar":"pass","sections-filled":11,"paths-verified":true,"notes":""}

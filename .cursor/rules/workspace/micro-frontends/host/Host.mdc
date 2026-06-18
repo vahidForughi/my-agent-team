@@ -1,8 +1,7 @@
 ---
-globs: micro-frontends/host/**/*
 alwaysApply: false
+globs: micro-frontends/host/**/*
 ---
-
 # Host Micro-Frontend
 
 ## Architecture & routing

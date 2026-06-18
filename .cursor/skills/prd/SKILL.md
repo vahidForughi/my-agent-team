@@ -1,6 +1,6 @@
 ---
 name: prd
-description: "Generate a PRD and emit prd.json for the myteam harness. Each user story is assigned agent roles (from .cursor/agents/) with parallel counts. Use when planning a feature or when asked to create a PRD / spec out work. Triggers: create a prd, plan this feature, requirements for, spec out, /myteam-do."
+description: "Generate a PRD and emit prd.json for the myteam harness. Each user story is assigned a workspace part and agent roles derived from that part's category. Use when planning a feature or when asked to create a PRD / spec out work. Triggers: create a prd, plan this feature, requirements for, spec out, /myteam-do."
 license: MIT
 compatibility: Reads .cursor/myteam/config.yaml and .cursor/agents/. Output follows .cursor/myteam/prds/prd.json.example.
 metadata:
@@ -11,7 +11,8 @@ metadata:
 # PRD Generator (myteam)
 
 Produce a clear, implementation-ready PRD and emit it as `prd.json` for the harness.
-`prd` skill, **extended** so every story is assigned agent roles + a parallel count.
+`prd` skill, **extended** so every story is linked to a workspace part and assigned agent roles
+derived from that part's category.
 
 **Do NOT implement.** This skill only produces the PRD.
 
@@ -48,22 +49,26 @@ Rules:
   endpoint, one component). Too big: "build the dashboard", "add auth", "refactor the API".
 - **Order by dependency**: schema → backend logic → API → UI. `priority` ascending, no forward deps.
 
-## Step 3 — Assign agents per story (the myteam extension)
+## Step 3 — Assign part + agents per story (the myteam extension)
 
-For every story, choose the agent roles that should do the work and how many run in parallel.
-Roles MUST come from `.cursor/agents/` (registry in `.cursor/myteam/config.yaml`):
+For every story, assign a **`part`** from `.cursor/myteam/workspace-parts.yaml` — the closest
+matching leaf part, or the top-level parent if no leaf is a better fit. Include these fields from
+the part entry: `name`, `dir`, `category`, `kebab`.
 
-| Work in the story | Likely roles |
+Use the part's `category` to select agent roles (MUST come from `.cursor/agents/`):
+
+| part category | default agents |
 |---|---|
-| Services, data models, APIs, infra design | `backend-architect` |
-| `client/` or `micro-frontends/` UI | `frontend-developer` |
-| API validation (functional/perf/security) | `api-tester` |
-| CI/CD, deploy, infra automation | `devops-automator` |
-| Correctness/security/maintainability review | `code-reviewer` |
-| Screenshot-backed QA / reality check | `evidence-collector` |
+| `micro-service`, `api-gateway` | `backend-architect`, `api-tester` |
+| `shared-lib` | `backend-architect`, `code-reviewer` |
+| `micro-frontend`, `frontend` | `frontend-developer`, `evidence-collector` |
+| `infra`, `observability` | `devops-automator` |
+| `testing` | `api-tester`, `evidence-collector` |
+| `automation`, `tools` | `devops-automator` / `api-tester` |
+| `docs` | `code-reviewer` |
 
-Set `count` (parallel instances of that role) and a story-level `parallelism` cap (≥ sum of counts
-is fine; it bounds concurrency). When unsure, use `config.yaml > defaults.defaultParallelism`.
+`agents[]` entries are `{"role": "..."}` — no `count`, no story-level `parallelism`. A story
+touching multiple categories may list roles from both.
 
 ## Step 4 — Emit prd.json
 
@@ -85,8 +90,13 @@ Write `prd.json` matching `.cursor/myteam/prds/prd.json.example` exactly:
       "priority": 1,
       "passes": false,
       "notes": "",
-      "agents": [{ "role": "backend-architect", "count": 2 }, { "role": "api-tester", "count": 1 }],
-      "parallelism": 3
+      "part": {
+        "name": "Services",
+        "dir": "Services",
+        "category": "micro-service",
+        "kebab": "services"
+      },
+      "agents": [{ "role": "backend-architect" }, { "role": "api-tester" }]
     }
   ]
 }
@@ -102,6 +112,5 @@ Write `prd.json` matching `.cursor/myteam/prds/prd.json.example` exactly:
 - [ ] Asked lettered clarifying questions and incorporated answers
 - [ ] Stories small, specific, dependency-ordered (no forward deps)
 - [ ] Acceptance criteria verifiable; each ends with `Typecheck passes`; UI stories browser-verify
-- [ ] Every story has `agents[]` (valid roles) + `parallelism`
 - [ ] Valid JSON, matches `prd.json.example`; `branchName` is `myteam/<feature-kebab>`
 - [ ] Did NOT start implementing

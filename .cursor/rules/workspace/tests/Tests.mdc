@@ -1,0 +1,9 @@
+---
+alwaysApply: false
+description: Guidance for the 'Tests' part of the codebase.
+---
+# Rules for the Tests Part
+
+Tests part description.
+
+@tests/AGENT.md

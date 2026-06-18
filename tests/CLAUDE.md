@@ -69,3 +69,5 @@ summaries in `/tmp`, metrics pushed to PushGateway/Prometheus, visualized in Gra
 - `api-tester` — owns API-level test coverage and validation.
 - `performance-benchmarker` — owns load/perf scenarios and thresholds (delegated to `k6`).
 - `evidence-collector` — captures and reports test/metric evidence.
+
+@AGENT.md

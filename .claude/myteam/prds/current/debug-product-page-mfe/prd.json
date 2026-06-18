@@ -1,0 +1,95 @@
+{
+  "project": "cloud-native-ecommerce-platform",
+  "prdId": "PRD-DEBUG-PRODUCT-PAGE-MFE",
+  "branchName": "myteam/debug-product-page-mfe",
+  "description": "Bug: the product page does not load its micro-frontend. The 'store' remote (product list at /store and product detail at /store/product/:id) is the page in question; the host loads it at runtime via @module-federation/runtime init()+loadRemote('store/ConsoleMicroApp') from {remoteUrl}/remoteEntry.js (dev remoteUrl=http://localhost:4201) in host/src/microFe/MicroFrontendApp.tsx, and a load/mount failure renders ErrorBoundaryFallback ('Failed to Load Micro Frontend'). DONE-DEFINITION: navigating to /store in the host renders the store remote (no ErrorBoundary, spinner resolves) and both the product list and a product detail page render with data; the fix is verified in the browser and guarded against regression. The union of the stories below fully satisfies this.",
+  "defaultParallelism": 2,
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Reproduce and root-cause the product-page MFE load failure",
+      "description": "As a developer, I want the exact failure of the product page captured and root-caused so the fix targets the real cause instead of a guess.",
+      "acceptanceCriteria": [
+        "Reproduce by serving the suite (cd micro-frontends && npm run setup && npm start) and opening the host at http://localhost:4200/store",
+        "Capture the browser console and Network tab evidence: the request for http://localhost:4201/remoteEntry.js and its status, plus any '[MicroFrontendApp] Error loading store' / ErrorBoundary message",
+        "Classify the failing layer with a cited file:line — (a) remote not served/remoteEntry 404 or CORS, (b) loadRemote/share-scope or React/antd singleton error, (c) injector mismatch, or (d) MFE mounts but product data fails from the gateway",
+        "Confirm whether the 'store' remote is actually served on :4201 by npm start (nx run-many serve) and whether NX_MF_DEV_REMOTES affects it",
+        "Record the root cause and the reproduction steps in progress.txt (Codebase Patterns + a dated block)",
+        "Typecheck passes",
+        "Verify in browser (screenshot of the failing page + console for the progress log)"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "Grounded in host/src/microFe/MicroFrontendApp.tsx (runtime init/loadRemote), host/src/config/microFrontendRegistry.ts (dev port 4201, /remoteEntry.js), host/src/helpers/environment.ts (getRemoteUrl), store/module-federation.config.ts (exposes ./ConsoleMicroApp), store/src/remote-entry.ts -> injector.ts. Diagnosis-first because the precise root cause requires the live console/network.",
+      "agents": [
+        { "role": "frontend-developer", "count": 1 },
+        { "role": "evidence-collector", "count": 1 }
+      ],
+      "parallelism": 2
+    },
+    {
+      "id": "US-002",
+      "title": "Fix Module Federation loading so the store remote mounts in the host",
+      "description": "As a user, I want navigating to /store to load and mount the store micro-frontend so the product page appears instead of an error fallback.",
+      "acceptanceCriteria": [
+        "Apply the fix for the root cause identified in US-001 across the load path: host/src/microFe/MicroFrontendApp.tsx (@module-federation/runtime init/loadRemote), host/src/config/microFrontendRegistry.ts (remote URL + /remoteEntry.js), host webpack.config.ts vs store module-federation.config.ts (name 'store', exposes './ConsoleMicroApp'), and dev serve on :4201",
+        "Ensure shared singletons (react, react-dom, antd, @tanstack/*) are configured so loadRemote does not throw a share-scope/duplicate-React error",
+        "Navigating to http://localhost:4200/store mounts the store remote: the Spin loader resolves, no ErrorBoundaryFallback ('Failed to Load Micro Frontend') is shown, and the injected container (id mfe-store-*) contains the store app",
+        "remoteModule.default exposes { inject, unmount } and inject() runs without throwing (store/src/injector.ts)",
+        "No regressions to the other remotes (checkout/account/admin) loading via the same MicroFrontendApp path",
+        "Typecheck passes",
+        "Verify in browser (screenshot of /store mounted for the progress log)"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "Most fragile seam: the host loads remotes with @module-federation/runtime manually while the build uses @nx/module-federation — watch share scope / duplicate React. Keep the registry/exposed-module names case-sensitive ('store' / 'ConsoleMicroApp').",
+      "agents": [
+        { "role": "frontend-developer", "count": 2 },
+        { "role": "code-reviewer", "count": 1 }
+      ],
+      "parallelism": 3
+    },
+    {
+      "id": "US-003",
+      "title": "Ensure product list and detail render with data once mounted",
+      "description": "As a shopper, I want the product list and a product detail page to actually show products so the page is usable, not just mounted.",
+      "acceptanceCriteria": [
+        "/store renders the product grid (store/src/pages/ProductList.tsx) with products fetched from the gateway, and shows correct loading/empty/error states (LoadingState/ErrorState components)",
+        "/store/product/:id renders ProductDetail for a valid product id (route store/src/routes/product/$id.tsx)",
+        "Data calls hit the gateway via env.apiBaseUrl (NX_API_BASE_URL, default http://localhost:8010) using the /Catalog/* paths (store/src/services/products/apis.ts: GetAllProducts, GetProductById/:id); confirm mock mode is off by default (NX_USE_MOCK_DATA !== 'true')",
+        "With the gateway/Catalog service unavailable, the UI shows the error state rather than a blank page or unhandled rejection",
+        "Typecheck passes",
+        "Verify in browser (screenshots of the product list and a product detail for the progress log)"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "Data layer already targets the gateway short-form /Catalog routes (store/src/services/products/apis.ts, httpClient.ts, config/env.config.ts). Requires the backend gateway (:8010) + Catalog service running, or NX_USE_MOCK_DATA=true to validate UI independently. Only needed if loading was the sole symptom — included to guarantee the page is actually usable.",
+      "agents": [
+        { "role": "frontend-developer", "count": 1 },
+        { "role": "api-tester", "count": 1 }
+      ],
+      "parallelism": 2
+    },
+    {
+      "id": "US-004",
+      "title": "Verify end-to-end and guard against regression",
+      "description": "As a maintainer, I want the product-page flow verified end-to-end and protected by a test so it does not silently break again.",
+      "acceptanceCriteria": [
+        "End-to-end manual pass: home (/) -> navigate to /store -> open a product detail at /store/product/:id, all rendering correctly with screenshots in the progress log",
+        "Add or update an automated guard: a Playwright e2e (micro-frontends/e2e) or store route test (store/src/routes/index.test.tsx) asserting the store remote mounts and the product list renders",
+        "npm test (nx run-many test) and the e2e guard pass locally",
+        "Append final outcome + learnings to progress.txt",
+        "Typecheck passes",
+        "Verify in browser (final screenshots of the working product list + detail for the progress log)"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "Existing test scaffolding: micro-frontends/e2e (Playwright), store/src/routes/index.test.tsx (Jest). Closes the done-definition and prevents regression of the MFE load path.",
+      "agents": [
+        { "role": "evidence-collector", "count": 1 },
+        { "role": "frontend-developer", "count": 1 }
+      ],
+      "parallelism": 2
+    }
+  ]
+}
