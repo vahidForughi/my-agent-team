@@ -1,10 +1,10 @@
-# myteam — harness agent guidance
+# myteam — execute agent guidance
 
-The execution loop has **one source of truth**: `.claude/skills/myteam-harness/SKILL.md`.
+The execution loop has **one source of truth**: `.claude/skills/myteam-execute/SKILL.md`.
 Load that skill when executing a PRD; do not re-describe the loop here (it used to be duplicated,
 which wasted context). This file only states the invariants an agent must never break.
 
-@.claude/skills/myteam-harness/SKILL.md
+@.claude/skills/myteam-execute/SKILL.md
 
 ## Invariants
 

@@ -214,7 +214,7 @@ context: |
   Terraform/Helm/Istio infra (Infrastructure/, Deployments/, terraform/), observability (monitoring/).
   We use conventional commits. Branches: myteam/<feature-kebab>.
 
-# Defaults used by /myteam-do and /myteam-harness.
+# Defaults used by /myteam-execute and /myteam-execute.
 defaults:
   branchPrefix: myteam/
   defaultParallelism: 2
@@ -228,7 +228,7 @@ defaults:
 # Agent registry — roles map 1:1 to .cursor/agents/<role>.md and .cursor/rules/<role>.mdc.
 # prd.json userStories[].agents[].role MUST be one of these.
 agents:
-  - role: product-manager        # owns /myteam-do: turns intent into prd.json
+  - role: product-manager        # owns /myteam-execute: turns intent into prd.json
   - role: backend-architect      # services, APIs, data models, infra design
   - role: frontend-developer     # client/ and micro-frontends/ UI work
   - role: api-tester             # API functional/perf/security validation
@@ -236,7 +236,7 @@ agents:
   - role: code-reviewer          # correctness/security/maintainability review
   - role: evidence-collector     # screenshot-backed QA, reality checks
 
-# Per-artifact rules. Constraints applied to each artifact the harness produces.
+# Per-artifact rules. Constraints applied to each artifact the execute produces.
 # Add or tighten these during onboarding.
 rules:
   prd:

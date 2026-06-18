@@ -1,10 +1,10 @@
 ---
-description: Drive the whole backlog-tasks CSV to done — one task at a time via /myteam-task, /myteam-do, /myteam-archive
+description: Drive the whole backlog-tasks CSV to done — one task at a time via /myteam-plan, /myteam-execute, /myteam-archive
 argument-hint: [path to backlog CSV] (default .claude/myteam/backlog-tasks.csv)
 ---
 
 Run the backlog: repeatedly pick the top‑priority `todo` task from the backlog CSV and take it all
-the way to `done` using the harness commands, updating the CSV status at each step — until every
+the way to `done` using the execute commands, updating the CSV status at each step — until every
 task is `done`.
 
 **Input** (`$ARGUMENTS`): optional path to the backlog CSV. Default: `.claude/myteam/backlog-tasks.csv`.
@@ -15,7 +15,7 @@ The CSV has columns: `id, title, description, priority, status`.
 
 **Steps**
 
-0. **Scaffold once.** Run `/myteam-task` to ensure the harness state tree exists/repairs. Read the CSV.
+0. **Scaffold once.** Run `/myteam-plan` to ensure the execute state tree exists/repairs. Read the CSV.
 
 1. **Pick the next task.** Among rows with `status == todo`, choose the one with the **lowest
    `priority`** number. Tie‑break by `id` ascending. If there are **no `todo` rows**, go to **Done**.
@@ -23,7 +23,7 @@ The CSV has columns: `id, title, description, priority, status`.
 2. **Mark in progress.** Set that row's `status` to `inprogress` and save the CSV immediately
    (one row changed; preserve all other rows, columns, and quoting).
 
-3. **Plan + execute the task — in a fresh session.** Run `/myteam-do` with the task's `title` +
+3. **Plan + execute the task — in a fresh session.** Run `/myteam-execute` with the task's `title` +
    `description` as the feature input, in its **own fresh-context subagent** (Agent tool) so one task's
    work never piles into the next. Let it generate `prds/current/<feature-kebab>/prd.json` (use the
    backlog `id` in the PRD `description`/`prdId` for traceability) and run the execution loop until it
@@ -49,6 +49,6 @@ When no `todo` rows remain, print a summary (counts of `done` / total, and any r
 - If a task blocks or its quality gates fail, **leave it `inprogress`**, report the blocker, and
   stop (do not advance to the next task).
 - Do not touch rows already `done`.
-- Skip the `_[name-part]` / `_example-prd` templates — they are not backlog tasks.
+- Skip `_[name-part]` template dirs — they are not backlog tasks.
 - Run each task in a **fresh-context subagent**; the runner carries only CSV status + a one-line
   per-task summary across iterations, never accumulated task transcripts.
