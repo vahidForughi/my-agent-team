@@ -1,0 +1,42 @@
+---
+globs: Services/Basket/**/*
+alwaysApply: false
+---
+
+# Basket Service
+
+## Architecture
+
+- Follow Clean Architecture: `Basket.API` → `Basket.Application` → `Basket.Core` ← `Basket.Infrastructure`.
+- Use CQRS via `Common.Mediator` — add commands/queries in `Basket.Application`, handlers in `Handlers/`, register assemblies in `Program.cs` via `AddMediator`.
+- Use Mapperly `BasketMapper.Instance` for entity/response/event mapping; do not add AutoMapper or register the mapper in DI.
+- Keep HTTP controllers thin — delegate to mediator; checkout publish logic stays in controllers (`IPublishEndpoint`) as existing pattern.
+
+## Data & persistence
+
+- Baskets live in Redis via `IDistributedCache`; repository is `Basket.Infrastructure/Repositories/BasketRepository.cs`.
+- Cache key is the basket `UserName` string — no key prefix or schema versioning.
+- JSON deserialization uses case-insensitive property names — preserve this when changing serializer options.
+- Register `IBasketRepository` → `BasketRepository` in `Program.cs`; Redis connection from `CacheSettings:ConnectionString`.
+
+## Messaging & contracts
+
+- Checkout publishes integration events then deletes the basket — v1 uses `BasketCheckoutEvent`, v2 uses `BasketCheckoutEventV2` (different namespaces and Ordering consumers).
+- MassTransit is publish-only here — no receive endpoints in `Program.cs`.
+- Queue names for downstream consumers are in `Infrastructure/EventBus.Messages/Common/EventBusConstant.cs` — do not hardcode queue strings in Basket.
+- Ocelot routes upstream `/Basket/*` to `/api/v1/Basket/*` or `/api/v2/Basket/Checkout` — keep gateway paths aligned when renaming actions.
+
+## Discount integration
+
+- Discount lookup runs in `CreateShoppingCartCommandHandler` via `DiscountGrpcService` (gRPC to Discount service).
+- Respect `BypassDiscount:Enabled` config flag — when true, skip gRPC calls entirely.
+- `DiscountGrpcService` degrades gracefully (zero discount) on gRPC failures — do not throw from discount lookup in the handler path.
+
+## Do not
+
+- Do not add EF Core or SQL persistence for carts — Redis is the sole store for this service.
+- Do not add MassTransit consumers in Basket — Ordering owns checkout consumption.
+- Do not assume authentication — no auth scheme is configured despite `UseAuthorization()` in the pipeline.
+- Do not change checkout event shapes without coordinating with `Services/Ordering` consumers.
+
+@Services/Basket/AGENT.md

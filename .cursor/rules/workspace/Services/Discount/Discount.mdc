@@ -1,0 +1,46 @@
+---
+globs: Services/Discount/**/*
+alwaysApply: false
+---
+
+# Discount Service Rules
+
+## Architecture & API surface
+
+- Discount is **gRPC-only** — public contract is `Discount.Application/Protos/discount.proto` (`DiscountProtoService`).
+- Entry point: `Discount.API/Program.cs` → `DiscountService` maps RPCs to MediatR commands/queries.
+- Do **not** add REST controllers expecting Ocelot `/Discount/*` routes to work; those gateway routes have no matching controller here.
+- Follow the four-project layout: `Discount.API` → `Discount.Application` → `Discount.Core` ← `Discount.Infrastructure`.
+
+## Data & persistence
+
+- Persistence is raw SQL via Dapper + Npgsql in `Discount.Infrastructure/Repositories/DiscountRepository.cs` — no EF Core.
+- Entity is `Coupon` (`ProductName`, `Description`, `Amount`, `Id`); table name is `Coupon`.
+- Startup migration in `DbExtension.ApplyMigrations` **drops and recreates** the `Coupon` table — do not treat it as a safe incremental migration.
+- `GetDiscount` returns a placeholder coupon (not `null`) when no row exists; the handler's `NotFound` throw path is effectively dead.
+
+## Application patterns
+
+- Use `Common.Mediator` (`IRequest`/`IRequestHandler`) for new operations — wire through `DiscountService`, not directly from gRPC to repository.
+- Use Mapperly (`DiscountMapper`) for command/entity/proto conversions; ignore `Id` on create.
+- Proto changes require updating `discount.proto` and regenerating — Basket consumes the same proto as a gRPC client (`Basket.Application.csproj` Protobuf reference).
+
+## Configuration & ports
+
+- gRPC binds `http://0.0.0.0:8080` (Http2) per `Discount.API/appsettings.json`.
+- Connection string key: `DatabaseSettings:ConnectionString`.
+- Docker Compose exposes host port **8002** → container **8080**.
+- Downstream callers (Basket) use `GrpcSettings:DiscountUrl` — verify port matches 8080, not 80.
+
+## Observability
+
+- Serilog via `Common.Logging`; optional Elasticsearch via `ElasticConfiguration:Uri`.
+- OpenTelemetry tracing source `"Discount.API"` with OTLP export (default endpoint in `Program.cs` if `Otlp:Endpoint` unset).
+
+## Don't
+
+- Don't assume REST endpoints exist — test with a gRPC client.
+- Don't add EF migrations — schema is managed in `DbExtension.cs`.
+- Don't ignore repository `bool` return values when adding create/update/delete logic (existing handlers do — fix if touching them).
+
+@Services/Discount/AGENT.md

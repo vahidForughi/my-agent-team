@@ -1,0 +1,37 @@
+---
+globs: micro-frontends/host/**/*
+alwaysApply: false
+---
+
+# Host Micro-Frontend
+
+## Architecture & routing
+
+- Host is the Module Federation shell — it loads remotes at runtime via `@module-federation/runtime` in `src/microFe/MicroFrontendApp.tsx`; do not add static remote imports to host webpack config.
+- Register new remotes in `src/config/microFrontendRegistry.ts` (name, remoteName, exposedModule `ConsoleMicroApp`, dev port, basePath) before adding routes.
+- Route table lives in `src/routes.tsx` — update both explicit routes and `PROTECTED_ROUTES` when adding auth-gated MFEs.
+- `/admin/*` renders outside `Layout` (no shared navbar); all other MFE routes render inside `Layout` with fixed navbar padding.
+- Pass shared context to remotes through `AppConfigContext` (`MicroFrontendConfig` from `@ecommerce-platform/app-injector`) — do not bypass this when injecting remotes.
+
+## Auth & HTTP
+
+- Wrap authenticated routes with `ProtectedRoute`; it redirects to `/login` and preserves `state.from` for post-login return.
+- MSAL/B2C config is in `src/auth/msal/config.ts` and wired in `src/app/app.tsx` via `EcommerceAuthProvider`.
+- HTTP calls use `HttpClientFactory` in `src/http/http-client.factory.ts` — it attaches `Authorization` and `X-User-Name` from auth-provider storage.
+- Set `NX_API_BASE_URL` to the Ocelot gateway URL; multiple files have different fallback defaults — do not rely on implicit defaults.
+
+## Data & cross-MFE sync
+
+- Basket, products, and categories use React Query hooks under `src/services/`; invalidate basket cache via `basketCacheKeys.byUser()` or the `ecommerce:cart:updated` window event (see `Navbar.tsx`).
+- API paths follow Ocelot upstream style (`/Basket/...`, `/Catalog/...`) — keep aligned with gateway routes, not direct service `/api/v1/` prefixes.
+- Zod schemas validate API responses in service layers; preserve `createApiFactory` pattern for Basket endpoints.
+
+## Do not
+
+- Do not import remote MFE source directly into host — use the registry + `loadRemote` contract (`inject`/`unmount`).
+- Do not duplicate layout in remotes when host already provides navbar/footer for that route.
+- Do not change `ConsoleMicroApp` exposed module name without updating all remotes and the registry.
+- Do not assume `QueryClientProvider` exists — verify provider wiring before adding new React Query hooks.
+- Do not commit hardcoded production API URLs — use `NX_*` env vars injected by webpack `DefinePlugin`.
+
+@micro-frontends/host/AGENT.md

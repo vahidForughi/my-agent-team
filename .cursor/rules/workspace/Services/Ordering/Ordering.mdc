@@ -1,0 +1,40 @@
+---
+globs: Services/Ordering/**/*
+alwaysApply: false
+---
+
+# Ordering Service
+
+## Architecture
+
+- Follow Clean Architecture: `Ordering.API` → `Ordering.Application` → `Ordering.Core` ← `Ordering.Infrastructure`.
+- Use CQRS via `Common.Mediator` — add commands/queries in `Ordering.Application`, handlers alongside, register via assembly scan in `ServiceRegistration.cs`.
+- Use Mapperly `OrderMapper` for entity/DTO/event mapping; do not add AutoMapper.
+- Keep MassTransit consumers in `Ordering.API/EventBusConsumer/` — they should delegate to mediator commands, not contain business logic.
+
+## Messaging & contracts
+
+- Primary checkout path is RabbitMQ: `BasketOrderingConsumer` on `basketcheckout-queue`, `BasketOrderingConsumerV2` on `basketcheckout-queue-v2`.
+- Queue names come from `Infrastructure/EventBus.Messages/Common/EventBusConstant.cs` — do not hardcode queue strings.
+- Activity consumers (`ProductActivityConsumer`, `OrderActivityConsumer`) must check `ExistsByEventIdAsync` before insert for idempotency.
+- Only v1 basket consumer and HTTP test checkout publish `OrderActivityEvent`; v2 consumer does not.
+
+## Data & persistence
+
+- EF Core context is `OrderContext` in `Ordering.Infrastructure/Data/`; migrations live in `Ordering.Infrastructure/Migrations/`.
+- Register new repositories in `InfraServices.AddInfraServices` and implement against `RepositoryBase<T>`.
+- Audit fields (`CreatedBy`, `LastModifiedBy`) are set in `OrderContext.SaveChangesAsync` — currently hardcoded to `"slowey"`.
+
+## API & routing
+
+- `OrderController` route is `/api/v1/Order` (inherits versioned route from `ApiController`).
+- `ActivityController` uses fixed `/api/v1/Activity` — different routing pattern from Order.
+- Ocelot gateway config references `/api/v1/Ordering` — verify gateway paths if changing controller names.
+
+## Do not
+
+- Do not treat `POST /api/v1/Order` as the production checkout path — it is marked for testing only.
+- Do not skip FluentValidation when adding new commands — validators auto-register from assembly.
+- Do not add authentication assumptions — no auth scheme is configured in `Program.cs`.
+
+@Services/Ordering/AGENT.md

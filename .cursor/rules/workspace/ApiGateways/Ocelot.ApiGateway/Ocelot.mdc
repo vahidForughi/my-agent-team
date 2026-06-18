@@ -1,0 +1,22 @@
+---
+alwaysApply: false
+globs: ApiGateways/Ocelot.ApiGateway/**/*
+---
+
+## Routing & path conventions
+
+- **Do** add new routes in both `ocelot.Development.json` and `ocelot.k8s.json` (and sync `Deployments/helm/ocelotapigw/templates/configmap.yaml`).
+- **Do** use short upstream paths (`/Catalog/...`) that rewrite to downstream `/api/v1/...` or `/api/v2/...` paths.
+- **Do** set `DownstreamHostAndPorts` per environment: `host.docker.internal` + ports 8000–8003 for Development; K8s service DNS for `k8s`.
+- **Don't** expect clients to call `/api/v1/...` through the gateway — upstream paths omit that prefix.
+- **Don't** add C# route handlers for proxied APIs; routing is declarative in ocelot JSON files.
+
+## Middleware, limits & deployment
+
+- **Do** keep `ASPNETCORE_ENVIRONMENT` aligned with the matching `ocelot.{Environment}.json` file (`Development` locally, `k8s` in Helm).
+- **Do** apply `RateLimitOptions` on write-heavy routes (checkout already limited to 1 req / 3s).
+- **Do** test via `http://localhost:8010` when using Docker Compose (`8010:80` mapping).
+- **Don't** assume auth is enforced — `UseAuthorization()` is registered but no authentication middleware is configured in `Program.cs`.
+- **Don't** rely on `Ocelot.ApiGateway.http` — it references stale port 5210 and a non-existent `/weatherforecast/` endpoint.
+
+@ApiGateways/Ocelot.ApiGateway/AGENT.md

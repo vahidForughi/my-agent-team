@@ -1,0 +1,17 @@
+---
+description: This rule provides guidance for using the Common.Logging library for centralized logging with Serilog and Elasticsearch.
+globs: Infrastructure/Common.Logging/**/*
+alwaysApply: false
+---
+## Common.Logging Library Guidelines
+
+### Do's
+- **Do** use `Logging.ConfigureLogger` during application startup to initialize Serilog.
+- **Do** ensure `ElasticConfiguration:Uri` is correctly configured in your application settings if you intend to use Elasticsearch for logging.
+- **Do** leverage Serilog's structured logging capabilities and enrichments provided by the library.
+
+### Don'ts
+- **Don't** bypass the `Logging.ConfigureLogger` for basic application logging, as it provides standardized configuration.
+- **Don't** hardcode log levels; prefer using configuration or environment-specific overrides as demonstrated.
+
+@Infrastructure/Common.Logging/AGENT.md

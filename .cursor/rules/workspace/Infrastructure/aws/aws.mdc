@@ -1,0 +1,41 @@
+---
+description: AWS CloudFormation templates for EKS, VPC, ALB, and S3 product-image storage.
+globs: Infrastructure/aws/**/*
+alwaysApply: false
+---
+# AWS CloudFormation (Infrastructure/aws)
+
+## Stack layout & deployment
+
+- Use **modular stacks** for the primary path: `vpc.yaml` → `s3-bucket.yaml` (optional) → `eks-cluster.yaml`; `minimal-stack.yaml` is the all-in-one alternative for `deploy-aws-minimal.sh`.
+- Deploy scripts live at `scripts/deploy/deploy-aws.sh` and `scripts/deploy/deploy-aws-minimal.sh` — not at repo root despite README examples.
+- Always pass `--capabilities CAPABILITY_NAMED_IAM` when deploying EKS/VPC templates.
+- Wire EKS to VPC by passing `PrivateSubnetIds` from `${EnvName}-private-subnet-ids` export — templates do not use `Fn::ImportValue` internally.
+- `alb-ingress.yaml` exists but `deploy-aws.sh` has ALB deployment **commented out**; Ocelot uses K8s LoadBalancer (NLB) in the current flow.
+
+## Networking & region
+
+- VPC CIDR defaults to `10.0.0.0/16` with 2 public + 2 private subnets; single NAT gateway (dev cost pattern).
+- **`RegionMap` only defines `us-east-1` AZs** in `vpc.yaml` and `minimal-stack.yaml` — extend the map before deploying to other regions.
+- Public subnets in `minimal-stack.yaml` carry `kubernetes.io/role/elb` tags; private subnets carry `kubernetes.io/role/internal-elb`.
+
+## EKS & nodes
+
+- Default Kubernetes version is **1.30**; node AMI type is `AL2023_x86_64_STANDARD`.
+- `eks-cluster.yaml` uses a launch template with gp3 `NodeDiskSize` (default 80 GiB); defaults to 5× `m7i-flex.large` nodes.
+- `deploy-aws.sh` skips EKS CloudFormation update when stack is already healthy — do not assume template edits apply on re-run.
+
+## S3 & Catalog integration
+
+- Product images bucket: `ecommerce-product-images-${AccountId}` with public read on `products/*`.
+- `deploy-aws.sh` syncs `client/src/images/products/` and rewrites Catalog seed JSON S3 URLs — keep bucket policy and Helm S3 config aligned.
+- Do not tighten S3 public-access blocks without updating Catalog image URL expectations.
+
+## Do not
+
+- Do not edit CloudFormation templates assuming ALB is active — verify `deploy-aws.sh` ALB block first.
+- Do not add .NET code under `Infrastructure/aws/` — this part is YAML IaC only (config.yaml `type: dotnet` is stale).
+- Do not duplicate networking/EKS modules here when changing `terraform/` — pick one IaC path or document the split explicitly.
+- Do not deploy `minimal-stack.yaml` and modular stacks with the same `EnvName` without cleanup — overlapping resource names will conflict.
+
+@Infrastructure/aws/AGENT.md

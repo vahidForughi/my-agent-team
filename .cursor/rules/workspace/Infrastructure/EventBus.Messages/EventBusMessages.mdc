@@ -1,0 +1,31 @@
+---
+description: Defines common constants and integration events for inter-service communication.
+globs: Infrastructure/EventBus.Messages/**/*
+alwaysApply: false
+---
+
+# Infrastructure/EventBus.Messages - Event Bus Messages
+
+This module serves as a shared library defining the contracts for inter-service communication via an event bus. It contains constants for queue names and the data structures for integration events.
+
+## Do's and Don'ts
+
+### Event Definition
+- **Do:** Ensure all new integration events inherit from `BaseIntegrationEvent` to leverage correlation and creation date tracking.
+- **Do:** Define event properties clearly, reflecting the data necessary for consuming services to react to the event.
+- **Don't:** Include sensitive information directly in events unless absolutely necessary and properly secured.
+- **Don't:** Add business logic or complex processing within the event definitions themselves; events are purely data carriers.
+
+### Event Bus Constants
+- **Do:** Use `EventBusConstant` for all queue names when publishing or subscribing to events to maintain consistency and prevent typos.
+- **Don't:** Hardcode queue names in individual services; always reference `EventBusConstant`.
+
+### Versioning
+- **Do:** Consider event versioning (e.g., `BasketCheckoutEvent` vs. `BasketCheckoutEventV2`) when making breaking changes to event structures to allow for graceful upgrades of consuming services.
+- **Don't:** Modify existing event structures without a clear versioning strategy, as this can break compatibility with existing consumers.
+
+### Dependencies
+- **Do:** Keep this library free of external business logic dependencies; it should only depend on core .NET libraries and potentially a base event contract.
+- **Don't:** Introduce service-specific business logic or domain models into this shared library.
+
+@Infrastructure/EventBus.Messages/AGENT.md

@@ -1,0 +1,15 @@
+## Common.Mediator Usage Guidelines
+
+### Do's
+- **Do** use `IMediator.Send<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken)` to dispatch commands and queries within the application.
+- **Do** define new messages by implementing `IRequest<TResponse>` (for responses) or `IRequest` (for no response).
+- **Do** create handlers for messages by implementing `IRequestHandler<TRequest, TResponse>`.
+- **Do** extend mediator functionality with cross-cutting concerns by implementing `IPipelineBehavior<TRequest, TResponse>`.
+- **Do** register the mediator and handlers using `IServiceCollection.AddMediator(params Assembly[] assemblies)` during application startup.
+
+### Don'ts
+- **Don't** directly instantiate `Mediator` or `RequestInvoker`; always use dependency injection.
+- **Don't** bypass the `IMediator` interface for direct handler calls to ensure pipeline behaviors are applied.
+- **Don't** forget to register the assemblies containing your request handlers when calling `AddMediator`.
+
+@Infrastructure/Common.Mediator/AGENT.md

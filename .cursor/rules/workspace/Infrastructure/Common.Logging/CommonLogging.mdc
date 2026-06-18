@@ -1,0 +1,13 @@
+---
+description: "Provides standardized Serilog logging configuration for .NET applications."
+globs: "Infrastructure/Common.Logging/**/*"
+alwaysApply: false
+---
+
+## Logging Configuration
+- **DO** use the `Common.Logging` library for all logging in .NET applications.
+- **DO** ensure `ElasticConfiguration:Uri` is correctly configured in `appsettings.json` or environment variables if Elasticsearch logging is desired.
+- **DO NOT** manually configure Serilog in individual projects; always defer to `Common.Logging.Logging.ConfigureLogger`.
+- **DO NOT** hardcode log levels; allow them to be configured via `appsettings.json` or environment variables, or use the overrides provided.
+
+@Infrastructure/Common.Logging/AGENT.md
