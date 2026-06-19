@@ -20,24 +20,23 @@ fresh-context `prd.json > userStories` loop, with **agent orchestration** per-st
 > you haven't), then re-run `/myteam-execute`.
 
 1. Read the current PRD at `.claude/myteam/prds/current/prd.json`.
-2. Read the progress log at `.claude/myteam/prds/current/progress.txt` (check Codebase Patterns section first).
-3. Check you're on the correct branch from PRD `branchName`. If not, check it out or create from main.
-4. Pick the highest priority user story where `passes: false`. If none remain, go to **Stop**.
-5. Dispatch that single user story's assigned agents with fresh context, scoped in the part's dir,
-   using the **Agent tool** (`subagent_type: "<role>"`) for each `{ role }` in the story's `agents[]`.
-   Agents can hand off to one another as needed.
-6. Load part's rules, skills, and AGENT.md (paths listed under **Part's Definition**).
-7. Implement that single user story.
-8. Run quality checks from `config.yaml > defaults.qualityGates` (typecheck, lint, test,
-   verify in browser — use whatever your project requires).
-9. Commit all changes: `feat: [US-id] - [Story Title]`. Never commit broken code.
-10. Set `passes: true` for the story in `prd.json`.
-11. APPEND (never replace) the dated entry to the PRD `progress.txt` using **Progress Log Patterns**.
-12. If you discover any reusable facts and preferences, update (see **Learn** sections):
-    - `## Codebase Patterns` at the top of `progress.txt`.
-    - Part's rule `.claude/rules/workspace/<part.dir>/<part.name>.mdc`.
-    - Part's skill `.claude/skills/workspace/<part.dir>/SKILL.md`.
-    - Part's AGENT.md `./<part.dir>/AGENT.md`.
+2. Read the progress log at `.claude/myteam/prds/current/progress.txt` (check Codebase Patterns section first)
+3. Pick the highest priority user story where passes: false, If none remain, go to **Stop**.
+4. Dispatch that single user story's assigned agents with fresh context and scoped in part's dir,
+   that can hands-off with another ones if needed.
+5. Load part's rules, skills and AGENT.md, (paths exists under **Part's Definition** section)
+6. Implement that single user story.
+7. Dispatch a testing agent to run quality checks from `config.yaml > defaults.qualityGates` each one needed (e.g., typecheck, lint, test,
+   verify in the browser using available browser skill - use whatever your project requires). Collaborate to fix if needed.
+8. Commit all changes: `feat: [US-id] - [Story Title]`. Never commit broken code.
+9. Set `passes: true` for the story in `prd.json`.
+10. APPEND (never replace, just append) the dated entry to the PRD `progress.txt` with Progress Log Patterns
+11. Learn If you discover any reusable facts and preferences, update:
+    - patterns that future iterations should know into `## Codebase Patterns` section at the top of the PRD `progress.txt`;
+    - part's rule `.claude/rules/workspace/<part.dir>/<part.name>.mdc`.
+    - part's skill `.claude/skills/workspace/<part.dir>/SKILL.md`.
+    - part's AGENT.md `<part.dir>/AGENT.md`.
+12. Write summary of steps 10-11 changes and learnings in the output.
 13. Repeat until every story passes, then emit `<promise>COMPLETE</promise>`.
 
 ## Codebase Patterns

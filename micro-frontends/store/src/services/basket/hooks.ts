@@ -8,11 +8,13 @@ import { Basket } from './schemas';
 
 export const CART_UPDATED_EVENT = 'ecommerce:cart:updated';
 
-function getUserName(user: ReturnType<typeof useAuth>['user']): string | null {
-  if (!user) {
-    return null;
-  }
-  return user.email || user.displayName || user.id || null;
+// The store is a public remote: an unauthenticated visitor shops as "guest".
+// The Basket service keys carts by user name and accepts a "guest" cart, so fall
+// back to "guest" rather than blocking add-to-cart for anonymous users.
+const GUEST_USER_NAME = 'guest';
+
+function getUserName(user: ReturnType<typeof useAuth>['user']): string {
+  return user?.email || user?.displayName || user?.id || GUEST_USER_NAME;
 }
 
 type AddToCartPayload = {
@@ -32,9 +34,6 @@ export function useAddToCart(input?: FilterOptions<AddToCartInput>) {
     mutationKey: [basketKeys.addToCart.create(input)],
     mutationFn: async (payload: AddToCartPayload) => {
       const userName = getUserName(user);
-      if (!userName) {
-        throw new Error('User must be authenticated to add items to cart');
-      }
 
       const basketKey = basketKeys.getBasket.create({ userName });
       let currentBasket: Basket | undefined =

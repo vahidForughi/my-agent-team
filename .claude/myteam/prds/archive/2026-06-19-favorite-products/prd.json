@@ -1,0 +1,109 @@
+{
+  "project": "cloud-native-ecommerce-platform",
+  "prdId": "BLG-009",
+  "description": "Add a product favorites feature: authenticated users can click a heart icon on the single-product page (and product cards) in the store micro-frontend to add/remove a product from their favorites list. Their favorites list is persisted via the Catalog service (MongoDB) and is viewable on a dedicated /favorites route in the account micro-frontend. Done when: heart icon toggles correctly on store product pages, favorites are persisted to the backend and retrieved by user name, and the account /favorites page lists the user's saved products.",
+  "defaultParallelism": 1,
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Favorites data model and API endpoints in Catalog service",
+      "description": "As a backend developer, I need to persist user favorites in MongoDB and expose CRUD endpoints so the frontend can add, remove, and list favorites per user.\n\nImplementation:\n- Add `FavoriteProduct` entity to `Services/Catalog/Catalog.Core/Entities/FavoriteProduct.cs` with fields: `Id` (string), `UserName` (string), `ProductId` (string), `ProductName` (string), `ProductImageUrl` (string nullable), `CreatedAt` (DateTime).\n- Add `IFavoriteRepository` to `Services/Catalog/Catalog.Core/Repositories/IFavoriteRepository.cs` (methods: `AddFavoriteAsync`, `RemoveFavoriteAsync`, `GetFavoritesByUserNameAsync`, `IsFavoriteAsync`).\n- Add `FavoriteRepository` to `Services/Catalog/Catalog.Infrastructure/Repositories/FavoriteRepository.cs` using MongoDB.Driver against collection `Favorites` in the existing `CatalogDb`.\n- Register `FavoriteRepository` in `Services/Catalog/Catalog.API/Program.cs` (scoped, same pattern as `ProductRepository`).\n- Add CQRS in `Catalog.Application`:\n  - `Commands/AddFavoriteCommand.cs` (properties: `UserName`, `ProductId`, `ProductName`, `ProductImageUrl`) → returns `FavoriteProductResponse`\n  - `Commands/RemoveFavoriteCommand.cs` (property: `FavoriteId`) → returns `bool`\n  - `Queries/GetFavoritesByUserNameQuery.cs` (property: `UserName`) → returns `IEnumerable<FavoriteProductResponse>`\n  - `Handlers/AddFavoriteHandler.cs`, `RemoveFavoriteHandler.cs`, `GetFavoritesByUserNameHandler.cs`\n  - `Responses/FavoriteProductResponse.cs`\n- Expose in `CatalogController`:\n  - `POST /api/v1/Catalog/favorites` body: `AddFavoriteCommand` → returns 200 with `FavoriteProductResponse`\n  - `DELETE /api/v1/Catalog/favorites/{favoriteId}` → returns 200\n  - `GET /api/v1/Catalog/favorites/{userName}` → returns 200 with list of `FavoriteProductResponse`",
+      "acceptanceCriteria": [
+        "POST /api/v1/Catalog/favorites with valid body returns 200 with FavoriteProductResponse including an Id",
+        "GET /api/v1/Catalog/favorites/{userName} returns a list of favorites for that user",
+        "DELETE /api/v1/Catalog/favorites/{favoriteId} removes the entry and returns 200",
+        "Favorites are persisted in MongoDB Favorites collection",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": "Follow the existing handler pattern in Catalog.Application/Handlers. MongoDB.Driver is already referenced — no new NuGet packages needed. The Favorites collection is created automatically by MongoDB on first insert.",
+      "part": {
+        "name": "Catalog",
+        "dir": "Services/Catalog",
+        "category": "micro-service",
+        "kebab": "services/catalog"
+      },
+      "agents": [
+        { "role": "backend-architect" },
+        { "role": "api-tester" }
+      ]
+    },
+    {
+      "id": "US-002",
+      "title": "Wire favorites routes through Ocelot API gateway",
+      "description": "As a gateway operator, I need to add three new Ocelot routes so frontend apps can reach the Catalog favorites endpoints through the gateway at :8010.\n\nFiles to update:\n- `ApiGateways/Ocelot.ApiGateway/ocelot.Development.json`\n- `ApiGateways/Ocelot.ApiGateway/ocelot.k8s.json`\n\nAdd three route entries matching the same pattern as existing Catalog routes:\n- `GET /catalog/favorites/{userName}` → upstream `http://catalog.api/api/v1/Catalog/favorites/{userName}`\n- `POST /catalog/favorites` → upstream `http://catalog.api/api/v1/Catalog/favorites`\n- `DELETE /catalog/favorites/{favoriteId}` → upstream `http://catalog.api/api/v1/Catalog/favorites/{favoriteId}`",
+      "acceptanceCriteria": [
+        "GET /catalog/favorites/{userName} proxied correctly in ocelot.Development.json",
+        "POST /catalog/favorites proxied correctly in ocelot.Development.json",
+        "DELETE /catalog/favorites/{favoriteId} proxied correctly in ocelot.Development.json",
+        "Corresponding routes added to ocelot.k8s.json",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "Inspect existing Catalog GET/POST/DELETE routes in ocelot.Development.json for the exact UpstreamPathTemplate, DownstreamScheme, and DownstreamHostAndPorts to replicate. k8s variant uses service DNS names.",
+      "part": {
+        "name": "Ocelot.ApiGateway",
+        "dir": "ApiGateways/Ocelot.ApiGateway",
+        "category": "api-gateway",
+        "kebab": "api-gateways/ocelot"
+      },
+      "agents": [
+        { "role": "backend-architect" }
+      ]
+    },
+    {
+      "id": "US-003",
+      "title": "Favorite toggle icon on product cards in store micro-frontend",
+      "description": "As a shopper, I want to click a heart icon on a product card to add/remove that product from my favorites so I can track products I like.\n\nImplementation in `micro-frontends/store/src/`:\n- Add `src/services/favorites/` with:\n  - `apis.ts` — Axios calls using the same httpClient pattern as `src/services/products/apis.ts`: `addFavorite(body)` POST to `/catalog/favorites`, `removeFavorite(favoriteId)` DELETE to `/catalog/favorites/{favoriteId}`, `getFavoritesByUserName(userName)` GET `/catalog/favorites/{userName}`\n  - `keys.ts` — TanStack Query keys\n  - `hooks.ts` — `useAddFavorite()`, `useRemoveFavorite()`, `useFavoritesByUserName(userName)` using TanStack Query\n  - `schemas.ts` — Zod schema for `FavoriteProductResponse` ({id, userName, productId, productName, productImageUrl, createdAt})\n  - `index.ts` — barrel export\n- Add `src/components/FavoriteButton.tsx` — uses `HeartOutlined`/`HeartFilled` from `@ant-design/icons`; accepts `productId`, `productName`, `productImageUrl?` props; reads current favorites from `useFavoritesByUserName(user?.name)` via `useAuth()`; hidden/disabled when `!isAuthenticated`.\n- Integrate `FavoriteButton` into `src/pages/ProductList.tsx` on each product card.",
+      "acceptanceCriteria": [
+        "A heart icon is visible on each product card in ProductList",
+        "Heart icon is hidden/disabled when user is not authenticated",
+        "Clicking the heart icon when authenticated calls POST /catalog/favorites and turns the icon filled",
+        "Clicking again calls DELETE /catalog/favorites/{favoriteId} and returns the icon to outline",
+        "Typecheck passes",
+        "Verify in browser: screenshot showing filled heart on a favorited product and empty heart on a non-favorited product"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "Use NX_API_BASE_URL as the base for favorites API calls — same pattern as src/services/products/apis.ts. useAuth() from @ecommerce-platform/auth-provider provides user.name (userName) and isAuthenticated. Check the exact user shape from the existing auth hooks.",
+      "part": {
+        "name": "store",
+        "dir": "micro-frontends/store",
+        "category": "micro-frontend",
+        "kebab": "micro-frontends/store"
+      },
+      "agents": [
+        { "role": "frontend-developer" },
+        { "role": "evidence-collector" }
+      ]
+    },
+    {
+      "id": "US-004",
+      "title": "Favorites list page in account micro-frontend",
+      "description": "As a signed-in user, I want to see a list of my favorited products on my account page so I can review and remove them.\n\nImplementation in `micro-frontends/account/src/`:\n- Add `src/services/favorites/` with:\n  - `apis.ts` — `getFavoritesByUserName(userName)` and `removeFavorite(favoriteId)` via `src/http/httpClient.ts`\n  - `keys.ts` — query keys\n  - `hooks.ts` — `useFavoritesByUserName(userName)`, `useRemoveFavorite()`\n  - `schemas.ts` — Zod schema for `FavoriteProductResponse`\n  - `index.ts` — barrel export\n- Add route file `src/routes/favorites.tsx` (file-based routing — same pattern as `orders.tsx`)\n- Add page component `src/pages/Favorites.tsx` — lists favorites with product name, image thumbnail, and a remove button using Ant Design `List` or `Card.Grid`. Must handle loading/empty/error states.\n- Run `npm run routes:generate` from `micro-frontends/` root to regenerate `src/routeTree.gen.ts` after creating the route file.",
+      "acceptanceCriteria": [
+        "Navigating to /account/favorites renders the Favorites page",
+        "The page lists favorited products with name and image",
+        "Clicking remove calls DELETE /catalog/favorites/{favoriteId} and refreshes the list",
+        "Empty state shown when no favorites exist",
+        "Typecheck passes",
+        "Verify in browser: screenshot of the Favorites page with at least one product listed"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "IMPORTANT: run `npm run routes:generate` from micro-frontends/ after creating src/routes/favorites.tsx — routeTree.gen.ts is generated and must not be edited manually. httpClient in src/http/httpClient.ts already injects the auth token. useAuth() provides user.name for the userName parameter.",
+      "part": {
+        "name": "account",
+        "dir": "micro-frontends/account",
+        "category": "micro-frontend",
+        "kebab": "micro-frontends/account"
+      },
+      "agents": [
+        { "role": "frontend-developer" },
+        { "role": "evidence-collector" }
+      ]
+    }
+  ]
+}

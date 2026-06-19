@@ -3,7 +3,7 @@ description: Turn a backlog-task description into a prd.json of specific technic
 argument-hint: <backlog-task description (free text, or a backlog-tasks.csv row)>
 ---
 
-Turn **one backlog task** into an implementation-ready `prd.json`. This command **only writes the
+Follow **Steps** to Turn a task into an implementation-ready `prd.json`. This command **only writes the
 current PRD** — no code, no scaffolding, no branch/commit, no execution (`/myteam-execute` runs it later).
 
 **Input** (`$ARGUMENTS`): the **backlog-task description** (free text). It may come straight from a
@@ -74,7 +74,7 @@ If you can't cover it without a gap, add the missing story rather than leaving i
 
 ## PRD Output
 
-Write `.claude/myteam/prds/current/<task-kebab>/prd.json` matching `.claude/myteam/prds/prd.json.example`
+Write `.claude/myteam/prds/current/prd.json` matching `.claude/myteam/prds/prd.json.example`
 exactly:
 
 - `project`, `prdId` (carry the backlog `id` for traceability)
@@ -83,7 +83,7 @@ exactly:
 - `userStories[]` — each with `part` (from `workspace-parts.yaml`) and `agents[]`
 
 Seed an empty `progress.txt` next to it with the `## Codebase Patterns` header. Validate JSON
-matches the example. Confirm `branchName` is `myteam/<task-kebab>`.
+matches the example.
 
 Show the PRD summary and ask the user to confirm before suggesting `/myteam-execute`.
 
@@ -92,5 +92,5 @@ Show the PRD summary and ask the user to confirm before suggesting `/myteam-exec
 - Write **only** the current PRD dir (`prd.json` + seeded `progress.txt`). Make **no other changes**.
 - Every story must map back to the backlog task; the **union of stories = the backlog done-definition**.
 - Stories dependency-ordered and right-sized; every story has a valid `part` and `agents[]`.
-- Valid JSON matching `prd.json.example`; `branchName` is `myteam/<task-kebab>`.
+- Valid JSON matching `prd.json.example`.
 - Do not start implementing — this is planning only.

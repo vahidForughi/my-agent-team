@@ -56,6 +56,11 @@ Cluster: ConfigMaps/Secrets with `__`-delimited env vars (e.g. `EventBusSettings
 - Discount gRPC downstream in `ocelot.k8s.json` uses port `8080`, not `80` like other services
 - No cross-service DB access — services communicate via gRPC (sync) or RabbitMQ (async) only
 - Terraform state is local by default; migrate to S3 backend before team use
+- Ocelot config: `ocelot.Development.json` uses port as **string** (`"Port": "8000"`); `ocelot.k8s.json` uses port as **integer** (`"Port": 80`) — keep this asymmetry when adding routes
+- Catalog MongoDB: always extend `ICatalogContext` (not inject `IMongoDatabase` directly) to add new collections; `CatalogContext` is the single connection point
+- Catalog CQRS: `AddMediator(assemblies)` in `Program.cs` auto-discovers all handlers in `Catalog.Application` — no explicit handler registration needed
+- MFE account routing: run `npx nx run account:routes:generate` after adding/removing route files in `micro-frontends/account/src/routes/` — never edit `routeTree.gen.ts` manually
+- MFE Module Federation: never call `init()` after the host is initialized at build time — use `registerRemotes()` guarded by a module-level `Set<string>` to prevent duplicate registration warnings
 
 ## Sub-Part AGENT.md Index
 

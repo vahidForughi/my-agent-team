@@ -64,7 +64,6 @@ Write `prd.json` matching `.claude/myteam/prds/prd.json.example` exactly:
 {
   "project": "cloud-native-ecommerce-platform",
   "prdId": "PRD-XYZ",
-  "branchName": "myteam/<feature-kebab>",
   "description": "...",
   "defaultParallelism": 2,
   "userStories": [
@@ -94,5 +93,5 @@ Write `prd.json` matching `.claude/myteam/prds/prd.json.example` exactly:
 - [ ] Stories small, specific, dependency-ordered (no forward deps)
 - [ ] Acceptance criteria verifiable; each ends with `Typecheck passes`; UI stories browser-verify
 - [ ] Every story has `agents[]` (valid roles) + `parallelism`
-- [ ] Valid JSON, matches `prd.json.example`; `branchName` is `myteam/<feature-kebab>`
+- [ ] Valid JSON, matches `prd.json.example`.
 - [ ] Did NOT start implementing
