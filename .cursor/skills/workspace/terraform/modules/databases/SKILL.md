@@ -1,6 +1,8 @@
 ---
 name: databases
 description: Guide for managing AWS managed database services (DocumentDB, ElastiCache Redis, RDS PostgreSQL, RDS SQL Server) using Terraform.
+paths:
+  - terraform/modules/databases/**/*
 metadata: { part-dir: terraform/modules/databases }
 ---
 

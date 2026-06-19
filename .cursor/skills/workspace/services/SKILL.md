@@ -1,6 +1,8 @@
 ---
 name: services
 description: Microservices that make up the platform's domain.
+paths:
+  - Services/**/*
 metadata: { part-dir: Services }
 ---
 

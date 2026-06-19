@@ -1,6 +1,8 @@
 ---
 name: host
 description: Host micro-frontend shell — Module Federation runtime, routing, Azure AD B2C auth, shared layout, and remote MFE loading. Use when working in micro-frontends/host or integrating host routes, auth, or remote registry.
+paths:
+  - micro-frontends/host/**/*
 metadata: { part-dir: micro-frontends/host }
 ---
 

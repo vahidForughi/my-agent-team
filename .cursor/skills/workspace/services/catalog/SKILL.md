@@ -1,6 +1,8 @@
 ---
 name: catalog
 description: MongoDB-backed product/brand/type API with S3 images and RabbitMQ product-activity events.
+paths:
+  - Services/Catalog/**/*
 metadata: { part-dir: Services/Catalog }
 ---
 

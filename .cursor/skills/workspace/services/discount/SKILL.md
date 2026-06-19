@@ -1,6 +1,8 @@
 ---
 name: discount
 description: Onboard into the Discount gRPC microservice — coupon CRUD, PostgreSQL/Dapper persistence, MediatR handlers, and Basket consumer integration. Use when editing files under Services/Discount/.
+paths:
+  - Services/Discount/**/*
 metadata:
   part-dir: Services/Discount
 ---

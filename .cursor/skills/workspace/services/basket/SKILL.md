@@ -1,6 +1,8 @@
 ---
 name: basket
 description: Basket microservice — Redis-backed shopping carts, Discount gRPC integration, and checkout event publishing. Use when working in Services/Basket or integrating with cart CRUD, checkout, or basket-related gateway routes.
+paths:
+  - Services/Basket/**/*
 metadata: { part-dir: Services/Basket }
 ---
 

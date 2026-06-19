@@ -1,6 +1,8 @@
 ---
 name: tools
 description: Manage and understand the 'Tools' part of the codebase.
+paths:
+  - tools/**/*
 metadata: { part-dir: tools }
 ---
 

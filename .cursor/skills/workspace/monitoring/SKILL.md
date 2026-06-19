@@ -1,6 +1,8 @@
 ---
 name: monitoring
 description: Overview of the monitoring components and configurations.
+paths:
+  - monitoring/**/*
 metadata: { part-dir: monitoring }
 ---
 

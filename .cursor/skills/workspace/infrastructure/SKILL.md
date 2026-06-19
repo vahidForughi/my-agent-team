@@ -1,6 +1,8 @@
 ---
 name: infrastructure
 description: Provides shared .NET building blocks and infrastructure-as-code for microservices.
+paths:
+  - Infrastructure/**/*
 metadata: { part-dir: Infrastructure }
 ---
 

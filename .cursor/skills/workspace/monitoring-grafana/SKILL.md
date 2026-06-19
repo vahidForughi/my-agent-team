@@ -1,6 +1,8 @@
 ---
 name: monitoring-grafana
 description: Grafana observability and visualization tools.
+paths:
+  - monitoring/grafana/**/*
 metadata: { part-dir: monitoring/grafana }
 ---
 This skill provides guidance on using and configuring Grafana within the platform.

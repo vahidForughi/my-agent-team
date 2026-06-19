@@ -1,6 +1,8 @@
 ---
 name: store
 description: Store micro-frontend for displaying products, product details, and interacting with Catalog services.
+paths:
+  - micro-frontends/store/**/*
 metadata:
   part-dir: micro-frontends/store
 ---
