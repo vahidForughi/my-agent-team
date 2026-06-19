@@ -70,6 +70,7 @@ builder.Services.AddScoped<ICatalogContext, CatalogContext>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IBrandRepository, ProductRepository>();
 builder.Services.AddScoped<ITypesRepository, ProductRepository>();
+builder.Services.AddScoped<IFavoriteRepository, FavoriteRepository>();
 
 //Register AWS S3 Configuration
 builder.Services.Configure<Catalog.Infrastructure.Services.AwsS3Settings>(
