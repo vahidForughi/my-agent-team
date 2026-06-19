@@ -6,7 +6,7 @@ WORKDIR /app
 EXPOSE 80
 EXPOSE 443
 
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM --platform=linux/amd64 mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["Directory.Packages.props", "./"]
@@ -15,6 +15,7 @@ COPY ["Services/Discount/Discount.Application/Discount.Application.csproj", "Ser
 COPY ["Services/Discount/Discount.Core/Discount.Core.csproj", "Services/Discount/Discount.Core/"]
 COPY ["Services/Discount/Discount.Infrastructure/Discount.Infrastructure.csproj", "Services/Discount/Discount.Infrastructure/"]
 COPY ["Infrastructure/Common.Logging/Common.Logging.csproj", "Infrastructure/Common.Logging/"]
+COPY ["Infrastructure/Common.Mediator/Common.Mediator.csproj", "Infrastructure/Common.Mediator/"]
 RUN dotnet restore "./Services/Discount/Discount.API/Discount.API.csproj"
 COPY . .
 WORKDIR "/src/Services/Discount/Discount.API"
