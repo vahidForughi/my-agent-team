@@ -1,4 +1,61 @@
 # Changelog
+## [1.1.0] - 2026-06-19
+
+## What's Changed
+
+### 🚀 Features
+- feat: [US-004] - Favorites list page in account micro-frontend (7789178)
+- feat: [US-003] - Favorite toggle icon on product cards in store micro-frontend (538cb8f)
+- feat: [US-002] - Wire favorites routes through Ocelot API gateway (202d877)
+- feat: [US-001] - Favorites data model and API endpoints in Catalog service (0a92939)
+- feat: [US-002] - Browser-verify store loads without RUNTIME-010 error (c5981ab)
+- feat: [US-001] - Replace init() with registerRemotes() in MicroFrontendApp.tsx (8be0c38)
+- feat(myteam): add custom agent harness (e31a2d9)
+
+### 🐛 Bug Fixes
+- fix: post-favorites bug fixes and myteam harness improvements (729a1fe)
+- fix: add typecheck targets to store and account MFEs, fix store typeRoots (0298dc9)
+- fix: Dockerfile cross-platform builds, EF Core Activity migration, and infra script updates (266f63f)
+
+### 🔧 Improvements
+- fix: post-favorites bug fixes and myteam harness improvements (729a1fe)
+- enhance myteam-execute skill (c89cb8b)
+- enhance myteam execute command/skill (4ebabc4)
+- myteam onboard/task commands enhanced for claude (d7a17ce)
+- myteam onboard enhanced (634f581)
+- myteam onboard enhanced (35d490f)
+
+### 📚 Documentation
+- fix: Dockerfile cross-platform builds, EF Core Activity migration, and infra script updates (266f63f)
+
+### 🔐 Security
+- No security updates
+
+### 🏗️ Infrastructure
+- fix: Dockerfile cross-platform builds, EF Core Activity migration, and infra script updates (266f63f)
+
+### Other Changes
+- logs (39f793f)
+- update claude file paths (5a3e067)
+- add paths to skills (4c876d5)
+- remove .claude from gitignore (eeb50e7)
+- init myteam claude (bb54167)
+- onboard (07833e5)
+- init myteam commands (54226ef)
+
+## Docker Images
+All services are available as Docker images:
+- 
+- 
+- 
+- 
+- 
+
+## Helm Deployment
+
+
+**Full Changelog**: https://github.com/vahidForughi/my-agent-team/compare/1.0.0...1.1.0
+
 ## [0.11.3] - 2026-05-18
 
 ## What's Changed
