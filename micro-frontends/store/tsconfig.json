@@ -35,7 +35,6 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "es6",
-    "typeRoots": ["src/typings", "node_modules/@types"],
     "types": ["node"]
   },
   "exclude": ["node_modules"],

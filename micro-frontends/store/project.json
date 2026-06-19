@@ -97,6 +97,13 @@
         "jestConfig": "store/jest.config.ts"
       }
     },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./node_modules/.bin/tsc --noEmit -p store/tsconfig.app.json",
+        "cwd": "{workspaceRoot}/micro-frontends"
+      }
+    },
     "routes:generate": {
       "executor": "nx:run-commands",
       "options": {
