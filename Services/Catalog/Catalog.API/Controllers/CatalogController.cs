@@ -7,6 +7,7 @@ using MassTransit;
 using Common.Mediator;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
+using System.Collections.Generic;
 
 namespace Catalog.API.Controllers;
 
@@ -185,6 +186,35 @@ public class CatalogController : ApiController
     {
         var command = new DeleteProductByIdCommand(id);
         var result = await _mediator.Send(command);
+        return Ok(result);
+    }
+
+    [HttpPost]
+    [Route("favorites")]
+    [ProducesResponseType(typeof(FavoriteProductResponse), (int)HttpStatusCode.OK)]
+    public async Task<ActionResult<FavoriteProductResponse>> AddFavorite([FromBody] AddFavoriteCommand command)
+    {
+        var result = await _mediator.Send<FavoriteProductResponse>(command);
+        return Ok(result);
+    }
+
+    [HttpDelete]
+    [Route("favorites/{favoriteId}", Name = "RemoveFavorite")]
+    [ProducesResponseType(typeof(bool), (int)HttpStatusCode.OK)]
+    public async Task<ActionResult<bool>> RemoveFavorite(string favoriteId)
+    {
+        var command = new RemoveFavoriteCommand(favoriteId);
+        var result = await _mediator.Send(command);
+        return Ok(result);
+    }
+
+    [HttpGet]
+    [Route("favorites/{userName}", Name = "GetFavoritesByUserName")]
+    [ProducesResponseType(typeof(IEnumerable<FavoriteProductResponse>), (int)HttpStatusCode.OK)]
+    public async Task<ActionResult<IEnumerable<FavoriteProductResponse>>> GetFavoritesByUserName(string userName)
+    {
+        var query = new GetFavoritesByUserNameQuery(userName);
+        var result = await _mediator.Send(query);
         return Ok(result);
     }
 }

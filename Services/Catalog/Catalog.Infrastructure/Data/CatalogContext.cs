@@ -11,6 +11,7 @@ public class CatalogContext : ICatalogContext
     public IMongoCollection<ProductBrand> Brands { get; }
 
     public IMongoCollection<ProductType> Types { get; }
+    public IMongoCollection<FavoriteProduct> Favorites { get; }
 
     public CatalogContext(IConfiguration configuration)
     {
@@ -20,6 +21,7 @@ public class CatalogContext : ICatalogContext
             configuration.GetValue<string>("DatabaseSettings:BrandsCollection"));
         Types = database.GetCollection<ProductType>(configuration.GetValue<string>("DatabaseSettings:TypesCollection"));
         Products = database.GetCollection<Product>(configuration.GetValue<string>("DatabaseSettings:CollectionName"));
+        Favorites = database.GetCollection<FavoriteProduct>("Favorites");
         BrandContextSeed.SeedData(Brands);
         TypeContextSeed.SeedData(Types);
         CatalogContextSeed.SeedData(Products);
