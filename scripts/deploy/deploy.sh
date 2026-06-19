@@ -174,6 +174,32 @@ build_images() {
     log_success "All Docker images built and tagged successfully"
 }
 
+# Pre-pull heavy external images into minikube to avoid helm/kubectl wait timeouts
+pre_pull_images() {
+    log_info "Pre-pulling external images into minikube (this avoids timeout failures on first deploy)..."
+
+    local images=(
+        "mcr.microsoft.com/mssql/server:2022-latest"
+        "rabbitmq:3-management-alpine"
+        "docker.elastic.co/elasticsearch/elasticsearch:7.9.2"
+        "docker.elastic.co/kibana/kibana:7.9.2"
+        "localstack/localstack:3"
+        "portainer/portainer-ce:latest"
+        "dpage/pgadmin4:latest"
+    )
+
+    for image in "${images[@]}"; do
+        if minikube ssh -- "crictl images 2>/dev/null | grep -qF \"$(echo "$image" | cut -d: -f1)\"" 2>/dev/null; then
+            log_info "Already cached: $image"
+        else
+            log_info "Pulling: $image"
+            minikube image pull "$image" || log_warning "Could not pre-pull $image — will pull on demand"
+        fi
+    done
+
+    log_success "Image pre-pull complete"
+}
+
 # Function to deploy infrastructure services
 deploy_infrastructure() {
     if [ "$DEPLOYMENT_MODE" = "skip" ]; then
@@ -213,8 +239,8 @@ deploy_infrastructure() {
 
     # Wait for management tools to be ready
     log_info "Waiting for management tools to be ready..."
-    kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=portainer -n default --timeout=600s || log_warning "Portainer pod may not be ready yet"
-    kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=pgadmin -n default --timeout=600s || log_warning "pgAdmin pod may not be ready yet"
+    kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=portainer -n default --timeout=1800s || log_warning "Portainer pod may not be ready yet"
+    kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=pgadmin -n default --timeout=1800s || log_warning "pgAdmin pod may not be ready yet"
 
     cd ../..
 
@@ -239,7 +265,7 @@ deploy_localstack() {
 
     # Wait for LocalStack to be ready
     log_info "Waiting for LocalStack to be ready..."
-    kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=localstack -n default --timeout=300s || log_warning "LocalStack pod may not be ready yet"
+    kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=localstack -n default --timeout=1800s || log_warning "LocalStack pod may not be ready yet"
 
     # Initialize S3 bucket with images
     log_info "Initializing LocalStack S3 bucket and uploading images..."
@@ -275,66 +301,72 @@ wait_for_pods() {
     log_info "Waiting for infrastructure pods to be ready..."
 
     # Wait for critical infrastructure pods first
+    # Timeouts are set to 1800s (30 min) because large images (SQL Server 1.67GB,
+    # Elasticsearch 773MB) can take 30-45 min on first pull from external registries.
     log_info "Waiting for databases..."
     kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-catalogdb \
-        -n default --timeout=300s || log_warning "CatalogDB may not be ready yet, but continuing..."
+        -n default --timeout=1800s || log_warning "CatalogDB may not be ready yet, but continuing..."
     kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-basketdb \
-        -n default --timeout=300s || log_warning "BasketDB may not be ready yet, but continuing..."
+        -n default --timeout=1800s || log_warning "BasketDB may not be ready yet, but continuing..."
     kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-discountdb \
-        -n default --timeout=300s || log_warning "DiscountDB may not be ready yet, but continuing..."
+        -n default --timeout=1800s || log_warning "DiscountDB may not be ready yet, but continuing..."
     kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-orderdb \
-        -n default --timeout=300s || log_warning "OrderDB may not be ready yet, but continuing..."
+        -n default --timeout=1800s || log_warning "OrderDB may not be ready yet, but continuing..."
 
     log_info "Waiting for messaging and search..."
     kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-rabbitmq \
-        -n default --timeout=300s || log_warning "RabbitMQ may not be ready yet, but continuing..."
+        -n default --timeout=1800s || log_warning "RabbitMQ may not be ready yet, but continuing..."
     kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-elasticsearch \
-        -n default --timeout=300s || log_warning "Elasticsearch may not be ready yet, but continuing..."
+        -n default --timeout=1800s || log_warning "Elasticsearch may not be ready yet, but continuing..."
 
     log_info "Waiting for LocalStack..."
     kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=localstack \
-        -n default --timeout=300s || log_warning "LocalStack may not be ready yet, but continuing..."
+        -n default --timeout=1800s || log_warning "LocalStack may not be ready yet, but continuing..."
 
     # Wait for non-critical infrastructure (with warnings instead of failures)
     log_info "Waiting for monitoring tools..."
     kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-kibana \
-        -n default --timeout=300s || log_warning "Kibana may not be ready yet, but continuing..."
+        -n default --timeout=1800s || log_warning "Kibana may not be ready yet, but continuing..."
     kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-portainer \
-        -n default --timeout=300s || log_warning "Portainer may not be ready yet, but continuing..."
+        -n default --timeout=1800s || log_warning "Portainer may not be ready yet, but continuing..."
     kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=eshopping-pgadmin \
-        -n default --timeout=300s || log_warning "pgAdmin may not be ready yet, but continuing..."
+        -n default --timeout=1800s || log_warning "pgAdmin may not be ready yet, but continuing..."
 
     log_success "Infrastructure pods are ready (or starting)"
 }
 
 # Function to deploy API services
 deploy_apis() {
-    if [ "$DEPLOYMENT_MODE" = "skip" ]; then
+    # Check independently whether APIs are already deployed — infra "skip" should not
+    # prevent API deployment when APIs are missing (they are separate helm releases).
+    local EXISTING_API_RELEASES
+    EXISTING_API_RELEASES=$(helm list -n default -q 2>/dev/null | grep -cE "^eshopping-(catalog|basket|discount|ordering|gateway)$" || echo 0)
+
+    if [ "$DEPLOYMENT_MODE" = "skip" ] && [ "$EXISTING_API_RELEASES" -ge 5 ]; then
         log_info "Skipping API deployment (using existing)"
         return 0
     fi
-    
-    log_info "Deploying API microservices..."
-    
-    cd Deployments/helm
-    
-    HELM_CMD="install"
-    if [ "$DEPLOYMENT_MODE" = "upgrade" ]; then
-        HELM_CMD="upgrade --install"
+
+    if [ "$DEPLOYMENT_MODE" = "skip" ] && [ "$EXISTING_API_RELEASES" -gt 0 ]; then
+        log_warning "Found $EXISTING_API_RELEASES/5 API releases — deploying missing ones with upgrade --install"
     fi
-    
-    # Install microservices with increased timeout
-    # Catalog API - use local values file to override AWS defaults for LocalStack
+
+    log_info "Deploying API microservices..."
+
+    cd Deployments/helm
+
+    # Always use upgrade --install so re-runs are idempotent
+    local HELM_CMD="upgrade --install"
+
     helm $HELM_CMD eshopping-catalog ./catalog --namespace default --timeout 600s \
         -f ./catalog/local-values.yaml
-
     helm $HELM_CMD eshopping-basket ./basket --namespace default --timeout 600s
     helm $HELM_CMD eshopping-discount ./discount --namespace default --timeout 600s
     helm $HELM_CMD eshopping-ordering ./ordering --namespace default --timeout 600s
     helm $HELM_CMD eshopping-gateway ./ocelotapigw --namespace default --timeout 600s
-    
+
     cd ../..
-    
+
     log_success "API microservices deployed"
 }
 
@@ -534,16 +566,21 @@ setup_port_forwards() {
 
 # Function to start Angular dev server
 start_frontend() {
-    log_info "Starting Angular development server..."
-    
-    cd client
-    
-    # Start Angular in background
-    npm start > /dev/null 2>&1 &
-    
+    log_info "Starting micro-frontend dev servers..."
+
+    cd micro-frontends
+
+    if [ ! -d "node_modules" ]; then
+        log_info "Installing micro-frontend dependencies..."
+        npm install --legacy-peer-deps --prefer-offline
+    fi
+
+    # Start all 5 apps in background: host(:4200), store(:4201), checkout(:4202), account(:4203), admin(:4204)
+    node_modules/.bin/nx run-many --target=serve --projects=host,store,checkout,account,admin --parallel=5 > /tmp/microfrontend.log 2>&1 &
+
     cd ..
-    
-    log_success "Angular development server started"
+
+    log_success "Micro-frontend servers starting — http://localhost:4200 will be ready in ~30s"
 }
 
 # Function to verify deployment
@@ -651,6 +688,7 @@ main() {
     start_minikube
     check_istio_webhooks  # Check and fix webhook issues after minikube starts
     build_images
+    pre_pull_images
     deploy_infrastructure
     deploy_localstack
     wait_for_pods

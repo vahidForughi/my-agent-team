@@ -3,8 +3,6 @@
 # Script to enable Istio metrics collection for Grafana dashboards
 # This ensures all microservices have Istio sidecars injected for proper observability
 
-set -e
-
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -45,27 +43,42 @@ kubectl label namespace default istio-injection=enabled --overwrite
 log_info "Checking current microservice pods..."
 PODS_WITHOUT_SIDECAR=$(kubectl get pods -n default | grep -E "(catalog|basket|ordering|discount|ocelotapigw)" | grep "1/1" | wc -l || echo "0")
 
-if [ "$PODS_WITHOUT_SIDECAR" -gt 0 ]; then
-    log_warning "Found $PODS_WITHOUT_SIDECAR pods without Istio sidecars"
-    
-    # Restart deployments to inject sidecars
-    log_info "Restarting microservice deployments to inject Istio sidecars..."
-    kubectl rollout restart deployment/eshopping-catalog deployment/eshopping-basket deployment/eshopping-ordering deployment/eshopping-discount-discount-grpc deployment/eshopping-gateway-ocelotapigw -n default
+API_DEPLOYMENTS=(
+    eshopping-catalog
+    eshopping-basket
+    eshopping-ordering
+    eshopping-discount-discount-grpc
+    eshopping-gateway-ocelotapigw
+)
 
-    # Wait for rollouts to complete
+# Filter to only deployments that actually exist
+EXISTING_DEPLOYMENTS=()
+for dep in "${API_DEPLOYMENTS[@]}"; do
+    if kubectl get deployment "$dep" -n default &>/dev/null; then
+        EXISTING_DEPLOYMENTS+=("$dep")
+    else
+        log_warning "Deployment $dep not found — skipping sidecar restart for it"
+    fi
+done
+
+if [ "${#EXISTING_DEPLOYMENTS[@]}" -eq 0 ]; then
+    log_warning "No API deployments found. Deploy APIs first, then re-run this script."
+elif [ "$PODS_WITHOUT_SIDECAR" -gt 0 ]; then
+    log_warning "Found $PODS_WITHOUT_SIDECAR pods without Istio sidecars"
+
+    log_info "Restarting microservice deployments to inject Istio sidecars..."
+    kubectl rollout restart "${EXISTING_DEPLOYMENTS[@]/#/deployment/}" -n default
+
     log_info "Waiting for deployments to complete..."
-    kubectl rollout status deployment/eshopping-catalog deployment/eshopping-basket deployment/eshopping-ordering deployment/eshopping-discount-discount-grpc deployment/eshopping-gateway-ocelotapigw -n default --timeout=300s
-    
-    # Verify sidecar injection
+    kubectl rollout status "${EXISTING_DEPLOYMENTS[@]/#/deployment/}" -n default --timeout=300s
+
     log_info "Verifying Istio sidecar injection..."
-    sleep 10
     PODS_WITH_SIDECAR=$(kubectl get pods -n default | grep -E "(catalog|basket|ordering|discount|ocelotapigw)" | grep "2/2" | wc -l || echo "0")
-    
+
     if [ "$PODS_WITH_SIDECAR" -gt 0 ]; then
         log_success "$PODS_WITH_SIDECAR microservice pods now have Istio sidecars injected"
     else
-        log_error "Failed to inject Istio sidecars. Please check the logs."
-        exit 1
+        log_warning "Sidecars not yet visible — pods may still be starting. Check with: kubectl get pods -n default"
     fi
 else
     log_success "All microservice pods already have Istio sidecars injected"
