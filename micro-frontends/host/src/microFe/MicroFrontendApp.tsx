@@ -14,7 +14,7 @@
  * Pattern adapted from console-ui WebKitMicroApp implementation.
  */
 
-import { init, loadRemote } from '@module-federation/runtime';
+import { registerRemotes, loadRemote } from '@module-federation/runtime';
 import { Spin } from 'antd';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
@@ -22,6 +22,8 @@ import { getMicroFrontendConfig } from '../config/microFrontendRegistry';
 import { getRemoteUrl } from '../helpers/environment';
 import { ErrorBoundary, ErrorBoundaryFallback } from './ErrorBoundary';
 import { useAppConfig } from '../context/AppConfigContext';
+
+const registeredRemotes = new Set<string>();
 
 interface RemoteModule {
   inject: (elementId: string, props?: unknown) => void;
@@ -89,16 +91,11 @@ const MicroFrontendContent: React.FC<{ appName: string }> = ({ appName }) => {
 
         console.log(`[MicroFrontendApp] Loading ${appName} from ${remoteUrl}`);
 
-        // Initialize Module Federation runtime
-        init({
-          name: '@ecommerce-host',
-          remotes: [
-            {
-              name: microFrontendConfig.remoteName,
-              entry: `${remoteUrl}/remoteEntry.js`,
-            },
-          ],
-        });
+        // Register remote with the already-initialised MF runtime (never call init() again)
+        if (!registeredRemotes.has(microFrontendConfig.remoteName)) {
+          registerRemotes([{ name: microFrontendConfig.remoteName, entry: `${remoteUrl}/remoteEntry.js` }]);
+          registeredRemotes.add(microFrontendConfig.remoteName);
+        }
 
         // Load the remote module
         // Format: remoteName/exposedModule (e.g., 'store/ConsoleMicroApp')
