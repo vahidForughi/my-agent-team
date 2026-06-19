@@ -36,7 +36,7 @@ Common.Mediator provides a simplified in-process mediator implementation for req
 - **Responsibilities by file/module**:
     - `Abstractions.cs`: Defines `IRequest<T>`, `IRequest`, `Unit`, `IRequestHandler<TRequest, TResponse>`, `RequestHandlerDelegate<TResponse>`, `IPipelineBehavior<TRequest, TResponse>`, `IMediator`.
     - `Mediator.cs`: `Mediator` class implements `IMediator`, using a `ConcurrentDictionary` cache for `RequestInvoker`s. `RequestInvoker` uses reflection to build handler and behavior invocation chains.
-    - `ServiceCollectionExtensions.cs`: `AddMediator` method registers `IMediator` as a singleton and `IRequestHandler` implementations as transient services.
+    - `ServiceCollectionExtensions.cs`: `AddMediator` method registers `IMediator` as scoped (so it resolves handlers from the per-request provider) and `IRequestHandler` implementations as transient services.
 - **Detailed code flows**:
   1. A request (`IRequest<TResponse>`) is sent via `IMediator.Send(request, cancellationToken)`.
   2. The `Mediator` class looks up or builds a `RequestInvoker` for the request type.

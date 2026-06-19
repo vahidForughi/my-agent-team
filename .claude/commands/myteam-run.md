@@ -3,9 +3,8 @@ description: Drive the whole backlog-tasks CSV to done — one task at a time vi
 argument-hint: [path to backlog CSV] (default .claude/myteam/backlog-tasks.csv)
 ---
 
-Run the backlog: repeatedly pick the top‑priority `todo` task from the backlog CSV and take it all
-the way to `done` using the execute commands, updating the CSV status at each step — until every
-task is `done`.
+Follow **Steps** to repeatedly pick backlog tasks from the CSV and take it all the way to `done` one by one — until 
+every task is `done`.
 
 **Input** (`$ARGUMENTS`): optional path to the backlog CSV. Default: `.claude/myteam/backlog-tasks.csv`.
 
@@ -15,28 +14,20 @@ The CSV has columns: `id, title, description, priority, status`.
 
 **Steps**
 
-0. **Scaffold once.** Run `/myteam-plan` to ensure the execute state tree exists/repairs. Read the CSV.
-
-1. **Pick the next task.** Among rows with `status == todo`, choose the one with the **lowest
-   `priority`** number. Tie‑break by `id` ascending. If there are **no `todo` rows**, go to **Done**.
-
-2. **Mark in progress.** Set that row's `status` to `inprogress` and save the CSV immediately
+0. Run `/myteam-plan` to ensure the execute state tree exists/repairs.
+1. Read the CSV.
+2. Pick the next task. Among rows with `status == todo`, choose the one with the lowest
+   `priority` number. Tie‑break by `id` ascending. If there are **no `todo` rows**, go to **Done**.
+3. Set that row's `status` to `inprogress` and save the CSV immediately
    (one row changed; preserve all other rows, columns, and quoting).
-
-3. **Plan + execute the task — in a fresh session.** Run `/myteam-execute` with the task's `title` +
-   `description` as the feature input, in its **own fresh-context subagent** (Agent tool) so one task's
-   work never piles into the next. Let it generate `prds/current/<feature-kebab>/prd.json` (use the
-   backlog `id` in the PRD `description`/`prdId` for traceability) and run the execution loop until it
-   emits `<promise>COMPLETE</promise>`. Back in the runner, keep only the CSV status and a **one-line
-   summary** of the task — not the task's full transcript.
-
-4. **Archive.** Once the PRD is complete, run `/myteam-archive <feature-kebab>` to move it to
-   `prds/archive/YYYY-MM-DD-<feature-kebab>/`.
-
-5. **Mark done.** Set the backlog row's `status` to `done` and save the CSV. Report: backlog `id`,
+4. Dispatch a product-manager agent with fresh-context to run `/myteam-plan` with the task's `title` + `description` 
+   as the feature input. 
+5. Run `/myteam-execute` to loop in its own fresh-context subagent and. 
+6. Update summary of the task in CSV — not the task's full transcript.
+7. Run `/myteam-archive <feature-kebab>` to move it to `prds/archive/YYYY-MM-DD-<feature-kebab>/`.
+8. Set the backlog row's `status` to `done` and fill `summary` and save the CSV. Report: backlog `id`,
    PRD archived path, stories passed.
-
-6. **Loop.** Go back to step 1 for the next top‑priority `todo`.
+9. Go back to step 1 for the next top‑priority `todo`.
 
 **Done**
 

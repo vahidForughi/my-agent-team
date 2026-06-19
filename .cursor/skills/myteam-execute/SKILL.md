@@ -36,7 +36,8 @@ fresh-context `prd.json > userStories` loop, with **agent orchestration** per-st
    - part's rule `.cursor/rules/workspace/<part.dir>/<part.name>.mdc`.
    - part's skill `.cursor/skills/workspace/<part.dir>/SKILL.md`.
    - part's AGENT.md `<part.dir>/AGENT.md`.
-12. Repeat until every story passes, then emit `<promise>COMPLETE</promise>`.
+12. Write summary of steps 10-11 changes and learnings in the output.
+13. Repeat until every story passes, then emit `<promise>COMPLETE</promise>`.
 
 ## Codebase Patterns
 

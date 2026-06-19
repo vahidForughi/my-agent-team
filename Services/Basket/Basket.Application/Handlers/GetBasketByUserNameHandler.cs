@@ -1,6 +1,7 @@
 ﻿using Basket.Application.Mappers;
 using Basket.Application.Queries;
 using Basket.Application.Responses;
+using Basket.Core.Entities;
 using Basket.Core.Repositories;
 using Common.Mediator;
 
@@ -18,7 +19,11 @@ public class GetBasketByUserNameHandler : IRequestHandler<GetBasketByUserNameQue
     public async Task<ShoppingCartResponse> Handle(GetBasketByUserNameQuery request,
         CancellationToken cancellationToken)
     {
-        var shoppingCart = await _basketRepository.GetBasket(request.UserName);
+        // GetBasket returns null when the user has no cart stored in Redis (e.g. a guest's
+        // first visit). Fall back to an empty cart so callers get a valid, empty
+        // ShoppingCartResponse instead of a NullReferenceException from the mapper.
+        var shoppingCart = await _basketRepository.GetBasket(request.UserName)
+                           ?? new ShoppingCart(request.UserName);
         return BasketMapper.Instance.ToShoppingCartResponse(shoppingCart);
     }
 }

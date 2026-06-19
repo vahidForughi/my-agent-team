@@ -1,7 +1,6 @@
 {
   "project": "cloud-native-ecommerce-platform",
   "prdId": "PRD-001",
-  "branchName": "myteam/feature-kebab-name",
   "description": "One-line description of the feature this PRD delivers.",
   "defaultParallelism": 2,
   "userStories": [
@@ -49,7 +48,7 @@
         { "role": "backend-architect" },
         { "role": "api-tester" }
       ],
-      "model": "opus"
+      "model": "inherit"
     },
     {
       "id": "US-003",

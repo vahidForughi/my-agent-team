@@ -71,12 +71,16 @@ public class S3ImageStorageService : IImageStorageService
                 throw new Exception($"Failed to upload image to S3. Status code: {response.HttpStatusCode}");
             }
 
-            // Generate the public URL
+            // Generate the public URL. Prefer PublicUrl (browser-reachable) over ServiceUrl
+            // (the in-cluster SDK endpoint, which the browser can't resolve in local dev).
+            var publicBase = !string.IsNullOrEmpty(_s3Settings.PublicUrl)
+                ? _s3Settings.PublicUrl
+                : _s3Settings.ServiceUrl;
             string imageUrl;
-            if (!string.IsNullOrEmpty(_s3Settings.ServiceUrl))
+            if (!string.IsNullOrEmpty(publicBase))
             {
                 // LocalStack path-style URL
-                imageUrl = $"{_s3Settings.ServiceUrl}/{_s3Settings.BucketName}/{key}";
+                imageUrl = $"{publicBase}/{_s3Settings.BucketName}/{key}";
             }
             else
             {
@@ -254,7 +258,10 @@ public class AwsS3Settings
     public string BucketName { get; set; } = string.Empty;
     public string Region { get; set; } = string.Empty;
     public string ImagePrefix { get; set; } = "products/";
-    public string? ServiceUrl { get; set; }  // For LocalStack endpoint
+    public string? ServiceUrl { get; set; }  // For LocalStack endpoint (used by the S3 SDK, in-cluster DNS)
+    public string? PublicUrl { get; set; }   // Browser-reachable base for the public image URL (falls back to ServiceUrl).
+                                             // In local dev ServiceUrl is the in-cluster host (e.g. http://localstack:4566)
+                                             // which the browser can't resolve; set PublicUrl to http://localhost:4566.
     public bool UsePathStyle { get; set; } = false;  // For path-style URLs
 }
 

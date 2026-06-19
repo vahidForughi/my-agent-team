@@ -12,7 +12,12 @@ public static class ServiceCollectionExtensions
     /// </summary>
     public static IServiceCollection AddMediator(this IServiceCollection services, params Assembly[] assemblies)
     {
-        services.AddSingleton<IMediator, Mediator>();
+        // Scoped (not singleton): the mediator captures the IServiceProvider injected into it,
+        // and resolves handlers from it. A singleton would capture the root provider and fail to
+        // resolve scoped handler dependencies (e.g. repositories) with
+        // "Cannot resolve scoped service ... from root provider". Scoped gives it the
+        // per-request provider, matching how MediatR registers IMediator.
+        services.AddScoped<IMediator, Mediator>();
 
         var handlerInterface = typeof(IRequestHandler<,>);
         foreach (var asm in assemblies.Distinct())

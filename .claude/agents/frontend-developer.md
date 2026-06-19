@@ -1,6 +1,6 @@
 ---
 name: frontend-developer
-model: claude-opus-4-8[]
+model: inherit
 description: Use for frontend implementation tasks — React/Vue/Angular components, UI/UX implementation, performance optimization (Core Web Vitals), accessibility compliance, and state management.
 ---
 

@@ -434,7 +434,7 @@ deploy_monitoring() {
     # Install Prometheus
     log_info "Installing Prometheus..."
     helm repo add prometheus-community https://prometheus-community.github.io/helm-charts || true
-    helm repo update
+    helm repo update prometheus-community || log_warning "Could not refresh prometheus-community repo (using cached charts)"
     
     # Check if Prometheus exists and upgrade or install
     if helm list -n monitoring -q | grep -q "^prometheus$"; then

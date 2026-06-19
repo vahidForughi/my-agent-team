@@ -1,0 +1,4 @@
+## Codebase Patterns
+- MF Runtime: never call `init()` after host is initialized at build time — use `registerRemotes()` guarded by a module-level `Set<string>` to prevent duplicate registration warnings.
+- Catalog MongoDB: always extend `ICatalogContext` (not inject `IMongoDatabase`) to add new collections — keeps all DB access centralized and consistent with `ProductRepository`.
+- Catalog CQRS: handlers live in `Catalog.Application/Handlers/` and are auto-discovered by the existing `AddMediator(assemblies)` call — no explicit registration needed.

@@ -12,7 +12,7 @@ context: |
   Tech stack: .NET microservices (Services/), Ocelot API gateways (ApiGateways/),
   React client (client/) + micro-frontends (micro-frontends/),
   Terraform/Helm/Istio infra (Infrastructure/, Deployments/, terraform/), observability (monitoring/).
-  We use conventional commits. Branches: myteam/<feature-kebab>.
+  We use conventional commits.
 
 # Defaults used by /myteam-execute and /myteam-execute.
 defaults:
@@ -35,6 +35,7 @@ defaults:
     - typecheck
     - lint
     - test
+    - playwright
   uiVerification: "Verify in browser (screenshot for the progress log)"
   stopSignal: "<promise>COMPLETE</promise>"
 
@@ -59,7 +60,7 @@ rules:
     - UI stories must include a browser-verification criterion (screenshot for the log)
     - Every story must assign agents[] using roles from this registry, plus a parallelism cap
     - Default to count 1 and parallelism 1 per story; raise either only for genuinely complex stories with independent sub-work (justify in notes)
-    - branchName must be "myteam/<feature-kebab>"; prd.json must validate as JSON
+    - prd.json must validate as JSON
   progress:
     - Append-only; never overwrite or delete prior entries
     - One dated block per completed story, with a "Learnings for future iterations" section

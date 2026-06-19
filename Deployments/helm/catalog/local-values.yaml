@@ -2,7 +2,8 @@
 # This file overrides AWS S3 settings to use LocalStack instead of AWS
 
 configmap:
-  AWS__S3__ServiceUrl: "http://localstack:4566"
+  AWS__S3__ServiceUrl: "http://localstack:4566"   # in-cluster endpoint used by the S3 SDK
+  AWS__S3__PublicUrl: "http://localhost:4566"      # browser-reachable base embedded in image URLs (port-forwarded)
   USE_LOCALSTACK: "true"
 
 env:
