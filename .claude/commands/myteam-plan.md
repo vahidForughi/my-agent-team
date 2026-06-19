@@ -11,7 +11,7 @@ current PRD** — no code, no scaffolding, no branch/commit, no execution (`/myt
 
 ## Steps
 
-0. **Guard** — check `.cursor/myteam/workspace-parts.yaml` exists and is non-empty. See **Guard**.
+0. **Guard** — check `.claude/myteam/workspace-parts.yaml` exists and is non-empty. See **Guard**.
 1. Spawn the **product-manager** agent (Agent tool, `subagent_type: "product-manager"`) as lead.
 2. Load the **`prd`** skill (`.claude/skills/prd/SKILL.md`). See **Interactive Mode** for when to
    ask clarifying questions.
@@ -23,7 +23,7 @@ current PRD** — no code, no scaffolding, no branch/commit, no execution (`/myt
 
 ## Guard
 
-If `.cursor/myteam/workspace-parts.yaml` does **not** exist or is empty, STOP:
+If `.claude/myteam/workspace-parts.yaml` does **not** exist or is empty, STOP:
 
 > Stop. This repo hasn't been onboarded yet. Run `/myteam-onboard` first, then re-run `/myteam-plan`.
 
@@ -40,8 +40,8 @@ and record it in the PRD `description` / story `notes`.
 ## Story Rules
 
 - Stories are **grounded in the real architecture** (paths, stack, interfaces, gotchas).
-- Load `.cursor/myteam/workspace-parts.yaml` and the relevant part contexts:
-  `.cursor/skills/workspace/<part-dir>/SKILL.md`, `.cursor/rules/workspace/<part-dir>/<part-name>.mdc`,
+- Load `.claude/myteam/workspace-parts.yaml` and the relevant part contexts:
+  `.claude/skills/workspace/<part-dir>/SKILL.md`, `.claude/rules/workspace/<part-dir>/<part-name>.mdc`,
   and `./<part-dir>/AGENT.md`. Consult specialist agents in `.claude/agents/` (spawn via the Agent
   tool as needed).
 - Assign a `part` from `workspace-parts.yaml` to each story — closest leaf part, or top-level parent
@@ -64,7 +64,6 @@ Assign `agents: [{ "role": "..." }]` per story using roles from `.claude/agents/
 | `testing`                      | `api-tester`, `evidence-collector` |
 | `automation`, `tools`          | `devops-automator` / `api-tester` |
 | `docs`                         | `code-reviewer` |
-| all                            | `code-reviewer` |
 
 ## Completeness Rule
 
@@ -79,7 +78,6 @@ Write `.claude/myteam/prds/current/<task-kebab>/prd.json` matching `.claude/myte
 exactly:
 
 - `project`, `prdId` (carry the backlog `id` for traceability)
-- `branchName: myteam/<task-kebab>`
 - `description` = backlog task + its done-definition
 - `defaultParallelism`
 - `userStories[]` — each with `part` (from `workspace-parts.yaml`) and `agents[]`
