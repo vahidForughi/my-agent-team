@@ -1,6 +1,8 @@
 ---
 name: helm
 description: Manage Helm charts for deployment.
+paths:
+  - Deployments/helm/**/*
 metadata:
   part-dir: Deployments/helm
 ---

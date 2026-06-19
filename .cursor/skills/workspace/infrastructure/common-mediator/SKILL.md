@@ -1,6 +1,8 @@
 ---
 name: common-mediator
 description: Provides a simplified in-process mediator implementation for request/response and pipeline behaviors.
+paths:
+  - Infrastructure/Common.Mediator/**/*
 metadata: { part-dir: Infrastructure/Common.Mediator }
 ---
 This part implements a basic in-process mediator for handling requests and responses with optional pipeline behaviors. It's designed as a lightweight alternative to MediatR for simple CQRS patterns.

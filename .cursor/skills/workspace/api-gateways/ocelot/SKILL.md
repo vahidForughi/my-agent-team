@@ -1,6 +1,8 @@
 ---
 name: ocelot
 description: Ocelot HTTP API gateway that proxies Catalog, Basket, Discount, and Ordering routes.
+paths:
+  - ApiGateways/Ocelot.ApiGateway/**/*
 metadata: { part-dir: ApiGateways/Ocelot.ApiGateway }
 ---
 

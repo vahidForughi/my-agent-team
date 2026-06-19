@@ -1,6 +1,8 @@
 ---
 name: postman
 description: Guide to using Postman collections and environments for API testing and documentation.
+paths:
+  - tools/postman/**/*
 metadata: { part-dir: tools/postman }
 ---
 

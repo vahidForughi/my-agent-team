@@ -1,6 +1,8 @@
 ---
 name: scripts
 description: Manage and understand automation and operational bash scripts.
+paths:
+  - scripts/**/*
 metadata:
   part-dir: scripts
 ---

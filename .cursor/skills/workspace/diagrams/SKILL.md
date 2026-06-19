@@ -1,6 +1,8 @@
 ---
 name: diagrams
 description: Guide for working with diagrams and related documentation.
+paths:
+  - diagrams/**/*
 metadata: { part-dir: diagrams }
 ---
 

@@ -1,6 +1,8 @@
 ---
 name: terraform
 description: Manage and understand the AWS infrastructure provisioned by Terraform.
+paths:
+  - terraform/**/*
 metadata: { part-dir: terraform }
 ---
 

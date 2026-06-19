@@ -1,6 +1,8 @@
 ---
 name: event-bus-messages
 description: EventBus microservice — Defines common constants and integration events for inter-service communication.
+paths:
+  - Infrastructure/EventBus.Messages/**/*
 metadata:
   part-dir: Infrastructure/EventBus.Messages
 ---

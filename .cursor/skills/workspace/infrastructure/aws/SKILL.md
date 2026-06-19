@@ -1,6 +1,8 @@
 ---
 name: aws
 description: AWS CloudFormation templates for EKS, VPC, ALB, and S3 product-image storage. Use when editing Infrastructure/aws or integrating with deploy-aws.sh, cleanup-aws.sh, or manual CloudFormation deploys.
+paths:
+  - Infrastructure/aws/**/*
 metadata:
   part-dir: Infrastructure/aws
 ---

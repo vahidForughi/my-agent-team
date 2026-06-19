@@ -1,6 +1,8 @@
 ---
 name: client
 description: Documentation and guidance for the legacy Angular SPA frontend.
+paths:
+  - client/**/*
 metadata:
   part-dir: client
 ---

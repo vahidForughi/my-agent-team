@@ -1,6 +1,8 @@
 ---
 name: k8s
 description: Raw Kubernetes manifests and scripts for deploying the entire e-commerce platform.
+paths:
+  - Deployments/k8s/**/*
 metadata:
   part-dir: Deployments/k8s
 ---

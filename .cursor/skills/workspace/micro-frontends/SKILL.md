@@ -1,6 +1,8 @@
 ---
 name: micro-frontends
 description: The main MicroFrontends part that orchestrates other micro-frontends.
+paths:
+  - micro-frontends/**/*
 metadata: { part-dir: micro-frontends }
 ---
 

@@ -1,6 +1,8 @@
 ---
 name: ordering
 description: Ordering microservice — order persistence, basket checkout consumers, and activity feed API. Use when working in Services/Ordering or integrating with order checkout, order CRUD, or admin activity endpoints.
+paths:
+  - Services/Ordering/**/*
 metadata:
   part-dir: Services/Ordering
 ---
