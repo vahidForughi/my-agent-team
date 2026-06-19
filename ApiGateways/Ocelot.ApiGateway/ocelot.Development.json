@@ -170,6 +170,43 @@
       "UpstreamPathTemplate": "/Admin/MigrateImagesToS3",
       "UpstreamHttpMethod": [ "POST" ]
     },
+    //Catalog Favorites API
+    {
+      "DownstreamPathTemplate": "/api/v1/Catalog/favorites/{userName}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "host.docker.internal",
+          "Port": "8000"
+        }
+      ],
+      "UpstreamPathTemplate": "/catalog/favorites/{userName}",
+      "UpstreamHttpMethod": [ "GET" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/v1/Catalog/favorites",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "host.docker.internal",
+          "Port": "8000"
+        }
+      ],
+      "UpstreamPathTemplate": "/catalog/favorites",
+      "UpstreamHttpMethod": [ "POST" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/v1/Catalog/favorites/{favoriteId}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "host.docker.internal",
+          "Port": "8000"
+        }
+      ],
+      "UpstreamPathTemplate": "/catalog/favorites/{favoriteId}",
+      "UpstreamHttpMethod": [ "DELETE" ]
+    },
     //Basket API
     {
       "DownstreamPathTemplate": "/api/v1/Basket/GetBasket/{userName}",
