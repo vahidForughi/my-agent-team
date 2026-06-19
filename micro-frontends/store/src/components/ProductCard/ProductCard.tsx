@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Button, Col } from 'antd';
+import { Card, Button, Col, Flex } from 'antd';
 import { ShoppingCartOutlined } from '@ant-design/icons';
 import { Product } from '../../services/products';
 import ProductCardCover from './ProductCardCover';
@@ -12,6 +12,7 @@ import {
   PRODUCT_CARD,
   PRODUCT_CARD_COLORS,
 } from '../../constants/layoutConstants';
+import { FavoriteButton } from '../FavoriteButton';
 
 type ProductCardProps = {
   product: Product;
@@ -94,6 +95,13 @@ function ProductCard(props: ProductCardProps) {
       }}
     >
       <ProductCardMeta product={product} />
+      <Flex justify="flex-end">
+        <FavoriteButton
+          productId={product.id}
+          productName={product.name}
+          productImageUrl={imageUrl}
+        />
+      </Flex>
       <Button
         variant="outlined"
         size="large"
