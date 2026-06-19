@@ -170,6 +170,42 @@
 			"UpstreamHttpMethod": ["POST"]
 		},
 		{
+			"DownstreamPathTemplate": "/api/v1/Catalog/favorites/{userName}",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "eshopping-catalog",
+					"Port": 80
+				}
+			],
+			"UpstreamPathTemplate": "/catalog/favorites/{userName}",
+			"UpstreamHttpMethod": ["GET"]
+		},
+		{
+			"DownstreamPathTemplate": "/api/v1/Catalog/favorites",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "eshopping-catalog",
+					"Port": 80
+				}
+			],
+			"UpstreamPathTemplate": "/catalog/favorites",
+			"UpstreamHttpMethod": ["POST"]
+		},
+		{
+			"DownstreamPathTemplate": "/api/v1/Catalog/favorites/{favoriteId}",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "eshopping-catalog",
+					"Port": 80
+				}
+			],
+			"UpstreamPathTemplate": "/catalog/favorites/{favoriteId}",
+			"UpstreamHttpMethod": ["DELETE"]
+		},
+		{
 			"DownstreamPathTemplate": "/api/v1/Basket/GetBasket/{userName}",
 			"DownstreamScheme": "http",
 			"DownstreamHostAndPorts": [
