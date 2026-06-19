@@ -1,5 +1,5 @@
 # myteam — custom execute config
-# Ported (.cursor/myteam/). This file is read by the myteam
+# Ported (.claude/myteam/). This file is read by the myteam
 # skills/commands as shared context.
 
 schema: prd-driven

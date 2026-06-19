@@ -35,8 +35,8 @@ fresh-context `prd.json > userStories` loop, with **agent orchestration** per-st
 11. APPEND (never replace) the dated entry to the PRD `progress.txt` using **Progress Log Patterns**.
 12. If you discover any reusable facts and preferences, update (see **Learn** sections):
     - `## Codebase Patterns` at the top of `progress.txt`.
-    - Part's rule `.cursor/rules/workspace/<part.dir>/<part.name>.mdc`.
-    - Part's skill `.cursor/skills/workspace/<part.dir>/SKILL.md`.
+    - Part's rule `.claude/rules/workspace/<part.dir>/<part.name>.mdc`.
+    - Part's skill `.claude/skills/workspace/<part.dir>/SKILL.md`.
     - Part's AGENT.md `./<part.dir>/AGENT.md`.
 13. Repeat until every story passes, then emit `<promise>COMPLETE</promise>`.
 
@@ -67,10 +67,10 @@ Only add patterns that are **general and reusable**, not story-specific details.
 
 ## Part's Definition
 
-- List of parts: `.cursor/myteam/workspace-parts.yaml`
+- List of parts: `.claude/myteam/workspace-parts.yaml`
 - Part's dir: `./<part.dir>/`
-- Part's rules: `.cursor/rules/workspace/<part.dir>/`
-- Part's skill: `.cursor/skills/workspace/<part.dir>/`
+- Part's rules: `.claude/rules/workspace/<part.dir>/`
+- Part's skill: `.claude/skills/workspace/<part.dir>/`
 - Part's AGENT.md: `./<part.dir>/AGENT.md`
 
 ## Learn Rules
