@@ -1,3 +1,20 @@
+# My Agent Team
+
+A PRD-driven agent execution harness for Claude Code and Cursor. Turns a feature description into commits through a loop of specialist agents, quality gates, and a self-updating knowledge base.
+
+```bash
+/myteam-onboard    # Scan repo → generate AGENT.md, CLAUDE.md, SKILL.md per part (run once)
+/myteam-plan       # Describe a feature → produce ordered prd.json with agent assignments
+/myteam-execute    # Run the loop: pick story → dispatch agents → gates → commit → checkpoint
+/myteam-archive    # Move completed PRD to archive after COMPLETE signal
+/myteam-run        # Drive full backlog-tasks.csv end-to-end (plan → execute → archive per task)
+```
+
+Config: `.claude/myteam/config.yaml` · `.cursor/myteam/config.yaml`
+Docs: [`.claude/myteam/README.md`](.claude/myteam/README.md) · [`.cursor/myteam/README.md`](.cursor/myteam/README.md)
+
+---
+
 # Cloud-Native E-Commerce Platform
 
 [![.NET 10](https://img.shields.io/badge/.NET-10.0-blue.svg)](https://dotnet.microsoft.com/)
