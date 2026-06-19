@@ -10,66 +10,33 @@ metadata:
 
 # myteam execution loop
 
-The merged strategy: fresh-context `prd.json` loop, with per-story **agent orchestration**
-and habit of leaving a clean, traceable trail.
+fresh-context `prd.json > userStories` loop, with **agent orchestration** per-story.
 
-## Inputs
+## The loop (one story per iteration, fresh context, scoped in part dir)
 
-- Active PRD: `.cursor/myteam/prds/current/<prd>/prd.json` and its `progress.txt`.
-- Per-part context: `.cursor/rules/workspace/<part-dir>/<part-name>.md`, `.cursor/skills/workspace/<part-dir>/SKILL.md`,
-  `./<part-dir>/AGENT.md` (curated doc) for every part a story touches.
-- Recent history: `git log` for the paths a story touches (see step 1) — cheaper and more current
-  than re-reading prose.
-- Defaults & quality gates: `.cursor/myteam/config.yaml`.
-- Agent roles: `.cursor/agents/<role>.md` (+ `.cursor/rules/<role>.mdc`).
+0. check `.cursor/myteam/prds/current/prd.json` is exists and include filled userStories property.
+   If is missing, STOP and do not execute next steps:
+> Stop. The execute isn't initialized. Run `/myteam-plan` first (and `/myteam-onboard` before that if
+> you haven't), then re-run `/myteam-execute`.
 
-## The loop (one story per iteration, fresh context, specific part)
-
-1. Read the PRD at `.cursor/myteam/prds/current/<prd>/prd.json`.
-2. Read the progress log at `.cursor/myteam/prds/current/<prd>/progress.txt` (check Codebase Patterns section first)
-3. Check you're on the correct branch from PRD branchName. If not, check it out or create from main.
-4. Pick the highest priority user story where passes: false
-5. Implement that single user story
-6. Run quality checks (e.g., typecheck, lint, test - use whatever your project requires)
-
-
-1. **Read state:** Open `prd.json` and the PRD `progress.txt`. Read the `## Codebase Patterns`
-   section at the top of `progress.txt` **first** — it carries forward what earlier iterations
-   learned. Then, for each part the story touches, 
-2. **Branch.** Ensure you are on `prd.json.branchName` (`myteam/<feature>`). If not, check it out
-   or create it from `main`.
-3. **Pick the story.** Choose the **highest-priority** story (lowest `priority` number) where
-   `passes: false`. If none remain, go to **Stop**.
-4. **dispatch assigned agents with fresh-context.** Read the story's
-   `agents[]` and `part`, engage that role from `.cursor/agents/`.
-   - **Agent Scoped** in story's `part` `dir`
-   - **Agent Load**: `.cursor/rules/workspace/<part.dir>/<part.name>.mdc`, `.cursor/skills/workspace/<part-kebab>/SKILL.md`
-     `<part-kebab>/AGENT.md`
-5. Implement that single user story.
-6. **Quality gates (bounded retries).** Run `config.yaml > defaults.qualityGates` (typecheck / lint /
-   test). For UI stories, verify in the browser. Do not proceed on failure: re-delegate 
-   the fix up to `config.yaml > defaults.maxStoryAttempts` times. If the gates
-   still fail after that — or the story proves too large to satisfy **all** its acceptance criteria in
-   one focused pass — **STOP the loop**: leave the story `passes: false`, append the blocker (and a
-   split suggestion if oversized) to `progress.txt`, and surface it. Never churn indefinitely and never
-   commit broken code.
-7. **Commit.** Commit all changes: `feat: [US-id] - [Story Title]`. Never commit broken code.
-8. **Mark done.** Set `passes: true` for the story in `prd.json`.
-9. **Log progress.** APPEND (never replace, just append) the dated entry to the PRD `progress.txt`:
-   ```
-   ## [YYYY-MM-DD HH:MM] - US-00X
-   - What was implemented (and which agents did what)
-   - Files changed
-   - **Learnings for future iterations:**
-     - Patterns discovered
-     - Gotchas encountered
-   ---
-   ```
-10. **Consolidate.** Promote general, If you discover any reusable learnings , add it:
+1. Read the current PRD at `.cursor/myteam/prds/current/prd.json`.
+2. Read the progress log at `.cursor/myteam/prds/current/progress.txt` (check Codebase Patterns section first)
+3. Pick the highest priority user story where passes: false, If none remain, go to **Stop**.
+4. Dispatch that single user story's first assigned agent with fresh context and scoped in part's dir,
+   that can hands-off with another ones if needed.
+5. Load part's rules, skills and AGENT.md, (paths exists under **Part's Definition** section) 
+6. Implement that single user story.
+7. Run quality checks from `config.yaml > defaults.qualityGates` each one needed (e.g., typecheck, lint, test,
+   verify in the browser - use whatever your project requires).
+8. Commit all changes: `feat: [US-id] - [Story Title]`. Never commit broken code.
+9. Set `passes: true` for the story in `prd.json`.
+10. APPEND (never replace, just append) the dated entry to the PRD `progress.txt` with Progress Log Patterns
+11. Learn If you discover any reusable facts and preferences, update:
    - patterns that future iterations should know into `## Codebase Patterns` section at the top of the PRD `progress.txt`; 
    - part's rule `.cursor/rules/workspace/<part.dir>/<part.name>.mdc`.
    - part's skill `.cursor/skills/workspace/<part.dir>/SKILL.md`.
    - part's AGENT.md `<part.dir>/AGENT.md`.
+12. Repeat until every story passes, then emit `<promise>COMPLETE</promise>`.
 
 ## Codebase Patterns
 
@@ -84,12 +51,57 @@ and habit of leaving a clean, traceable trail.
 
 Only add patterns that are **general and reusable**, not story-specific details.
 
-## Update part's SKILL.md Files
+## Progress Log Patterns
 
-Before committing, check if any edited files have learnings worth preserving in nearby CLAUDE.md files:
+```
+   ## [YYYY-MM-DD HH:MM] - US-00X
+   - What was implemented (and which agents did what)
+   - Files changed
+   - **Learnings for future iterations:**
+     - Patterns discovered
+     - Gotchas encountered
+   ---
+```
+
+## Part's Definition
+
+- List of the parts can see in myteam directory `.cursor/myteam/workspace-parts.yaml`
+- Part's dir in `./<part.dir>/`
+- Part's rules in `.cursor/rules/workspace/<part.dir>/`
+- Part's skill in `.cursor/skills/workspace/<part.dir>/`
+- Part's AGENT.md in `./<part.dir>/`
+
+## Learn Rules
+
+Good rules are focused, actionable, and scoped.
+
+- Keep rules under 500 lines
+- Split large rules into multiple, composable rules
+- Provide concrete examples or referenced files
+- Avoid vague guidance. Write rules like clear internal docs
+- Reuse rules when repeating prompts in chat
+- Reference files instead of copying their contents—this keeps rules short and prevents them from becoming stale as code changes
+
+**Avoid in rules:**
+- Copying entire style guides: Use a linter instead. Agent already knows common style conventions.
+- Documenting every possible command: Agent knows common tools like npm, git, and pytest.
+- Adding instructions for edge cases that rarely apply: Keep rules focused on patterns you use frequently.
+- Duplicating what's already in your codebase: Point to canonical examples instead of copying code.
+
+## Learn Skill
+
+check if any edited files have learnings worth preserving in nearby part's skill files:
+
+A skill is a portable:
+- version-controlled package teaches agents how to perform domain-specific tasks
+- include scripts, templates, and references that agents may act on using their tools
+
+## Learn AGENT.md
+
+check if any edited files have learnings worth preserving in nearby part's rules files:
 
 1. **Identify directories with edited files** - Look at which directories you modified
-2. **Check for existing CLAUDE.md** - Look for CLAUDE.md in those directories or parent directories
+2. **Check for existing AGENT.md** - Look for AGENT.md in those directories or parent directories
 3. **Add valuable learnings** - If you discovered something future developers/agents should know:
    - API patterns or conventions specific to that module
    - Gotchas or non-obvious requirements
@@ -97,7 +109,7 @@ Before committing, check if any edited files have learnings worth preserving in 
    - Testing approaches for that area
    - Configuration or environment requirements
 
-**Examples of good CLAUDE.md additions:**
+**Examples of good AGENT.md additions:**
 - "When modifying X, also update Y to keep them in sync"
 - "This module uses pattern Z for all API calls"
 - "Tests require the dev server running on PORT 3000"
@@ -108,7 +120,7 @@ Before committing, check if any edited files have learnings worth preserving in 
 - Temporary debugging notes
 - Information already in progress.txt
 
-Only update CLAUDE.md if you have **genuinely reusable knowledge** that would help future work in that directory.
+Only update AGENT.md if you have **genuinely reusable knowledge** that would help future work in that directory.
 
 ## Quality Requirements
 
@@ -116,6 +128,8 @@ Only update CLAUDE.md if you have **genuinely reusable knowledge** that would he
 - Do NOT commit broken code
 - Keep changes focused and minimal
 - Follow existing code patterns
+- don't indefinitely loop. **STOP the loop** after failure `config.yaml > defaults.maxStoryAttempts` times,
+  leave the story `passes: false`, append the blocker (and a split suggestion) to `progress.txt`
 
 ## Browser Testing (If Available)
 
