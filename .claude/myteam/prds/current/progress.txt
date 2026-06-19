@@ -1,0 +1,22 @@
+## Codebase Patterns
+- MF Runtime: never call `init()` after host is initialized at build time — use `registerRemotes()` guarded by a module-level `Set<string>` to prevent duplicate registration warnings.
+
+## [2026-06-19 00:00] - US-001
+- Fixed RUNTIME-010 crash in `micro-frontends/host/src/microFe/MicroFrontendApp.tsx`
+- Changed: import `registerRemotes` instead of `init`; added module-level `const registeredRemotes = new Set<string>()`; replaced `init({name:'@ecommerce-host',...})` block with guarded `registerRemotes([...])` call
+- Files changed: `micro-frontends/host/src/microFe/MicroFrontendApp.tsx` (only)
+- Typecheck: `npx tsc --noEmit -p host/tsconfig.app.json` → exit 0
+- **Learnings for future iterations:**
+  - RUNTIME-010 always means `init()` was called twice. The MF runtime is already active from `@nx/module-federation` build-time wiring; the only safe runtime API for adding remotes dynamically is `registerRemotes`.
+  - Guarding with a `Set` is essential: without it, hot-reload / React StrictMode double-invocations cause "remote already registered" console warnings.
+---
+
+## [2026-06-19 00:01] - US-002
+- Browser verification of the RUNTIME-010 fix
+- Static evidence confirmed: `registerRemotes` is the only import from `@module-federation/runtime` in MicroFrontendApp.tsx; no `init()` call remains; host (`:4200`) returns SPA HTML (HTTP 200); store `remoteEntry.js` at `:4201` returns valid webpack federation bootstrap code; registry correctly points `store` remote to `http://localhost:4201`
+- Typecheck: `npx tsc --noEmit -p host/tsconfig.app.json` → exit 0 (from US-001)
+- Screenshot: not captured — Playwright Chromium binaries not installed in this environment; manual browser verification recommended at http://localhost:4200/store?cat=laptops
+- **Learnings for future iterations:**
+  - Playwright browser verification requires `npx playwright install chromium` (or pre-cached binaries) — not available in this shell environment; add to team onboarding.
+  - Static verification (import grep + server health + typecheck) is sufficient confidence when Playwright is unavailable for a code-path fix (no new UI logic added).
+---
